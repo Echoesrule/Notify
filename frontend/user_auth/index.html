@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="../css/login.css">
 <script src="../js/config.js"></script>
+<script src="../js/login.js"></script>
 
 </head>
 <body>
@@ -100,7 +101,6 @@
         </div>
     </div>
 
-    <script src="../js/login.js"></script>
     <script>
         function togglePassword(inputId, toggleBtn) {
             const input = document.getElementById(inputId);
@@ -131,7 +131,7 @@
                 return;
             }
             try {
-                const res = await fetch('http://localhost:3000/user_auth/forgot-password', {
+                const res = await fetch(`${window.API_URL}/user_auth/forgot-password`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email })
@@ -161,7 +161,7 @@
                 return;
             }
             try {
-                const res = await fetch('http://localhost:3000/user_auth/reset-password', {
+                const res = await fetch(`${window.API_URL}/user_auth/reset-password`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, otp: code, newPassword })

@@ -1,88 +1,50 @@
-console.log('Registering script loaded.....')
-document.addEventListener('DOMContentLoaded', function() {
-    postRegForm();
-});
+// frontend/js/register.js
+// Ensure API_URL is defined
+if (typeof window.API_URL === 'undefined') {
+    window.API_URL = localStorage.getItem('api_url') || 'https://notify-sxkf.onrender.com/api';
+}
 
-function postRegForm(){
-const form=document.getElementById("registerForm");
-const message=document.getElementById("registerMessage");
-    if (!form){
-        console.err("Could not find form in html",error);
-        return;
-    };
+console.log('Register.js using API_URL:', window.API_URL);
 
-    form.addEventListener('submit', async function (e) {
+document.addEventListener('DOMContentLoaded', () => {
+    const registerForm = document.getElementById('registerForm');
+    const message = document.getElementById('registerMessage');
+
+    if (!registerForm) return;
+
+    registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const formData={
-            name:form.name.value,
-            email:form.email.value,
-            password:form.password.value
+        const formData = {
+            name: registerForm.name?.value,
+            email: registerForm.email.value,
+            password: registerForm.password.value,
+            role: registerForm.role?.value || 'student'
         };
 
-        try{
-            const res=await fetch(`${window.API_URL}/user_auth/register`,{
-                method:'POST',
+        try {
+            const res = await fetch(`${window.API_URL}/user_auth/register`, {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
             });
 
-        const data = await res.json();
-            console.log("Server Response",data);
-        if (res.ok) {
-            form.style.display = 'none';
-            message.style.color = 'green';
-            message.textContent = 'OTP sent! Check your email and enter the code below.';
-            showOtpInput(form.email.value);
-        } 
-        else {
-            message.style.color = 'red';
-            message.textContent = data.message || 'Registration failed';
-        }
-    }
-     catch (err) {
-        message.style.color = 'red';
-        message.textContent = 'Server error';
-        console.error(err);
-    }
-
-  });
-}
-
-function showOtpInput(email) {
-    const container = document.getElementById('registerMessage').parentElement;
-    
-    const otpForm = document.createElement('form');
-    otpForm.id = 'otpForm';
-    otpForm.innerHTML = `
-        <input type="text" id="otpInput" placeholder="Enter 6-digit OTP" maxlength="6" required>
-        <button type="submit">Verify</button>
-    `;
-    container.appendChild(otpForm);
-
-    otpForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const otp = document.getElementById('otpInput').value;
-
-        try {
-            const res = await fetch('http://localhost:3000/user_auth/verify-otp', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, otp })
-            });
-
             const data = await res.json();
+
             if (res.ok) {
-                document.getElementById('registerMessage').style.color = 'green';
-                document.getElementById('registerMessage').textContent = 'Verified! Redirecting to login...';
-                setTimeout(() => window.location.href = 'index.html', 1500);
+                message.style.color = 'green';
+                message.textContent = 'Registration successful! Redirecting to login...';
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
             } else {
-                document.getElementById('registerMessage').style.color = 'red';
-                document.getElementById('registerMessage').textContent = data.message;
+                message.style.color = 'red';
+                message.textContent = data.message || 'Registration failed';
             }
         } catch (err) {
-            document.getElementById('registerMessage').style.color = 'red';
-            document.getElementById('registerMessage').textContent = 'Verification error';
+            console.error('Register error:', err);
+            message.style.color = 'red';
+            message.textContent = 'Failed to connect to server';
         }
     });
-}
+});

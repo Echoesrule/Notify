@@ -1,8 +1,15 @@
 // frontend/js/config.js
-// API Configuration for Production
-var API_URL = 'https://notify-sxkf.onrender.com/api';
+// Global API Configuration - Loads FIRST
 
-// Export for use in other files
-window.API_URL = API_URL;
+// Set API URL based on environment
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    window.API_URL = 'http://localhost:3000/api';
+} else {
+    window.API_URL = 'https://notify-sxkf.onrender.com/api';
+}
 
-console.log('API URL:', API_URL);
+// Also store in localStorage for other pages
+localStorage.setItem('api_url', window.API_URL);
+
+console.log('✅ API_URL configured:', window.API_URL);
+console.log('📍 Environment:', window.location.hostname);

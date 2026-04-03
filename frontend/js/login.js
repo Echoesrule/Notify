@@ -1,3 +1,12 @@
+// frontend/js/login.js
+// Ensure API_URL is defined
+if (typeof window.API_URL === 'undefined') {
+    console.warn('API_URL not defined, checking localStorage...');
+    window.API_URL = localStorage.getItem('api_url') || 'https://notify-sxkf.onrender.com/api';
+}
+
+console.log('Login.js using API_URL:', window.API_URL);
+
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
     const message = document.getElementById('loginMessage');
@@ -9,6 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const email = loginForm.email.value;
         const password = loginForm.password.value;
+
+        console.log('Attempting login to:', `${window.API_URL}/user_auth/login`);
 
         try {
             const res = await fetch(`${window.API_URL}/user_auth/login`, {
@@ -38,8 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 message.style.color = 'green';
                 message.textContent = 'Login successful! Redirecting...';
 
-                
-
                 setTimeout(() => {
                     if (userData.role === 'admin') {
                         window.location.href = '../admin/admin.html';
@@ -54,9 +63,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 message.textContent = userData.message || 'Invalid email or password';
             }
         } catch (err) {
-            console.error(err);
+            console.error('Login fetch error:', err);
             message.style.color = 'red';
-            message.textContent = 'Failed please try again later';
+            message.textContent = 'Failed to connect to server. Please try again later.';
         }
     });
 });
