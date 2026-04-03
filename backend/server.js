@@ -1,3 +1,4 @@
+// server.js - Production Ready for Render/Vercel Deployment
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -10,11 +11,46 @@ const db = require('./db');
 const dataService = require('./Data_fetcher/data_service');
 const authRoutes = require('./user_auth/routes');
 
+// =====================
+// Configuration
+// =====================
+const PORT = process.env.PORT || 3000;
+const SECRET = process.env.JWT_SECRET || 'notify_fallback_dev_key_change_in_production';
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3001';
+
+// =====================
+// Ensure upload directories exist
+// =====================
+const uploadsDir = path.join(__dirname, 'uploads');
+const notesDir = path.join(__dirname, 'uploads/notes');
+const pfpsDir = path.join(__dirname, 'uploads/pfps');
+
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+if (!fs.existsSync(notesDir)) {
+    fs.mkdirSync(notesDir, { recursive: true });
+}
+if (!fs.existsSync(pfpsDir)) {
+    fs.mkdirSync(pfpsDir, { recursive: true });
+}
+
+// Health check endpoint for Render
+app.get('/health', (req, res) => {
+    res.status(200).json({ 
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+    });
+});
+
+// =====================
+// Multer Configuration
+// =====================
 const pfpStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const dir = path.join(__dirname, 'uploads/pfps');
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        cb(null, dir);
+        cb(null, pfpsDir);
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -22,15 +58,92 @@ const pfpStorage = multer.diskStorage({
     }
 });
 
-const uploadPfp = multer({ storage: pfpStorage, limits: { fileSize: 2 * 1024 * 1024 } });
+const uploadPfp = multer({ 
+    storage: pfpStorage, 
+    limits: { fileSize: 2 * 1024 * 1024 } // 2MB limit
+});
 
+const noteStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, notesDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({ 
+    storage: noteStorage,
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit for notes
+});
+
+// =====================
+// Express App
+// =====================
 const app = express();
-const PORT = 3000;
-const SECRET = process.env.JWT_SECRET || 'notify_fallback_dev_key_change_in_production';
 
+// =====================
+// CORS Configuration
+// =====================
+const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:5500',
+    FRONTEND_URL,
+    process.env.RENDER_EXTERNAL_URL,
+    'https://*.vercel.app',
+    'https://*.onrender.com'
+];
+
+app.use(cors({
+    origin: function(origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.some(allowed => {
+            if (allowed.includes('*')) {
+                const pattern = allowed.replace('*', '.*');
+                return new RegExp(pattern).test(origin);
+            }
+            return allowed === origin;
+        })) {
+            callback(null, true);
+        } else {
+            console.log('CORS blocked origin:', origin);
+            callback(null, true); // Allow but log - change to false in production
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+}));
+
+// =====================
+// Body Parsing Middleware
+// =====================
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// =====================
+// Static Files
+// =====================
+app.use('/uploads', express.static(uploadsDir));
+
+// Request logging middleware
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    next();
+});
+
+// =====================
+// Admin Middleware
+// =====================
 const adminMiddleware = (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(401).json({ message: 'Unauthorized' });
+    if (!token) {
+        return res.status(401).json({ message: 'Unauthorized - No token provided' });
+    }
     
     try {
         const decoded = jwt.verify(token, SECRET);
@@ -40,87 +153,108 @@ const adminMiddleware = (req, res, next) => {
         req.user = decoded;
         next();
     } catch (err) {
-        return res.status(401).json({ message: 'Invalid token' });
+        if (err.name === 'JsonWebTokenError') {
+            return res.status(401).json({ message: 'Invalid token' });
+        }
+        if (err.name === 'TokenExpiredError') {
+            return res.status(401).json({ message: 'Token expired' });
+        }
+        return res.status(401).json({ message: 'Authentication failed' });
     }
 };
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, 'uploads/notes'));
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
-});
-
-const upload = multer({ storage: storage });
-
-app.use(cors());
-app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
+// =====================
+// Routes
+// =====================
 app.use('/user_auth', authRoutes);
 
+// Health check endpoint
 app.get('/', (req, res) => {
-    res.send('API running...');
+    res.json({ 
+        status: 'OK', 
+        message: 'API is running 🚀',
+        environment: NODE_ENV,
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Health check for Render
+app.get('/health', (req, res) => {
+    res.status(200).json({ 
+        status: 'healthy',
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString()
+    });
 });
 
 // ==================== SCHOOLS ====================
 app.get('/api/schools', async (req, res) => {
-    const schools = await dataService.getSchools();
-    
-    // Get counts for each school
-    const schoolsWithCounts = await Promise.all(schools.map(async (school) => {
-        const schoolId = parseInt(school.id);
+    try {
+        const schools = await dataService.getSchools();
         
-        const departments = school.departments || [];
+        // Get counts for each school
+        const schoolsWithCounts = await Promise.all(schools.map(async (school) => {
+            const schoolId = parseInt(school.id);
+            
+            const departments = school.departments || [];
+            
+            // Count students - just count users with this school_id (their primary school)
+            const [[{ studentCount }]] = await db.query(
+                'SELECT COUNT(*) as studentCount FROM notify_users WHERE school_id = ?',
+                [schoolId]
+            );
+            
+            const [[{ noteCount }]] = await db.query(
+                'SELECT COUNT(*) as noteCount FROM notes WHERE school_id = ?',
+                [schoolId]
+            );
+            const [[{ courseCount }]] = await db.query(
+                'SELECT COUNT(*) as courseCount FROM courses WHERE school_id = ?',
+                [schoolId]
+            );
+            
+            return {
+                ...school,
+                departments: departments,
+                studentCount: studentCount || 0,
+                noteCount: noteCount || 0,
+                courseCount: courseCount || 0
+            };
+        }));
         
-        // Count students - just count users with this school_id (their primary school)
-        const [[{ studentCount }]] = await db.query(
-            'SELECT COUNT(*) as studentCount FROM notify_users WHERE school_id = ?',
-            [schoolId]
-        );
-        
-        const [[{ noteCount }]] = await db.query(
-            'SELECT COUNT(*) as noteCount FROM notes WHERE school_id = ?',
-            [schoolId]
-        );
-        const [[{ courseCount }]] = await db.query(
-            'SELECT COUNT(*) as courseCount FROM courses WHERE school_id = ?',
-            [schoolId]
-        );
-        
-        return {
-            ...school,
-            departments: departments,
-            studentCount: studentCount || 0,
-            noteCount: noteCount || 0,
-            courseCount: courseCount || 0
-        };
-    }));
-    
-    res.json(schoolsWithCounts);
+        res.json(schoolsWithCounts);
+    } catch (error) {
+        console.error('Error fetching schools:', error);
+        res.status(500).json({ error: 'Failed to fetch schools' });
+    }
 });
 
 app.get('/api/schools/:schoolId', async (req, res) => {
-    const school = await dataService.getSchoolById(req.params.schoolId);
-    if (!school) return res.status(404).json({ message: "School not found" });
-    
-    // Get departments with units
-    const [departments] = await db.query('SELECT * FROM courses WHERE school_id = ? ORDER BY name', [school.id]);
-    for (const dept of departments) {
-        const [units] = await db.query('SELECT * FROM units WHERE dept_id = ? ORDER BY name', [dept.id]);
-        dept.units = units;
+    try {
+        const school = await dataService.getSchoolById(req.params.schoolId);
+        if (!school) return res.status(404).json({ message: "School not found" });
+        
+        // Get departments with units
+        const [departments] = await db.query('SELECT * FROM courses WHERE school_id = ? ORDER BY name', [school.id]);
+        for (const dept of departments) {
+            const [units] = await db.query('SELECT * FROM units WHERE dept_id = ? ORDER BY name', [dept.id]);
+            dept.units = units;
+        }
+        school.departments = departments;
+        
+        res.json(school);
+    } catch (error) {
+        console.error('Error fetching school:', error);
+        res.status(500).json({ error: 'Failed to fetch school' });
     }
-    school.departments = departments;
-    
-    res.json(school);
 });
 
 app.post('/api/schools', async (req, res) => {
     try {
         const { name } = req.body;
+        if (!name) {
+            return res.status(400).json({ error: 'School name is required' });
+        }
         const newSchool = await dataService.addSchool(name);
         res.json(newSchool);
     } catch (error) {
@@ -142,50 +276,63 @@ app.get('/api/departments', async (req, res) => {
 
 // ==================== DEPARTMENTS ====================
 app.get('/api/schools/:schoolId/departments', async (req, res) => {
-    const { schoolId } = req.params;
-    const schoolIdInt = parseInt(schoolId);
-    const departments = await dataService.getDepartmentsBySchool(schoolIdInt);
-    
-    // Get counts for each department
-    const departmentsWithCounts = [];
-    
-    for (const dept of departments) {
-        const deptId = parseInt(String(dept.id));
+    try {
+        const { schoolId } = req.params;
+        const schoolIdInt = parseInt(schoolId);
+        const departments = await dataService.getDepartmentsBySchool(schoolIdInt);
         
-        // Count students - from user_courses for this specific course
-        const [studentResult] = await db.query(
-            'SELECT COUNT(*) as studentCount FROM user_courses WHERE course_id = ?',
-            [deptId]
-        );
-        const [noteResult] = await db.query(
-            'SELECT COUNT(*) as noteCount FROM notes WHERE dept_id = ?',
-            [deptId]
-        );
-        const [unitResult] = await db.query(
-            'SELECT COUNT(*) as unitCount FROM units WHERE dept_id = ?',
-            [deptId]
-        );
+        // Get counts for each department
+        const departmentsWithCounts = [];
         
-        departmentsWithCounts.push({
-            ...dept,
-            studentCount: studentResult[0]?.studentCount || 0,
-            noteCount: noteResult[0]?.noteCount || 0,
-            unitCount: unitResult[0]?.unitCount || 0
-        });
+        for (const dept of departments) {
+            const deptId = parseInt(String(dept.id));
+            
+            // Count students - from user_courses for this specific course
+            const [studentResult] = await db.query(
+                'SELECT COUNT(*) as studentCount FROM user_courses WHERE course_id = ?',
+                [deptId]
+            );
+            const [noteResult] = await db.query(
+                'SELECT COUNT(*) as noteCount FROM notes WHERE dept_id = ?',
+                [deptId]
+            );
+            const [unitResult] = await db.query(
+                'SELECT COUNT(*) as unitCount FROM units WHERE dept_id = ?',
+                [deptId]
+            );
+            
+            departmentsWithCounts.push({
+                ...dept,
+                studentCount: studentResult[0]?.studentCount || 0,
+                noteCount: noteResult[0]?.noteCount || 0,
+                unitCount: unitResult[0]?.unitCount || 0
+            });
+        }
+        
+        res.json(departmentsWithCounts);
+    } catch (error) {
+        console.error('Error fetching departments:', error);
+        res.status(500).json({ error: 'Failed to fetch departments' });
     }
-    
-    res.json(departmentsWithCounts);
 });
 
 app.get('/api/schools/:schoolId/departments/:deptId', async (req, res) => {
-    const dept = await dataService.getDepartmentById(req.params.schoolId, req.params.deptId);
-    if (!dept) return res.status(404).json({ message: "Department not found" });
-    res.json(dept);
+    try {
+        const dept = await dataService.getDepartmentById(req.params.schoolId, req.params.deptId);
+        if (!dept) return res.status(404).json({ message: "Department not found" });
+        res.json(dept);
+    } catch (error) {
+        console.error('Error fetching department:', error);
+        res.status(500).json({ error: 'Failed to fetch department' });
+    }
 });
 
 app.post('/api/departments', async (req, res) => {
     try {
         const { name, code, school_id } = req.body;
+        if (!name || !school_id) {
+            return res.status(400).json({ error: 'Name and school_id are required' });
+        }
         const newDept = await dataService.addDepartment(school_id, name, code);
         if (!newDept) return res.status(404).json({ error: 'School not found' });
         res.json(newDept);
@@ -197,34 +344,47 @@ app.post('/api/departments', async (req, res) => {
 
 // ==================== UNITS ====================
 app.get('/api/schools/:schoolId/departments/:deptId/units', async (req, res) => {
-    const units = await dataService.getUnitsByDepartment(req.params.schoolId, req.params.deptId);
-    
-    // Add note counts for each unit
-    const unitsWithCounts = [];
-    for (const unit of units) {
-        const unitId = parseInt(String(unit.id));
-        const [noteResult] = await db.query(
-            'SELECT COUNT(*) as noteCount FROM notes WHERE unit_id = ?',
-            [unitId]
-        );
-        unitsWithCounts.push({
-            ...unit,
-            noteCount: noteResult[0]?.noteCount || 0
-        });
+    try {
+        const units = await dataService.getUnitsByDepartment(req.params.schoolId, req.params.deptId);
+        
+        // Add note counts for each unit
+        const unitsWithCounts = [];
+        for (const unit of units) {
+            const unitId = parseInt(String(unit.id));
+            const [noteResult] = await db.query(
+                'SELECT COUNT(*) as noteCount FROM notes WHERE unit_id = ?',
+                [unitId]
+            );
+            unitsWithCounts.push({
+                ...unit,
+                noteCount: noteResult[0]?.noteCount || 0
+            });
+        }
+        
+        res.json(unitsWithCounts);
+    } catch (error) {
+        console.error('Error fetching units:', error);
+        res.status(500).json({ error: 'Failed to fetch units' });
     }
-    
-    res.json(unitsWithCounts);
 });
 
 app.get('/api/schools/:schoolId/departments/:deptId/units/:unitId', async (req, res) => {
-    const unit = await dataService.getUnitById(req.params.schoolId, req.params.deptId, req.params.unitId);
-    if (!unit) return res.status(404).json({ message: "Unit not found" });
-    res.json(unit);
+    try {
+        const unit = await dataService.getUnitById(req.params.schoolId, req.params.deptId, req.params.unitId);
+        if (!unit) return res.status(404).json({ message: "Unit not found" });
+        res.json(unit);
+    } catch (error) {
+        console.error('Error fetching unit:', error);
+        res.status(500).json({ error: 'Failed to fetch unit' });
+    }
 });
 
 app.post('/api/units', async (req, res) => {
     try {
         const { name, code, school_id, dept_id } = req.body;
+        if (!name || !school_id || !dept_id) {
+            return res.status(400).json({ error: 'Name, school_id, and dept_id are required' });
+        }
         const newUnit = await dataService.addUnit(school_id, dept_id, name, code);
         if (!newUnit) return res.status(404).json({ error: 'Department not found' });
         res.json(newUnit);
@@ -313,6 +473,11 @@ app.get('/api/notes/my-notes', async (req, res) => {
 app.post('/api/notes', upload.single('file'), async (req, res) => {
     try {
         const { title, description, school_id, dept_id, unit_id, userId } = req.body;
+        
+        if (!title || !school_id || !dept_id || !unit_id) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+        
         const filePath = req.file ? '/uploads/notes/' + req.file.filename : null;
         
         const newNote = await dataService.addNote(school_id, dept_id, unit_id, {
@@ -376,7 +541,13 @@ app.get('/api/notes/:id/download', async (req, res) => {
         await db.query('UPDATE notes SET downloads = COALESCE(downloads, 0) + 1 WHERE id = ?', [req.params.id]);
         
         const fileName = note.file_path.split('/').pop();
-        res.redirect(`/uploads/notes/${fileName}`);
+        const filePath = path.join(__dirname, 'uploads', 'notes', fileName);
+        
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ error: 'File not found on server' });
+        }
+        
+        res.download(filePath);
     } catch (error) {
         console.error('Error downloading note:', error);
         res.status(500).json({ error: 'Failed to download note' });
@@ -395,13 +566,13 @@ app.get('/api/notes/:id/preview', async (req, res) => {
         }
         
         const fileName = note.file_path.split('/').pop();
-        const fullPath = path.resolve(__dirname, 'uploads', 'notes', fileName);
+        const fullPath = path.join(__dirname, 'uploads', 'notes', fileName);
         
         if (!fs.existsSync(fullPath)) {
             return res.status(404).json({ error: 'File not found on server' });
         }
         
-        res.redirect(`/uploads/notes/${fileName}`);
+        res.sendFile(fullPath);
     } catch (error) {
         console.error('Error previewing note:', error);
         res.status(500).json({ error: 'Failed to preview note' });
@@ -419,7 +590,6 @@ app.get('/api/updates', async (req, res) => {
             LEFT JOIN notify_users p ON u.user_id = p.id
         `;
         
-        // If schoolId is provided and valid, filter by school or show global updates (course_id IS NULL)
         const parsedSchoolId = parseInt(schoolId);
         if (schoolId && !isNaN(parsedSchoolId) && parsedSchoolId > 0) {
             query += ` WHERE (c.school_id = ${parsedSchoolId} OR u.course_id IS NULL OR u.course_id = 0)`;
@@ -458,6 +628,11 @@ app.get('/api/updates/my-updates', async (req, res) => {
 app.post('/api/updates', async (req, res) => {
     try {
         const { title, content, course_id, userId, postedBy } = req.body;
+        
+        if (!title || !content) {
+            return res.status(400).json({ error: 'Title and content are required' });
+        }
+        
         const newUpdate = await dataService.addUpdate({ 
             title, 
             content, 
@@ -485,20 +660,29 @@ app.delete('/api/updates/:id', async (req, res) => {
 
 // ==================== STATS ====================
 app.get('/api/stats', async (req, res) => {
-    const stats = await dataService.getUniversityStats();
-    res.json(stats);
+    try {
+        const stats = await dataService.getUniversityStats();
+        res.json(stats);
+    } catch (error) {
+        console.error('Error fetching stats:', error);
+        res.status(500).json({ error: 'Failed to fetch stats' });
+    }
 });
 
 app.get('/api/popular-departments', async (req, res) => {
-    const limit = parseInt(req.query.limit) || 3;
-    const depts = await dataService.getPopularDepartments(limit);
-    res.json(depts);
+    try {
+        const limit = parseInt(req.query.limit) || 3;
+        const depts = await dataService.getPopularDepartments(limit);
+        res.json(depts);
+    } catch (error) {
+        console.error('Error fetching popular departments:', error);
+        res.status(500).json({ error: 'Failed to fetch popular departments' });
+    }
 });
 
 // ==================== COUNTS ====================
 app.get('/api/counts', async (req, res) => {
     try {
-        // Count students - users with a school_id
         const [[{ studentCount }]] = await db.query(
             'SELECT COUNT(*) as studentCount FROM notify_users WHERE school_id IS NOT NULL'
         );
@@ -522,7 +706,6 @@ app.get('/api/schools/:schoolId/counts', async (req, res) => {
     try {
         const schoolId = parseInt(req.params.schoolId);
         
-        // Count students - just count users with this school_id (their primary school)
         const [[{ studentCount }]] = await db.query(
             'SELECT COUNT(*) as studentCount FROM notify_users WHERE school_id = ?',
             [schoolId]
@@ -635,15 +818,12 @@ app.post('/api/users/enroll-school', async (req, res) => {
         const { userId, schoolId } = req.body;
         console.log('enroll-school:', userId, schoolId);
         
-        // Ensure IDs are integers
         const userIdInt = parseInt(userId);
         const schoolIdInt = parseInt(schoolId);
         
-        // Get user's current school before enrolling
         const [currentUser] = await db.query('SELECT school_id FROM notify_users WHERE id = ?', [userIdInt]);
         const oldSchoolId = currentUser[0]?.school_id;
         
-        // Remove from old school's courses if switching schools
         if (oldSchoolId && parseInt(oldSchoolId) !== schoolIdInt) {
             await db.query(
                 'DELETE FROM user_courses WHERE user_id = ? AND school_id = ?',
@@ -652,7 +832,6 @@ app.post('/api/users/enroll-school', async (req, res) => {
             console.log('Removed from old school:', userIdInt, oldSchoolId);
         }
         
-        // Student will manually enroll in ONE department
         await db.query('UPDATE notify_users SET school_id = ? WHERE id = ?', [schoolIdInt, userIdInt]);
         
         const [schoolInfo] = await db.query('SELECT * FROM schools WHERE id = ?', [schoolIdInt]);
@@ -727,8 +906,6 @@ app.get('/api/units/:unitId/similar', async (req, res) => {
 });
 
 // ==================== ADMIN API ====================
-
-// Users management
 app.get('/api/admin/users', adminMiddleware, async (req, res) => {
     try {
         const [users] = await db.query(`
@@ -852,7 +1029,6 @@ app.get('/api/admin/schools', adminMiddleware, async (req, res) => {
         const schoolsWithCounts = await Promise.all(schools.map(async (school) => {
             const schoolId = parseInt(school.id);
             
-            // Count students by school_id
             const [[{ studentCount }]] = await db.query(
                 'SELECT COUNT(*) as studentCount FROM notify_users WHERE school_id = ?',
                 [schoolId]
@@ -1095,7 +1271,7 @@ app.get('/api/admin/notes', adminMiddleware, async (req, res) => {
 app.put('/api/admin/notes/:id', adminMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, description, status } = req.body;
+        const { title, description } = req.body;
         
         await db.query(
             'UPDATE notes SET title = ?, description = ? WHERE id = ?',
@@ -1180,15 +1356,24 @@ app.delete('/api/admin/updates/:id', adminMiddleware, async (req, res) => {
 // ==================== PROFILE PICTURE ====================
 app.post('/api/user/pfp', async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(401).json({ message: 'Unauthorized' });
+    if (!token) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
     
     try {
         const decoded = jwt.verify(token, SECRET);
         
         uploadPfp.single('pfp')(req, res, async (err) => {
-            if (err) return res.status(400).json({ message: 'File too large or invalid' });
+            if (err) {
+                if (err.code === 'LIMIT_FILE_SIZE') {
+                    return res.status(400).json({ message: 'File too large. Max 2MB' });
+                }
+                return res.status(400).json({ message: 'File upload error' });
+            }
             
-            if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+            if (!req.file) {
+                return res.status(400).json({ message: 'No file uploaded' });
+            }
             
             try {
                 const pfpPath = '/uploads/pfps/' + req.file.filename;
@@ -1242,7 +1427,45 @@ app.get('/api/admin/stats', adminMiddleware, async (req, res) => {
     }
 });
 
-// Start server
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+// =====================
+// 404 Handler
+// =====================
+app.use((req, res) => {
+    res.status(404).json({ 
+        error: 'Route not found',
+        path: req.path,
+        method: req.method
+    });
 });
+
+// =====================
+// Global Error Handler
+// =====================
+app.use((err, req, res, next) => {
+    console.error('Global error:', err.stack);
+    res.status(500).json({ 
+        error: 'Internal Server Error',
+        message: NODE_ENV === 'development' ? err.message : 'Something went wrong'
+    });
+});
+
+// =====================
+// Start Server
+// =====================
+const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📍 Environment: ${NODE_ENV}`);
+    console.log(`🔗 API URL: http://localhost:${PORT}`);
+    console.log(`✅ Health check: http://localhost:${PORT}/health`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('SIGTERM signal received: closing HTTP server');
+    server.close(() => {
+        console.log('HTTP server closed');
+        process.exit(0);
+    });
+});
+
+module.exports = app;
