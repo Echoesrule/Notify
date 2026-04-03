@@ -323,13 +323,8 @@ app.get('/api/setup', async (req, res) => {
     }
 });
 
-// Call the initialization function
-// Make sure db is imported and ready
-if (typeof db !== 'undefined') {
-    initializeDatabase().catch(console.error);
-} else {
-    console.error('❌ Database not loaded, cannot initialize tables');
-}
+// Database is ready - tables will be created via /api/setup endpoint
+console.log('✅ Database ready. Visit /api/setup to create tables.');
 
 // Health check endpoint
 app.get('/', (req, res) => {
