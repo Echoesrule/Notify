@@ -48,7 +48,26 @@ if (!fs.existsSync(notesDir)) {
 if (!fs.existsSync(pfpsDir)) {
     fs.mkdirSync(pfpsDir, { recursive: true });
 }
-
+//check if tables exist
+// Add this route to check database tables
+app.get('/api/check-tables', async (req, res) => {
+    try {
+        const [tables] = await db.query(`
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public'
+            ORDER BY table_name
+        `);
+        
+        res.json({
+            status: 'ok',
+            tables: tables.map(t => t.table_name),
+            count: tables.length
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 
 // =====================
