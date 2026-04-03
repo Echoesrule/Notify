@@ -189,6 +189,11 @@ const adminMiddleware = (req, res, next) => {
 // Routes
 // =====================
 app.use('/user_auth', authRoutes);
+// Simple test endpoint - Add this FIRST
+app.get('/api/test', (req, res) => {
+    res.json({ message: 'API is working!', timestamp: new Date().toISOString() });
+});
+
 
 
 // DATABASE SETUP ENDPOINT - Run this first!
