@@ -191,127 +191,108 @@ const adminMiddleware = (req, res, next) => {
 app.use('/user_auth', authRoutes);
 
 
-//auto create tables 
-// Add this after your middleware setup (app.use statements)
-// and BEFORE your routes (app.get('/api/...'))
-
-// =====================
-// Database Initialization - Auto Create Tables
-// =====================
-async function initializeDatabase() {
-    console.log('📊 Checking database tables...');
-    
-    const tables = [
-        `CREATE TABLE IF NOT EXISTS schools (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(255) NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )`,
+// DATABASE SETUP ENDPOINT - Run this first!
+app.get('/api/setup', async (req, res) => {
+    try {
+        console.log('🔧 Running database setup...');
         
-        `CREATE TABLE IF NOT EXISTS courses (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(255) NOT NULL,
-            code VARCHAR(50),
-            school_id INTEGER REFERENCES schools(id) ON DELETE CASCADE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )`,
+        // Create tables
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS schools (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
         
-        `CREATE TABLE IF NOT EXISTS units (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(255) NOT NULL,
-            code VARCHAR(50),
-            dept_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
-            is_common BOOLEAN DEFAULT FALSE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )`,
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS courses (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                code VARCHAR(50),
+                school_id INTEGER REFERENCES schools(id) ON DELETE CASCADE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
         
-        `CREATE TABLE IF NOT EXISTS notify_users (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(255),
-            email VARCHAR(255) UNIQUE NOT NULL,
-            password VARCHAR(255) NOT NULL,
-            role VARCHAR(50) DEFAULT 'student',
-            school_id INTEGER REFERENCES schools(id),
-            pfp VARCHAR(500),
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )`,
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS units (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                code VARCHAR(50),
+                dept_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
+                is_common BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
         
-        `CREATE TABLE IF NOT EXISTS notes (
-            id SERIAL PRIMARY KEY,
-            title VARCHAR(255) NOT NULL,
-            description TEXT,
-            file_path VARCHAR(500),
-            downloads INTEGER DEFAULT 0,
-            school_id INTEGER REFERENCES schools(id),
-            dept_id INTEGER REFERENCES courses(id),
-            unit_id INTEGER REFERENCES units(id),
-            user_id INTEGER REFERENCES notify_users(id),
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )`,
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS notify_users (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255),
+                email VARCHAR(255) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                role VARCHAR(50) DEFAULT 'student',
+                school_id INTEGER REFERENCES schools(id),
+                pfp VARCHAR(500),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
         
-        `CREATE TABLE IF NOT EXISTS updates (
-            id SERIAL PRIMARY KEY,
-            title VARCHAR(255) NOT NULL,
-            content TEXT,
-            course_id INTEGER REFERENCES courses(id),
-            user_id INTEGER REFERENCES notify_users(id),
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )`,
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS notes (
+                id SERIAL PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                description TEXT,
+                file_path VARCHAR(500),
+                downloads INTEGER DEFAULT 0,
+                school_id INTEGER REFERENCES schools(id),
+                dept_id INTEGER REFERENCES courses(id),
+                unit_id INTEGER REFERENCES units(id),
+                user_id INTEGER REFERENCES notify_users(id),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
         
-        `CREATE TABLE IF NOT EXISTS user_courses (
-            id SERIAL PRIMARY KEY,
-            user_id INTEGER REFERENCES notify_users(id) ON DELETE CASCADE,
-            course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
-            school_id INTEGER REFERENCES schools(id),
-            status VARCHAR(20) DEFAULT 'active',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )`,
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS updates (
+                id SERIAL PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                content TEXT,
+                course_id INTEGER REFERENCES courses(id),
+                user_id INTEGER REFERENCES notify_users(id),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
         
-        `CREATE TABLE IF NOT EXISTS institutions (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(255) NOT NULL,
-            staff_domain VARCHAR(255),
-            student_domain VARCHAR(255),
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )`
-    ];
-    
-    for (const query of tables) {
-        try {
-            await db.query(query);
-            console.log('✅ Table verified/created');
-        } catch (err) {
-            console.error('❌ Table error:', err.message);
-        }
-    }
-    
-    // Create indexes for better performance
-    const indexes = [
-        `CREATE INDEX IF NOT EXISTS idx_notes_school ON notes(school_id)`,
-        `CREATE INDEX IF NOT EXISTS idx_notes_dept ON notes(dept_id)`,
-        `CREATE INDEX IF NOT EXISTS idx_notes_unit ON notes(unit_id)`,
-        `CREATE INDEX IF NOT EXISTS idx_notes_user ON notes(user_id)`,
-        `CREATE INDEX IF NOT EXISTS idx_updates_course ON updates(course_id)`,
-        `CREATE INDEX IF NOT EXISTS idx_user_courses_user ON user_courses(user_id)`,
-        `CREATE INDEX IF NOT EXISTS idx_user_courses_course ON user_courses(course_id)`,
-        `CREATE INDEX IF NOT EXISTS idx_units_dept ON units(dept_id)`,
-        `CREATE INDEX IF NOT EXISTS idx_courses_school ON courses(school_id)`
-    ];
-    
-    console.log('📈 Creating indexes...');
-    for (const index of indexes) {
-        try {
-            await db.query(index);
-        } catch (err) {
-            // Index errors are safe to ignore if they already exist
-        }
-    }
-    
-    console.log('🎉 Database initialization complete!');
-    
-    // Optional: Create test user if none exists
-    const [users] = await db.query('SELECT COUNT(*) FROM notify_users');
-    if (users[0].count === 0) {
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS user_courses (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES notify_users(id) ON DELETE CASCADE,
+                course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
+                school_id INTEGER REFERENCES schools(id),
+                status VARCHAR(20) DEFAULT 'active',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS institutions (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                staff_domain VARCHAR(255),
+                student_domain VARCHAR(255),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        
+        // Create indexes
+        await db.query(`CREATE INDEX IF NOT EXISTS idx_notes_school ON notes(school_id)`);
+        await db.query(`CREATE INDEX IF NOT EXISTS idx_notes_dept ON notes(dept_id)`);
+        await db.query(`CREATE INDEX IF NOT EXISTS idx_notes_unit ON notes(unit_id)`);
+        await db.query(`CREATE INDEX IF NOT EXISTS idx_updates_course ON updates(course_id)`);
+        
+        // Create test user
         const bcrypt = require('bcrypt');
         const hashedPassword = await bcrypt.hash('password123', 10);
         await db.query(`
@@ -319,9 +300,28 @@ async function initializeDatabase() {
             VALUES ('Test User', 'test@example.com', $1, 'student')
             ON CONFLICT (email) DO NOTHING
         `, [hashedPassword]);
-        console.log('✅ Test user created: test@example.com / password123');
+        
+        // Add test school
+        await db.query(`
+            INSERT INTO schools (name) 
+            VALUES ('Test University') 
+            ON CONFLICT DO NOTHING
+        `);
+        
+        res.json({ 
+            success: true, 
+            message: 'Database setup complete!',
+            credentials: {
+                email: 'test@example.com',
+                password: 'password123'
+            }
+        });
+        
+    } catch (error) {
+        console.error('Setup error:', error);
+        res.status(500).json({ error: error.message });
     }
-}
+});
 
 // Call the initialization function
 // Make sure db is imported and ready
