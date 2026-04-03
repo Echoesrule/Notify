@@ -21,7 +21,7 @@ const message=document.getElementById("registerMessage");
         };
 
         try{
-            const res=await fetch ('http://localhost:3000/user_auth/register',{
+            const res=await fetch(`${window.API_URL}/user_auth/register`,{
                 method:'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)

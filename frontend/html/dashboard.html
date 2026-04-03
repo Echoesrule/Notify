@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css?family=Fredoka|Inter&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-
+<script src="../js/config.js"></script>
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 
        <script src="../js/navigation.js"></script>
@@ -163,8 +163,6 @@
     <div id="modalContainer"></div>
 </body>
 <script>
-    const API_URL = 'http://localhost:3000/api';
-
     function showModal(options) {
         const { title, message, icon = 'info', confirmText = 'Confirm', cancelText = 'Cancel', onConfirm, isDanger = false } = options;
         
@@ -317,7 +315,7 @@
     }
 
     function previewNote(noteId) {
-        window.open(`${API_URL}/notes/${noteId}/preview`, '_blank');
+        window.open(`${window.API_URL}/notes/${noteId}/preview`, '_blank');
     }
 
     window.addEventListener('load', function() {

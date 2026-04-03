@@ -7,7 +7,7 @@ const pool = new Pool({
     port: 5432,
     database: 'notifydb_qu3i',
     user: 'notifydb_qu3i_user',
-    password: 'YOUR_ACTUAL_PASSWORD_HERE', // Replace with your actual password
+    password: 'DbZTQnyI8ofDVA77wV9qcedjByLrO5Iw', // Replace with your actual password
     ssl: {
         rejectUnauthorized: false
     }

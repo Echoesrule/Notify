@@ -64,10 +64,10 @@ async function loadUpdates() {
         
         // Admin sees all updates, others see school-specific + global updates
         if (userRole === 'admin' || userRole === 'lecturer') {
-            url = 'http://localhost:3000/api/updates';
+            url = `${window.API_URL}/api/updates`;
         } else {
             const schoolId = localStorage.getItem('selected_school');
-            url = `http://localhost:3000/api/updates?schoolId=${schoolId || ''}`;
+            url = `${window.API_URL}/api/updates?schoolId=${schoolId || ''}`;
         }
 
         const res = await fetch(url);

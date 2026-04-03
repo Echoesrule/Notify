@@ -1,0 +1,16 @@
+cd C:\.vscode\notify\frontend
+
+# Create a simple index.html that redirects to your dashboard
+cat > index.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="0; url=html/dashboard.html">
+    <title>Notify - Redirecting...</title>
+</head>
+<body>
+    <p>Redirecting to <a href="./html/dashboard.html">Notify Dashboard</a>...</p>
+</body>
+</html>
+EOF

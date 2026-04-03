@@ -483,13 +483,13 @@ function updateTopbar() {
     }
     if (profileImg) {
         if (userPfp) {
-            profileImg.src = 'http://localhost:3000' + userPfp;
+            profileImg.src = `${window.API_URL}${userPfp}`;
         } else {
             profileImg.src = '../images/dashboardImages/v3321_68.png';
         }
     }
     
-    fetch('http://localhost:3000/api/updates')
+    fetch(`${window.API_URL}/updates`)
         .then(r => r.json())
         .then(updates => {
             // Get read updates from localStorage

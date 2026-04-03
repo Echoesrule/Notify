@@ -140,7 +140,7 @@ async function handleSchoolChange() {
  */
 async function loadUserEnrollment(userId) {
     try {
-        const res = await fetch(`http://localhost:3000/api/users/${userId}/enrollment`);
+        const res = await fetch(`${window.API_URL}/users/${userId}/enrollments`);
         if (res.ok) {
             const enrollments = await res.json();
             if (enrollments.length > 0) {
@@ -517,7 +517,7 @@ function setupProfileImageButtons() {
     // Load saved pfp
     const savedPfp = localStorage.getItem('user_pfp');
     if (profileImg && savedPfp) {
-        profileImg.src = 'http://localhost:3000' + savedPfp;
+        profileImg.src = `${window.API_URL}${savedPfp}`;
     }
     
     if (changeBtn) {
@@ -544,7 +544,7 @@ function setupProfileImageButtons() {
                     formData.append('pfp', file);
                     
                     try {
-                        const res = await fetch('http://localhost:3000/api/user/pfp', {
+                        const res = await fetch(`${window.API_URL}/user/pfp`, {
                             method: 'POST',
                             headers: { 'Authorization': `Bearer ${token}` },
                             body: formData
@@ -556,13 +556,13 @@ function setupProfileImageButtons() {
                             
                             // Update image display
                             if (profileImg) {
-                                profileImg.src = 'http://localhost:3000' + data.pfp;
+                                profileImg.src = `${window.API_URL}${data.pfp}`;
                             }
                             
                             // Update topbar
                             const topProfileImg = document.getElementById('profileImg');
                             if (topProfileImg) {
-                                topProfileImg.src = 'http://localhost:3000' + data.pfp;
+                                topProfileImg.src = `${window.API_URL}${data.pfp}`;
                             }
                             
                             showNotification('Profile image updated', 'success');
@@ -635,7 +635,7 @@ async function handlePasswordUpdate() {
     
     const token = localStorage.getItem('notify_token');
     try {
-        const res = await fetch('http://localhost:3000/user_auth/change-password', {
+        const res = await fetch(`${window.API_URL}/user_auth/change-password`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -676,7 +676,7 @@ async function saveProfileToServer() {
     
     try {
         // Save name and email
-        const profileRes = await fetch('http://localhost:3000/user_auth/update-profile', {
+        const profileRes = await fetch(`${window.API_URL}/user_auth/update-profile`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -705,7 +705,7 @@ async function saveProfileToServer() {
         
         // Handle enrollment changes
         if (schoolId && courseId && userId) {
-            const enrollRes = await fetch('http://localhost:3000/api/users/enroll', {
+            const enrollRes = await fetch(`${window.API_URL}/users/enrollments`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -17,8 +17,8 @@ document.addEventListener('DOMContentLoaded', function() {
 async function loadFilterOptions() {
     try {
         const [schoolsRes, deptsRes] = await Promise.all([
-            fetch(`${API_URL}/schools`).then(r => r.json()).catch(() => []),
-            fetch(`${API_URL}/departments`).then(r => r.json()).catch(() => [])
+            fetch(`${window.API_URL}/schools`).then(r => r.json()).catch(() => []),
+            fetch(`${window.API_URL}/departments`).then(r => r.json()).catch(() => [])
         ]);
         
         const courseSelect = document.getElementById('filterCourse');

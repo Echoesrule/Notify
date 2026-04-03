@@ -1,9 +1,8 @@
 
-const API_URL = 'http://localhost:3000/api';
 
 async function getSchools() {
     try{
-        const response=await fetch('http://localhost:3000/api/schools');
+        const response=await fetch(`${window.API_URL}/schools`);
         if (!response.ok) throw new Error("Failed to fetch schools");
         return await response.json();
     }

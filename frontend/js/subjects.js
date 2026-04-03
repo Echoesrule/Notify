@@ -43,7 +43,7 @@ function showContent() {
 
 async function getUnitsByDepartment(schoolId, deptId) {
     try {
-        const res = await fetch(`http://localhost:3000/api/schools/${schoolId}/departments/${deptId}/units`);
+        const res = await fetch(`${window.API_URL}/schools/${schoolId}/departments/${deptId}/units`);
         if (!res.ok) throw new Error('Failed to fetch units');
         return await res.json();
     } catch (err) {
@@ -71,8 +71,8 @@ async function displaySubjects() {
             
             try {
                 const [schoolRes, deptRes] = await Promise.all([
-                    schoolId ? fetch(`http://localhost:3000/api/schools/${schoolId}`).then(r => r.json()) : Promise.resolve(null),
-                    deptId ? fetch(`http://localhost:3000/api/schools/${schoolId}/departments/${deptId}`).then(r => r.json()) : Promise.resolve(null)
+                    schoolId ? fetch(`${window.API_URL}/schools/${schoolId}`).then(r => r.json()) : Promise.resolve(null),
+                    deptId ? fetch(`${window.API_URL}/schools/${schoolId}/departments/${deptId}`).then(r => r.json()) : Promise.resolve(null)
                 ]);
                 schoolName = schoolRes?.name || 'School';
                 deptName = deptRes?.name || 'Department';

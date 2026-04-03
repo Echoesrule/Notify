@@ -1,5 +1,4 @@
 
-const API_URL = 'http://localhost:3000/api';
 
 const deptIcons = {
     'computer': { icon: 'fa-laptop-code', bg: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', color: '#fff' },
@@ -83,7 +82,7 @@ function showContent() {
 
 async function getDepartmentsBySchool(schoolId) {
     try {
-        const res = await fetch(`http://localhost:3000/api/schools/${schoolId}/departments`);
+        const res = await fetch(`${API_URL}/schools/${schoolId}/departments`);
         if (!res.ok) throw new Error('Failed to fetch departments');
         return await res.json();
     } catch (err) {

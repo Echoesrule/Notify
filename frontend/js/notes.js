@@ -43,7 +43,7 @@ function showContent() {
 
 async function fetchNotesByUnit(schoolId, deptId, unitId) {
     try {
-        const res = await fetch(`http://localhost:3000/api/schools/${schoolId}/departments/${deptId}/units/${unitId}/notes`);
+        const res = await fetch(`${window.API_URL}/schools/${schoolId}/departments/${deptId}/units/${unitId}/notes`);
         if (!res.ok) {
             throw new Error(`Failed to fetch notes: ${res.status} ${res.statusText}`);
         }
