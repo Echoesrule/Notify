@@ -1,0 +1,1101 @@
+/* ========== BOOKMARKS PAGE STYLES ========== */
+
+.loader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    gap: 20px;
+}
+
+.loader-container.hide, 
+.loader-container[style*="display: none"],
+.loader-container.hidden {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+.loader-ring {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(37, 99, 235, 0.1);
+    border-top-color: var(--primary, #2563eb);
+    border-radius: 50%;
+    position: absolute;
+}
+
+.loader-container .loader-ring:nth-child(1) {
+    animation: ringPulse 1.2s ease-in-out infinite;
+}
+
+.loader-container .loader-ring:nth-child(2) {
+    width: 45px;
+    height: 45px;
+    animation: ringPulse 1.2s ease-in-out infinite 0.2s;
+}
+
+.loader-container .loader-ring:nth-child(3) {
+    width: 30px;
+    height: 30px;
+    animation: ringPulse 1.2s ease-in-out infinite 0.4s;
+}
+
+@keyframes ringPulse {
+    0% { transform: rotate(0deg); opacity: 1; }
+    50% { transform: rotate(180deg); opacity: 0.5; }
+    100% { transform: rotate(360deg); opacity: 1; }
+}
+
+.loader-container p {
+    margin-top: 80px;
+    font-size: 1.1rem;
+    color: var(--text-secondary, #64748b);
+    font-weight: 500;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.bookmarks-content {
+    display: block;
+    padding: 20px;
+}
+
+.bookmarks-content.hide {
+    display: none;
+}
+
+/* Header */
+.bookmarks-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 0 20px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.back-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.back-link:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.bookmarks-header h1 {
+    font-size: 2.2rem;
+    margin: 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+}
+
+.bookmarks-header h1 i {
+    color: var(--primary);
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.header-actions .btn-outline,
+.header-actions .btn-primary {
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+}
+
+.header-actions .btn-outline {
+    background: transparent;
+    border: 2px solid var(--border);
+    color: var(--text-primary);
+}
+
+.header-actions .btn-outline:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.header-actions .btn-primary {
+    background: var(--primary);
+    border: none;
+    color: white;
+}
+
+.header-actions .btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+/* Toolbar */
+.bookmarks-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 15px;
+    background: var(--card-bg);
+    padding: 15px 20px;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    margin: 0 20px 30px;
+}
+
+.search-box {
+    flex: 1;
+    min-width: 250px;
+    position: relative;
+}
+
+.search-box i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+}
+
+.search-box input {
+    width: 100%;
+    padding: 12px 12px 12px 40px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    transition: all 0.3s;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+}
+
+.filter-dropdown select {
+    padding: 12px 24px 12px 16px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    background: var(--card-bg);
+    color: var(--text-primary);
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 16px;
+}
+
+.filter-dropdown select:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.view-toggle {
+    display: flex;
+    gap: 8px;
+}
+
+.view-btn {
+    padding: 10px 16px;
+    border: 2px solid var(--border);
+    background: var(--card-bg);
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.3s;
+}
+
+.view-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.view-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+/* Folders Section */
+.folders-section {
+    margin-bottom: 40px;
+    padding: 0 20px;
+}
+
+.folders-section h2 {
+    font-size: 1.6rem;
+    margin-bottom: 20px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+    position: relative;
+    padding-left: 15px;
+}
+
+.folders-section h2::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 5px;
+    height: 30px;
+    background: var(--primary);
+    border-radius: 5px;
+}
+
+.folders-section h2 i {
+    color: var(--primary);
+}
+
+.folders-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.folder-card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: var(--card-shadow);
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    border: 2px solid var(--border);
+}
+
+.folder-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--primary);
+    box-shadow: var(--card-shadow-hover);
+}
+
+.folder-card[data-folder]:hover {
+    background: linear-gradient(135deg, var(--card-bg), rgba(0, 102, 255, 0.05));
+}
+
+.folder-icon i {
+    font-size: 2.5rem;
+    color: var(--primary);
+}
+
+.folder-info h3 {
+    margin: 0 0 5px 0;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.folder-info p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.folder-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.folder-card:hover .folder-actions {
+    opacity: 1;
+}
+
+.folder-menu {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+
+.folder-menu:hover {
+    background: var(--bg-hover);
+    color: var(--error);
+}
+
+.add-folder {
+    border: 2px dashed var(--border);
+    background: var(--bg-tertiary);
+    justify-content: center;
+}
+
+.add-folder .folder-icon i {
+    color: var(--success);
+}
+
+.add-folder:hover {
+    border-color: var(--success);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+/* Bookmarks Section */
+.bookmarks-section {
+    margin-bottom: 40px;
+    padding: 0 20px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-header h2 {
+    font-size: 1.6rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-primary);
+    font-weight: 500;
+    position: relative;
+    padding-left: 15px;
+}
+
+.section-header h2::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 5px;
+    height: 30px;
+    background: var(--primary);
+    border-radius: 5px;
+}
+
+.section-header h2 i {
+    color: var(--primary);
+}
+
+.bookmark-count {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    background: var(--bg-tertiary);
+    padding: 5px 12px;
+    border-radius: 20px;
+}
+
+/* Bookmarks Grid */
+.bookmarks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+}
+
+/* List View */
+.bookmarks-grid.list-view {
+    grid-template-columns: 1fr;
+}
+
+.bookmarks-grid.list-view .bookmark-card {
+    flex-direction: row;
+    align-items: center;
+}
+
+.bookmarks-grid.list-view .bookmark-content {
+    flex: 1;
+}
+
+.bookmark-card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 25px;
+    display: flex;
+    gap: 20px;
+    box-shadow: var(--card-shadow);
+    transition: all 0.3s;
+    position: relative;
+    border: 2px solid var(--border);
+    opacity: 0;
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+.bookmark-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--primary);
+    box-shadow: var(--card-shadow-hover);
+}
+
+.bookmark-type {
+    width: 60px;
+    height: 60px;
+    background: var(--bg-tertiary);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.bookmark-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.bookmark-content h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.bookmark-meta {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 10px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    flex-wrap: wrap;
+}
+
+.bookmark-meta span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.bookmark-meta i {
+    color: var(--primary);
+}
+
+.bookmark-description {
+    color: var(--text-secondary);
+    margin: 10px 0;
+    line-height: 1.5;
+    font-size: 0.95rem;
+}
+
+.bookmark-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.tag {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    transition: all 0.3s;
+}
+
+.tag:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.bookmark-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.bookmark-card:hover .bookmark-actions {
+    opacity: 1;
+}
+
+.action-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-btn:hover {
+    background: var(--primary);
+    color: white;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 40px;
+}
+
+.page-btn {
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--border);
+    background: var(--card-bg);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    color: var(--text-primary);
+}
+
+.page-btn:hover:not(:disabled) {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.page-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background: var(--card-bg);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalSlideIn 0.3s ease;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.3rem;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: color 0.3s;
+    padding: 0;
+    line-height: 1;
+}
+
+.close-modal:hover {
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.modal-footer {
+    padding: 20px 25px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.btn-outline {
+    padding: 10px 20px;
+    background: transparent;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    transition: all 0.3s;
+}
+
+.btn-outline:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.btn-primary {
+    padding: 10px 20px;
+    background: var(--primary);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: white;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+/* Color Options */
+.color-options {
+    display: flex;
+    gap: 10px;
+}
+
+.color-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 3px solid transparent;
+}
+
+.color-dot.blue { background: var(--primary); }
+.color-dot.green { background: var(--success); }
+.color-dot.orange { background: var(--warning); }
+.color-dot.purple { background: #8b5cf6; }
+.color-dot.red { background: var(--error); }
+
+.color-dot:hover {
+    transform: scale(1.1);
+}
+
+.color-dot.active {
+    border-color: white;
+    box-shadow: 0 0 0 2px var(--text-primary);
+}
+
+/* Folder View */
+.folder-view {
+    display: none;
+}
+
+.folder-view.active {
+    display: block;
+}
+
+.folder-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    padding: 20px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    margin: 0 20px 25px;
+}
+
+.back-to-folders {
+    background: var(--bg-tertiary);
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    transition: all 0.3s;
+}
+
+.back-to-folders:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.folder-header-info h2 {
+    margin: 0 0 5px 0;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+}
+
+.folder-header-info h2 i {
+    color: var(--primary);
+}
+
+.folder-header-info p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Note Detail View */
+.note-detail-view {
+    display: none;
+    animation: fadeIn 0.3s ease;
+    padding: 0 20px;
+}
+
+.note-detail-view.active {
+    display: block;
+}
+
+.note-detail-card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    border: 2px solid var(--border);
+}
+
+.note-detail-header {
+    padding: 30px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+}
+
+.note-detail-header .back-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    transition: all 0.3s;
+    font-size: 0.95rem;
+}
+
+.note-detail-header .back-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.note-detail-header h2 {
+    margin: 0 0 15px 0;
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+.note-detail-meta {
+    display: flex;
+    gap: 25px;
+    flex-wrap: wrap;
+    opacity: 0.9;
+}
+
+.note-detail-meta span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.95rem;
+}
+
+.note-detail-body {
+    padding: 30px;
+}
+
+.note-detail-section {
+    margin-bottom: 30px;
+}
+
+.note-detail-section h3 {
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+}
+
+.note-detail-section h3 i {
+    color: var(--primary);
+}
+
+.note-detail-description {
+    color: var(--text-secondary);
+    line-height: 1.7;
+    font-size: 1rem;
+}
+
+.note-detail-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.stat-item {
+    background: var(--bg-tertiary);
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-item .stat-value {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.stat-item .stat-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-top: 8px;
+}
+
+.note-detail-actions {
+    padding: 20px 30px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.note-detail-actions button {
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+}
+
+.btn-preview-note {
+    background: var(--primary);
+    color: white;
+    border: none;
+}
+
+.btn-preview-note:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+.btn-download-note {
+    background: var(--card-bg);
+    border: 2px solid var(--primary);
+    color: var(--primary);
+}
+
+.btn-download-note:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-remove-bookmark {
+    background: var(--card-bg);
+    border: 2px solid var(--error);
+    color: var(--error);
+    margin-left: auto;
+}
+
+.btn-remove-bookmark:hover {
+    background: var(--error);
+    color: white;
+}
+
+/* Empty state */
+.empty-folder,
+.no-results {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+}
+
+.empty-folder i,
+.no-results i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.4;
+    color: var(--primary);
+}
+
+.empty-folder h3,
+.no-results h3 {
+    margin: 0 0 10px 0;
+    color: var(--text-primary);
+}
+
+.empty-folder p,
+.no-results p {
+    margin: 0;
+    font-size: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .bookmarks-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .header-left {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .bookmarks-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .search-box {
+        width: 100%;
+    }
+    
+    .filter-dropdown select {
+        width: 100%;
+    }
+    
+    .view-toggle {
+        justify-content: center;
+    }
+    
+    .bookmarks-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .bookmark-card {
+        flex-direction: column;
+    }
+    
+    .bookmark-actions {
+        flex-direction: row;
+        justify-content: flex-end;
+        opacity: 1;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 20px;
+    }
+    
+    .note-detail-actions {
+        flex-direction: column;
+    }
+    
+    .btn-remove-bookmark {
+        margin-left: 0;
+    }
+}

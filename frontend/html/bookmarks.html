@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookmarks - Noteify</title>
+    <link href="https://fonts.googleapis.com/css?family=Fredoka|Inter&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="../css/dashboard.css" rel="stylesheet" />
+    <link href="../css/footer.css" rel="stylesheet" />
+    <link href="../css/bookmarks.css" rel="stylesheet" />
+    <link href="../css/modal.css" rel="stylesheet" />
+<script src="../js/themes.js"></script>
+
+</head>
+<body>
+    <div class="dashboard-cont">
+        <div class="page-content">
+            
+            <!-- Loading Spinner (hidden by default) -->
+            <div class="loader-container hide" id="lottieLoader">
+                <div class="loader-ring"></div>
+                <div class="loader-ring"></div>
+                <div class="loader-ring"></div>
+                <p>Loading Bookmarks...</p>
+            </div>
+
+            <!-- Bookmarks Content -->
+            <div class="bookmarks-content" id="bookmarksContent">
+                
+                <!-- Header -->
+                <div class="bookmarks-header">
+                    <div class="header-left">
+                        <a href="dashboard.html" class="back-link">
+                            <i class="fas fa-arrow-left"></i> Dashboard
+                        </a>
+                        <h1><i class="fas fa-bookmark"></i> My Bookmarks</h1>
+                    </div>
+                    
+                    <div class="header-actions">
+                        <button class="btn-outline" id="exportBookmarks">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                        <button class="btn-outline" id="importBookmarks">
+                            <i class="fas fa-upload"></i> Import
+                        </button>
+                        <button class="btn-primary" id="newFolder" onclick="document.getElementById('folderModal').style.display='flex'">
+                            <i class="fas fa-folder-plus"></i> New Folder
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search and Filter Bar -->
+                <div class="bookmarks-toolbar">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchBookmarks" placeholder="Search bookmarks...">
+                    </div>
+                    
+                    <div class="filter-dropdown">
+                        <select id="sortBookmarks">
+                            <option value="recent">Most Recent</option>
+                            <option value="oldest">Oldest First</option>
+                            <option value="alphabetical">Alphabetical</option>
+                            <option value="course">By Course</option>
+                        </select>
+                    </div>
+                    
+                    <div class="view-toggle">
+                        <button class="view-btn active" id="gridView">
+                            <i class="fas fa-th-large"></i>
+                        </button>
+                        <button class="view-btn" id="listView">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Folders Section -->
+                <div class="folders-section" id="foldersSection">
+                    <h2><i class="fas fa-folder"></i> Folders</h2>
+                    <div class="folders-grid" id="foldersGrid"></div>
+                </div>
+
+                <!-- Folder View -->
+                <div class="folder-view" id="folderView">
+                    <div class="folder-header">
+                        <button class="back-to-folders" onclick="showFoldersView()">
+                            <i class="fas fa-arrow-left"></i> Back to Folders
+                        </button>
+                        <div class="folder-header-info">
+                            <h2><i class="fas fa-folder"></i> <span id="folderViewName"></span></h2>
+                            <p><span id="folderViewCount">0</span> bookmarks</p>
+                        </div>
+                    </div>
+                    <div class="bookmarks-grid" id="folderBookmarksGrid"></div>
+                </div>
+
+                <!-- Note Detail View -->
+                <div class="note-detail-view" id="noteDetailView">
+                    <div class="note-detail-card">
+                        <div class="note-detail-header">
+                            <button class="back-btn" onclick="goBackFromNoteDetail()">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </button>
+                            <h2 id="noteDetailTitle"></h2>
+                            <div class="note-detail-meta">
+                                <span><i class="fas fa-user"></i> <span id="noteDetailAuthor"></span></span>
+                                <span><i class="fas fa-calendar"></i> <span id="noteDetailDate"></span></span>
+                                <span><i class="fas fa-file"></i> <span id="noteDetailPages"></span> pages</span>
+                            </div>
+                        </div>
+                        <div class="note-detail-body">
+                            <div class="note-detail-section">
+                                <h3><i class="fas fa-align-left"></i> Description</h3>
+                                <p class="note-detail-description" id="noteDetailDescription"></p>
+                            </div>
+                            <div class="note-detail-section">
+                                <h3><i class="fas fa-chart-bar"></i> Statistics</h3>
+                                <div class="note-detail-stats">
+                                    <div class="stat-item">
+                                        <div class="stat-value" id="noteDetailDownloads">0</div>
+                                        <div class="stat-label">Downloads</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="note-detail-actions">
+                            <button class="btn-preview-note" id="btnPreviewNote" onclick="previewNoteDetail()">
+                                <i class="fas fa-eye"></i> Preview
+                            </button>
+                            <button class="btn-download-note" id="btnDownloadNote" onclick="downloadNoteDetail()">
+                                <i class="fas fa-download"></i> Download
+                            </button>
+                            <button class="btn-remove-bookmark" onclick="removeBookmarkFromDetail()">
+                                <i class="fas fa-trash"></i> Remove Bookmark
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bookmarks Grid -->
+                <div class="bookmarks-section" id="allBookmarksSection">
+                    <div class="section-header">
+                        <h2><i class="fas fa-bookmark"></i> All Bookmarks</h2>
+                        <span class="bookmark-count" id="bookmarkCount">0 items</span>
+                    </div>
+
+                    <div class="bookmarks-grid" id="bookmarksGrid"></div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination">
+                    <button class="page-btn" disabled><i class="fas fa-chevron-left"></i></button>
+                    <button class="page-btn active">1</button>
+                    <button class="page-btn">2</button>
+                    <button class="page-btn">3</button>
+                    <button class="page-btn">4</button>
+                    <button class="page-btn">5</button>
+                    <button class="page-btn"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="folderModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Folder</h3>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Folder Name</label>
+                    <input type="text" id="folderName" placeholder="e.g., Mathematics">
+                </div>
+                <div class="form-group">
+                    <label>Description (optional)</label>
+                    <textarea id="folderDesc" rows="3" placeholder="Folder description..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Color</label>
+                    <div class="color-options">
+                        <span class="color-dot blue active"></span>
+                        <span class="color-dot green"></span>
+                        <span class="color-dot orange"></span>
+                        <span class="color-dot purple"></span>
+                        <span class="color-dot red"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" id="cancelFolder">Cancel</button>
+                <button class="btn-primary" id="createFolder">Create Folder</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notification-container"></div>
+
+    <!-- Scripts -->
+    <script src="../js/navigation.js"></script>
+    <script>
+        // Folder modal functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const folderModal = document.getElementById('folderModal');
+            const newFolderBtn = document.getElementById('newFolder');
+            const addFolderCard = document.getElementById('addFolderCard');
+            const createFolderBtn = document.getElementById('createFolder');
+            const cancelFolderBtn = document.getElementById('cancelFolder');
+            const closeModalBtn = folderModal?.querySelector('.close-modal');
+            
+            function openFolderModal() {
+                if (folderModal) folderModal.style.display = 'flex';
+            }
+            
+            function closeFolderModal() {
+                if (folderModal) folderModal.style.display = 'none';
+                document.getElementById('folderName').value = '';
+                document.getElementById('folderDesc').value = '';
+            }
+            
+            if (newFolderBtn) newFolderBtn.addEventListener('click', openFolderModal);
+            if (addFolderCard) addFolderCard.addEventListener('click', openFolderModal);
+            if (cancelFolderBtn) cancelFolderBtn.addEventListener('click', closeFolderModal);
+            if (closeModalBtn) closeModalBtn.addEventListener('click', closeFolderModal);
+            
+            if (createFolderBtn) {
+                createFolderBtn.addEventListener('click', function() {
+                    const folderName = document.getElementById('folderName').value.trim();
+                    if (!folderName) {
+                        alert('Please enter a folder name');
+                        return;
+                    }
+                    
+                    const folders = getBookmarkFolders();
+                    folders.push({
+                        name: folderName,
+                        color: '#4a90d9',
+                        created_at: new Date().toISOString()
+                    });
+                    saveBookmarkFolders(folders);
+                    closeFolderModal();
+                    location.reload();
+                });
+            }
+            
+            // Close modal on outside click
+            if (folderModal) {
+                folderModal.addEventListener('click', function(e) {
+                    if (e.target === folderModal) closeFolderModal();
+                });
+            }
+        });
+        
+        let currentFolderIndex = null;
+        let previousView = 'folders';
+        
+        function getBookmarkFolders() {
+            return JSON.parse(localStorage.getItem('notifyBookmarkFolders') || '[]');
+        }
+        
+        function saveBookmarkFolders(folders) {
+            localStorage.setItem('notifyBookmarkFolders', JSON.stringify(folders));
+        }
+        
+        function getBookmarks() {
+            return JSON.parse(localStorage.getItem('notifyBookmarks') || '[]');
+        }
+        
+        function removeBookmark(index) {
+            if (!await friendlyConfirm({ title: 'Remove Bookmark?', message: 'Are you sure you want to remove this bookmark?', confirmText: 'Remove', isDanger: true })) return;
+            let bookmarks = getBookmarks();
+            bookmarks.splice(index, 1);
+            localStorage.setItem('notifyBookmarks', JSON.stringify(bookmarks));
+            location.reload();
+        }
+        
+        function removeFolder(index) {
+            event.stopPropagation();
+            if (!await friendlyConfirm({ title: 'Delete Folder?', message: 'Delete this folder and all its bookmarks?', confirmText: 'Delete', isDanger: true })) return;
+            let folders = getBookmarkFolders();
+            let bookmarks = getBookmarks();
+            
+            bookmarks = bookmarks.filter(b => b.folderIndex != index);
+            bookmarks.forEach(b => {
+                if (b.folderIndex > index) b.folderIndex--;
+            });
+            
+            folders.splice(index, 1);
+            saveBookmarkFolders(folders);
+            localStorage.setItem('notifyBookmarks', JSON.stringify(bookmarks));
+            location.reload();
+        }
+        
+        function showFoldersView() {
+            document.getElementById('foldersSection').style.display = 'block';
+            document.getElementById('allBookmarksSection').style.display = 'block';
+            document.getElementById('folderView').classList.remove('active');
+            document.getElementById('noteDetailView').classList.remove('active');
+            currentFolderIndex = null;
+        }
+        
+        function openFolder(index) {
+            const folders = getBookmarkFolders();
+            const bookmarks = getBookmarks();
+            const folder = folders[index];
+            
+            if (!folder) return;
+            
+            currentFolderIndex = index;
+            previousView = 'folder';
+            
+            document.getElementById('foldersSection').style.display = 'none';
+            document.getElementById('allBookmarksSection').style.display = 'none';
+            document.getElementById('folderView').classList.add('active');
+            document.getElementById('noteDetailView').classList.remove('active');
+            
+            document.getElementById('folderViewName').textContent = folder.name;
+            
+            const folderBookmarks = bookmarks.filter(b => b.folderIndex == index);
+            document.getElementById('folderViewCount').textContent = folderBookmarks.length;
+            
+            const grid = document.getElementById('folderBookmarksGrid');
+            
+            if (folderBookmarks.length === 0) {
+                grid.innerHTML = '<div class="empty-folder"><i class="fas fa-folder-open"></i><h3>This folder is empty</h3><p>Add notes from the Notes page to see them here.</p></div>';
+                return;
+            }
+            
+            let html = '';
+            folderBookmarks.forEach((bookmark, idx) => {
+                const actualIndex = bookmarks.findIndex(b => b.id === bookmark.id);
+                const date = bookmark.date ? new Date(bookmark.date).toLocaleDateString() : 'Recently';
+                
+                html += `
+                    <div class="bookmark-card" onclick="openNoteDetail(${actualIndex})" style="cursor:pointer">
+                        <div class="bookmark-type">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="bookmark-content">
+                            <h3>${bookmark.title || 'Untitled'}</h3>
+                            <p class="bookmark-meta">
+                                <span><i class="fas fa-calendar"></i> ${date}</span>
+                            </p>
+                            <p class="bookmark-description">${bookmark.description || ''}</p>
+                        </div>
+                        <div class="bookmark-actions">
+                            <button class="action-btn" title="Delete" onclick="removeBookmark(${actualIndex})"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>`;
+            });
+            
+            grid.innerHTML = html;
+        }
+        
+        function openNoteDetail(index) {
+            event.stopPropagation();
+            const bookmarks = getBookmarks();
+            const bookmark = bookmarks[index];
+            
+            if (!bookmark) return;
+            
+            previousView = 'note';
+            
+            document.getElementById('foldersSection').style.display = 'none';
+            document.getElementById('allBookmarksSection').style.display = 'none';
+            document.getElementById('folderView').classList.remove('active');
+            document.getElementById('noteDetailView').classList.add('active');
+            
+            document.getElementById('noteDetailTitle').textContent = bookmark.title || 'Untitled';
+            document.getElementById('noteDetailAuthor').textContent = bookmark.uploadedByName || 'Unknown';
+            document.getElementById('noteDetailDate').textContent = bookmark.date ? new Date(bookmark.date).toLocaleDateString() : 'Unknown';
+            document.getElementById('noteDetailPages').textContent = bookmark.pages || 'Unknown';
+            document.getElementById('noteDetailDescription').textContent = bookmark.description || 'No description available.';
+            document.getElementById('noteDetailDownloads').textContent = bookmark.downloads || '0';
+            
+            document.getElementById('noteDetailView').dataset.bookmarkIndex = index;
+            
+            // Show/hide buttons based on noteId availability
+            const hasNoteId = bookmark.noteId;
+            document.getElementById('btnPreviewNote').style.display = hasNoteId ? 'flex' : 'none';
+            document.getElementById('btnDownloadNote').style.display = hasNoteId ? 'flex' : 'none';
+        }
+        
+        function goBackFromNoteDetail() {
+            if (currentFolderIndex !== null) {
+                openFolder(currentFolderIndex);
+            } else {
+                showAllBookmarksView();
+            }
+        }
+        
+        function showAllBookmarksView() {
+            document.getElementById('foldersSection').style.display = 'block';
+            document.getElementById('allBookmarksSection').style.display = 'block';
+            document.getElementById('folderView').classList.remove('active');
+            document.getElementById('noteDetailView').classList.remove('active');
+            currentFolderIndex = null;
+        }
+        
+        function previewNoteDetail() {
+            const index = document.getElementById('noteDetailView').dataset.bookmarkIndex;
+            const bookmarks = getBookmarks();
+            const bookmark = bookmarks[index];
+            
+            if (bookmark && bookmark.noteId) {
+                window.open(`http://localhost:3000/api/notes/${bookmark.noteId}/preview`, '_blank');
+            }
+        }
+        
+        function downloadNoteDetail() {
+            const index = document.getElementById('noteDetailView').dataset.bookmarkIndex;
+            const bookmarks = getBookmarks();
+            const bookmark = bookmarks[index];
+            
+            if (bookmark && bookmark.noteId) {
+                window.location.href = `http://localhost:3000/api/notes/${bookmark.noteId}/download`;
+            }
+        }
+        
+        function removeBookmarkFromDetail() {
+            const index = document.getElementById('noteDetailView').dataset.bookmarkIndex;
+            if (!await friendlyConfirm({ title: 'Remove Bookmark?', message: 'Are you sure you want to remove this bookmark?', confirmText: 'Remove', isDanger: true })) return;
+            
+            let bookmarks = getBookmarks();
+            bookmarks.splice(index, 1);
+            localStorage.setItem('notifyBookmarks', JSON.stringify(bookmarks));
+            
+            if (currentFolderIndex !== null) {
+                openFolder(currentFolderIndex);
+            } else {
+                location.reload();
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const foldersGrid = document.getElementById('foldersGrid');
+            const bookmarksGrid = document.getElementById('bookmarksGrid');
+            if (!foldersGrid || !bookmarksGrid) return;
+            
+            const folders = getBookmarkFolders();
+            const bookmarks = getBookmarks();
+            
+            // Update count
+            const bookmarkCount = document.getElementById('bookmarkCount');
+            if (bookmarkCount) {
+                bookmarkCount.textContent = `${bookmarks.length} items`;
+            }
+            
+            // Render folders
+            let foldersHtml = '';
+            folders.forEach((folder, index) => {
+                const count = bookmarks.filter(b => b.folderIndex == index).length;
+                foldersHtml += `
+                    <div class="folder-card" onclick="openFolder(${index})" style="cursor:pointer">
+                        <div class="folder-icon">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="folder-info">
+                            <h3>${folder.name}</h3>
+                            <p>${count} bookmark${count !== 1 ? 's' : ''}</p>
+                        </div>
+                        <div class="folder-actions">
+                            <button class="folder-menu" onclick="removeFolder(${index})" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>`;
+            });
+            
+            // Add folder card
+            foldersHtml += `
+                <div class="folder-card add-folder" id="addFolderCard" onclick="document.getElementById('folderModal').style.display='flex'" style="cursor:pointer">
+                    <div class="folder-icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <div class="folder-info">
+                        <h3>Create New Folder</h3>
+                        <p>Click to add</p>
+                    </div>
+                </div>`;
+            
+            foldersGrid.innerHTML = foldersHtml;
+            
+            // Render bookmarks
+            if (bookmarks.length === 0) {
+                bookmarksGrid.innerHTML = '<div class="no-results"><i class="fas fa-bookmark"></i><p>No bookmarks yet. Save notes from the Notes page to see them here.</p></div>';
+                return;
+            }
+            
+            let html = '';
+            bookmarks.forEach((bookmark, index) => {
+                const icon = 'fa-file-pdf';
+                const date = bookmark.date ? new Date(bookmark.date).toLocaleDateString() : 'Recently';
+                const folderName = folders[bookmark.folderIndex] ? folders[bookmark.folderIndex].name : 'Uncategorized';
+                
+                html += `
+                    <div class="bookmark-card" onclick="openNoteDetail(${index})" style="cursor:pointer">
+                        <div class="bookmark-type">
+                            <i class="fas ${icon}"></i>
+                        </div>
+                        <div class="bookmark-content">
+                            <h3>${bookmark.title || 'Untitled'}</h3>
+                            <p class="bookmark-meta">
+                                <span><i class="fas fa-folder"></i> ${folderName}</span>
+                                <span><i class="fas fa-calendar"></i> ${date}</span>
+                            </p>
+                            <p class="bookmark-description">${bookmark.description || ''}</p>
+                        </div>
+                        <div class="bookmark-actions">
+                            <button class="action-btn" title="Delete" onclick="removeBookmark(${index})"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>`;
+            });
+            
+            bookmarksGrid.innerHTML = html;
+        });
+    </script>
+    <div id="modalContainer"></div>
+    <script>
+    function showModal(options) {
+        const { title, message, icon = 'info', confirmText = 'Confirm', cancelText = 'Cancel', onConfirm, isDanger = false } = options;
+        const modalHtml = `
+            <div class="modal-overlay" id="customModal">
+                <div class="modal-dialog">
+                    <div class="modal-icon ${icon}">
+                        <i class="fas ${icon === 'warning' ? 'fa-exclamation-triangle' : icon === 'danger' ? 'fa-trash-alt' : 'fa-question-circle'}"></i>
+                    </div>
+                    <h3 class="modal-title">${title}</h3>
+                    <p class="modal-message">${message}</p>
+                    <div class="modal-actions">
+                        <button class="modal-btn-cancel" onclick="closeModal()">${cancelText}</button>
+                        <button class="modal-btn-confirm ${isDanger ? 'danger' : 'primary'}" id="modalConfirmBtn">${confirmText}</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('modalContainer').innerHTML = modalHtml;
+        const modal = document.getElementById('customModal');
+        setTimeout(() => modal.classList.add('show'), 10);
+        document.getElementById('modalConfirmBtn').onclick = () => { closeModal(); if (onConfirm) onConfirm(); };
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    }
+    function closeModal() {
+        const modal = document.getElementById('customModal');
+        if (modal) { modal.classList.remove('show'); setTimeout(() => modal.remove(), 200); }
+    }
+    function friendlyConfirm(options) {
+        return new Promise((resolve) => {
+            showModal({ ...options, onConfirm: () => resolve(true), icon: options.isDanger ? 'danger' : 'warning' });
+        });
+    }
+    </script>
+    <script src="../js/bookmarks.js"></script>
+   
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <h3><i class="fas fa-graduation-cap"></i> Notify</h3>
+                <p>Your ultimate university notes platform. Access, share, and excel with comprehensive study materials across all faculties.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="dashboard.html">Dashboard</a></li>
+                    <li><a href="search.html">Search Notes</a></li>
+                    <li><a href="updates.html">Updates</a></li>
+                    <li><a href="bookmarks.html">Bookmarks</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Faculties</h4>
+                <ul>
+                    <li><a href="#">Science & Computing</a></li>
+                    <li><a href="#">Business</a></li>
+                    <li><a href="#">Medicine</a></li>
+                    <li><a href="#">Engineering</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Support</h4>
+                <ul>
+                    <li><a href="#">Help Center</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Notify. All rights reserved.</p>
+            <div class="footer-social">
+                <a href="#"><i class="fab fa-facebook-f"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-linkedin-in"></i></a>
+            </div>
+            <div class="footer-links">
+                <a href="#">Privacy</a>
+                <span>|</span>
+                <a href="#">Terms</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lecturer Dashboard - Notify</title>
+    <link href="../css/dashboard.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="lecturer.css" rel="stylesheet" />
+    <script src="../js/themes.js"></script>
+
+</head>
+<body>
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div class="dashboard-cont">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-nav">
+                <a href="#" onclick="showSection('home')"><i class="fas fa-home"></i> <span>Home</span></a>
+                <a href="#" onclick="showSection('browse')"><i class="fas fa-folder-open"></i> <span>Browse</span></a>
+                <a href="#" onclick="showSection('courses')"><i class="fas fa-book"></i> <span>My Courses</span></a>
+                <a href="#" onclick="showSection('notes')"><i class="fas fa-sticky-note"></i> <span>Notes</span></a>
+                <a href="#" onclick="showSection('updates')"><i class="fas fa-bullhorn"></i> <span>Updates</span></a>
+                <a href="#" onclick="showSection('settings')"><i class="fas fa-cog"></i> <span>Settings</span></a>
+                <a href="#" onclick="showLogoutModal()" class="logout"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="topbar">
+                <button class="mobile-menu-btn" title="Open Menu"><i class="fas fa-bars"></i></button>
+                <div class="topbar-logo"><i class="fas fa-graduation-cap"></i> NOTIFY</div>
+                <div class="search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search notes..." id="globalSearch" onkeyup="handleSearch(this.value)">
+                </div>
+                <div class="topbar-right">
+                    <div class="notif">
+                        <i class="fas fa-bell"></i>
+                        <span class="notif-badge" id="notifCount">0</span>
+                    </div>
+                    <div class="theme-toggle"  id="themeToggle">
+                        <i class="fas fa-sun"></i>
+                        <i class="fas fa-moon"></i>
+                    </div>
+                    <div class="profile">
+                        <img src="../images/dashboardImages/v3321_68.png" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                        <div class="profile-info">
+                            <span class="profile-name" id="userName"></span>
+                            <span class="profile-role">Lecturer</span>
+                        </div>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="breadcrumbs">
+                <a href="#"><i class="fas fa-home"></i></a>
+                <i class="fas fa-chevron-right"></i>
+                <span id="breadcrumb">Home</span>
+            </div>
+
+            <div class="page-content">
+                
+                <!-- HOME SECTION -->
+                <div id="home" class="section">
+                    <div class="welcome-banner">
+                        <div class="welcome-text">
+                            <h2>Hello </h2>
+                            <h1>Welcome Back,<span id="userNameDisplay">User</span></h1>
+                            <p>Manage your notes and updates</p>
+                               <p>
+                                Easily upload, manage, and share your course materials with students—all in one place. Let’s make learning smoother 
+                            </p>
+                            <span class="date-badge"><i class="fas fa-calendar"></i> <span id="currentDate"></span></span>
+                            <div class="quick-actions" style="margin-top: 15px;">
+                                <button class="action-btn primary" onclick="showSection('notes')">
+                                    <i class="fas fa-plus"></i> New Note
+                                </button>
+                            </div>
+                        </div>
+                        <div class="welcome-img">
+                            <img src="../images/dashboardImages/lec_pic-removebg-preview.png" alt="Welcome">
+                        </div>
+                    </div>
+                    <div class="stats-row">
+                        <div class="stat-box">
+                            <div class="stat-box-icon" style="background: #e3f2fd;"><i class="fas fa-file-alt" style="color: #1976d2;"></i></div>
+                            <div class="stat-box-content">
+                                <span class="stat-number" id="totalNotes">0</span>
+                                <span class="stat-label">Total Notes</span>
+                            </div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-box-icon" style="background: #f3e5f5;"><i class="fas fa-book" style="color: #7b1fa2;"></i></div>
+                            <div class="stat-box-content">
+                                <span class="stat-number" id="totalCourses">0</span>
+                                <span class="stat-label">Courses</span>
+                            </div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-box-icon" style="background: #fff3e0;"><i class="fas fa-bullhorn" style="color: #f57c00;"></i></div>
+                            <div class="stat-box-content">
+                                <span class="stat-number" id="totalUpdates">0</span>
+                                <span class="stat-label">Updates</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="content-grid">
+                        <div class="panel">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-clock"></i> Recent Notes</h3>
+                                <button class="view-all" onclick="showSection('notes')">View All</button>
+                            </div>
+                            <div id="recentNotes" class="notes-list"></div>
+                        </div>
+                        <div class="panel">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+                            </div>
+                            <div class="actions-list">
+                                <button class="menu-btn" onclick="showSection('notes')">
+                                    <i class="fas fa-plus"></i>
+                                    <span>Upload New Note</span>
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                                <button class="menu-btn" onclick="showSection('updates')">
+                                    <i class="fas fa-bullhorn"></i>
+                                    <span>Post Update</span>
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                                <button class="menu-btn" onclick="showSection('settings')">
+                                    <i class="fas fa-cog"></i>
+                                    <span>Settings</span>
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+           
+                <div id="browse" class="section" style="display:none;">
+                    <div class="notes-header">
+                        <h2><i class="fas fa-folder-open"></i> Browse Schools</h2>
+                    </div>
+                    <div class="browse-container">
+                        <div class="browse-breadcrumb" id="browseBreadcrumb">
+                            <span>Select a school to view courses</span>
+                        </div>
+                        <div class="browse-grid" id="browseGrid"></div>
+                    </div>
+                </div>
+
+                <!-- COURSES SECTION -->
+                <div id="courses" class="section" style="display:none;">
+                    <div class="notes-header">
+                        <h2><i class="fas fa-book"></i> My Courses & Units</h2>
+                        <button class="btn-primary" onclick="openCourseModal()">
+                            <i class="fas fa-plus"></i> Add Course
+                        </button>
+                    </div>
+                    <div id="coursesContainer" class="courses-list"></div>
+                </div>
+
+                <!-- NOTES SECTION -->
+                <div id="notes" class="section" style="display:none;">
+                    <div class="notes-header">
+                        <h2><i class="fas fa-file-alt"></i> Notes</h2>
+                        <button class="btn-primary" onclick="openNoteModal()">
+                            <i class="fas fa-plus"></i> Upload Note
+                        </button>
+                    </div>
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="switchNotesTab('my')" id="tabMyNotes">
+                            <i class="fas fa-user"></i> My Notes
+                        </button>
+                        <button class="tab-btn" onclick="switchNotesTab('all')" id="tabAllNotes">
+                            <i class="fas fa-globe"></i> All Notes
+                        </button>
+                    </div>
+                    <div id="notesContainer" class="notes-grid"></div>
+                </div>
+
+                <!-- UPDATES SECTION -->
+                <div id="updates" class="section" style="display:none;">
+                    <div class="notes-header">
+                        <h2><i class="fas fa-bullhorn"></i> Updates</h2>
+                        <button class="btn-primary" onclick="openUpdateModal()">
+                            <i class="fas fa-plus"></i> Post Update
+                        </button>
+                    </div>
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="switchUpdatesTab('my')" id="tabMyUpdates">
+                            <i class="fas fa-user"></i> My Updates
+                        </button>
+                        <button class="tab-btn" onclick="switchUpdatesTab('all')" id="tabAllUpdates">
+                            <i class="fas fa-globe"></i> All Updates
+                        </button>
+                    </div>
+                    <div id="updatesContainer" class="updates-list"></div>
+                </div>
+
+                <!-- SETTINGS SECTION -->
+                <div id="settings" class="section" style="display:none;">
+                    <div class="section-header">
+                        <h2><i class="fas fa-cog"></i> Settings</h2>
+                    </div>
+                    <div class="settings-content">
+                        <div class="settings-card">
+                            <div class="settings-icon"><i class="fas fa-user"></i></div>
+                            <h3>Profile</h3>
+                            <p>Update your name and email</p>
+                            <button class="btn-outline" onclick="openProfileModal()">Edit</button>
+                        </div>
+                        <div class="settings-card">
+                            <div class="settings-icon"><i class="fas fa-lock"></i></div>
+                            <h3>Change Password</h3>
+                            <p>Update your password</p>
+                            <button class="btn-outline" onclick="openChangePasswordModal()">Change</button>
+                        </div>
+                        <div class="settings-card">
+                            <div class="settings-icon"><i class="fas fa-palette"></i></div>
+                            <h3>Appearance</h3>
+                            <p>Toggle dark/light mode</p>
+                            <button class="btn-outline" onclick="toggleTheme()">Toggle Theme</button>
+                        </div>
+                    </div>
+                </div>
+
+
+    <div id="noteModal" class="modal" style="display:none;">
+        <div class="modal-content modal-wide" style="max-height: 90vh; overflow-y: auto; margin-top: 60px;">
+            <div class="modal-header" style="position: sticky; top: 0; background: var(--bg-secondary); z-index: 10;">
+                <h3 id="noteModalTitle">Upload Note</h3>
+                <span class="close" onclick="closeNoteModal()">&times;</span>
+            </div>
+            <form id="noteForm">
+                <input type="hidden" id="noteId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-school"></i> School</label>
+                        <div class="select-with-btn">
+                            <select id="schoolSelect" required>
+                                <option value="">Select School</option>
+                                
+                            </select>
+                            <button type="button" class="btn-plus" onclick="createNew('school')" title="Create New School"><i class="fas fa-plus"></i></button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-book"></i> Course</label>
+                        <div class="select-with-btn">
+                            <select id="courseSelect" required disabled>
+                                <option value="">Select Course</option>
+                            </select>
+                            <button type="button" class="btn-plus" onclick="createNew('course')" title="Create New Course" disabled><i class="fas fa-plus"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-layer-group"></i> Unit</label>
+                        <div class="select-with-btn">
+                            <select id="unitSelect" required disabled>
+                                <option value="">Select Unit</option>
+                            </select>
+                            <button type="button" class="btn-plus" onclick="createNew('unit')" title="Create New Unit" disabled><i class="fas fa-plus"></i></button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-tag"></i> Title</label>
+                        <input type="text" id="noteTitle" placeholder="Note title" required>
+                    </div>
+                </div>
+                <div class="form-group full-width">
+                    <label><i class="fas fa-align-left"></i> Description</label>
+                    <textarea id="noteContent" placeholder="Note description" rows="2"></textarea>
+                </div>
+                <div class="form-group full-width" id="commonUnitSection" style="display: none; background: var(--bg-tertiary); padding: 15px; border-radius: 8px; margin-top: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <i class="fas fa-globe" style="color: #7b1fa2;"></i>
+                        <strong>Common Unit Settings</strong>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-school"></i> School</label>
+                            <select id="commonUnitSchool">
+                                <option value="">Select School</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-book"></i> Department</label>
+                            <select id="commonUnitDept" disabled>
+                                <option value="">Select Department</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-font"></i> Unit Name</label>
+                            <input type="text" id="commonUnitName" placeholder="Unit name">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-code"></i> Unit Code</label>
+                            <input type="text" id="commonUnitCode" placeholder="e.g., BCS 101">
+                        </div>
+                    </div>
+                    <button type="button" class="btn-primary" id="confirmCommonUnitBtn" onclick="confirmCommonUnitInline()" style="margin-top: 10px;">
+                        <i class="fas fa-check-circle"></i> Confirm Common Unit
+                    </button>
+                    <div id="commonUnitConfirmed" style="display: none; margin-top: 10px; color: #10b981; font-weight: bold;">
+                        <i class="fas fa-check-circle"></i> Common unit confirmed! You can now upload the note.
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-file-pdf"></i> File (PDF)</label>
+                        <input type="file" id="noteFile" accept=".pdf">
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="isCommonUnit">
+                            <span class="checkmark"></span>
+                            <i class="fas fa-globe"></i> Common Unit (available across schools)
+                        </label>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-outline" onclick="closeNoteModal()">Cancel</button>
+                    <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Common Unit Modal -->
+    <div id="commonUnitModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-share-alt"></i> Share Common Unit</h3>
+                <span class="close" onclick="closeCommonUnitModal()">&times;</span>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-school"></i> Select School to Share With</label>
+                <select id="commonUnitSchoolSelect">
+                    <option value="">Select School</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-book"></i> Select Department</label>
+                <select id="commonUnitDeptSelect" disabled>
+                    <option value="">Select Department</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-outline" onclick="closeCommonUnitModal()">Cancel</button>
+                <button type="button" class="btn-primary" onclick="confirmCommonUnit()"><i class="fas fa-check"></i> Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="updateModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Post Update</h3>
+                <span class="close" onclick="closeUpdateModal()">&times;</span>
+            </div>
+            <form id="updateForm">
+                <div class="form-group">
+                    <label><i class="fas fa-heading"></i> Title</label>
+                    <input type="text" id="updateTitle" placeholder="Update title" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-align-left"></i> Content</label>
+                    <textarea id="updateContent" placeholder="Update content" rows="4" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-book"></i> Course (Optional)</label>
+                    <select id="updateCourse">
+                        <option value="">All Courses</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-outline" onclick="closeUpdateModal()">Cancel</button>
+                    <button type="submit" class="btn-primary"><i class="fas fa-paper-plane"></i> Post</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="courseModal" class="modal" style="display:none;">
+        <div class="modal-content modal-wide">
+            <div class="modal-header">
+                <h3 id="courseModalTitle">Add Course</h3>
+                <span class="close" onclick="closeCourseModal()">&times;</span>
+            </div>
+            <form id="courseForm">
+                <input type="hidden" id="deptId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-school"></i> School</label>
+                        <div class="select-with-btn">
+                            <select id="courseSchoolSelect" required>
+                                <option value="">Select School</option>
+                            </select>
+                            <button type="button" class="btn-plus" onclick="createNew('school')" title="Create New School"><i class="fas fa-plus"></i></button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-book"></i> Course</label>
+                        <div class="select-with-btn">
+                            <select id="courseCourseSelect" required disabled>
+                                <option value="">Select Course</option>
+                            </select>
+                            <button type="button" class="btn-plus" onclick="createNew('course')" title="Create New Course" disabled><i class="fas fa-plus"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-layer-group"></i> Unit</label>
+                        <div class="select-with-btn">
+                            <select id="courseUnitSelect" required disabled>
+                                <option value="">Select Unit</option>
+                            </select>
+                            <button type="button" class="btn-plus" onclick="createNew('unit')" title="Create New Unit" disabled><i class="fas fa-plus"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-outline" onclick="closeCourseModal()">Cancel</button>
+                    <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="lecturer.js"></script>
+</body>
+</html>

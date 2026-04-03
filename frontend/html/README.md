@@ -1,0 +1,2 @@
+<script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.10/dist/dotlottie-wc.js" type="module"></script>
+<dotlottie-wc src="https://lottie.host/a1af0175-b59d-489c-966e-c75da9a23658/6wAk8fBuDg.lottie" style="width: 300px;height: 300px" autoplay loop></dotlottie-wc>

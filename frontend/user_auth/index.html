@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Notify</title>
+    <link href="https://fonts.googleapis.com/css?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/login.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="side-hero">
+            <i class="fas fa-graduation-cap" style="font-size: 3rem; margin-bottom: 16px;"></i>
+            <h3>Notify</h3>
+            <p>Your ultimate university notes platform</p>
+            <p style="margin-top: 16px; opacity: 0.8; font-size: 0.9rem;">Access, share, and excel with comprehensive study materials across all faculties.</p>
+            <div style="margin-top: 30px; display: flex; gap: 20px; font-size: 0.85rem;">
+                <span><i class="fas fa-book"></i> Notes</span>
+                <span><i class="fas fa-users"></i> Community</span>
+                <span><i class="fas fa-star"></i> Best Resources</span>
+            </div>
+        </div>
+    
+        <div class="auth-container">
+            <h2>Sign In</h2>
+            <p class="subtitle">Enter your credentials to continue</p>
+            
+            <form id="loginForm" class="auth-form">
+                <div class="input-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" name="email" id="loginEmail" placeholder="Enter your email" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" name="password" id="loginPassword" placeholder="Enter your password" required>
+                    <span toggle="#loginPassword" class="password-toggle" onclick="togglePassword('loginPassword', this)">
+                        <i class="fas fa-eye"></i>
+                    </span>
+                </div>
+                
+                <div class="forgot-link">
+                    <a href="#" onclick="showForgotPassword(); return false;">Forgot password?</a>
+                </div>
+                
+                <button type="submit">Sign In</button>
+            </form>
+            
+            <div class="divider">
+                <span>or</span>
+            </div>
+            
+            <div class="social-login">
+                <button class="social-btn">
+                    <i class="fab fa-google"></i> Google
+                </button>
+                <button class="social-btn">
+                    <i class="fab fa-apple"></i> Apple
+                </button>
+            </div>
+            
+            <p class="auth-footer">
+                Don't have an account? <a href="register.html">Create one</a>
+            </p>
+            
+            <div id="loginMessage"></div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:white;padding:30px;border-radius:12px;max-width:400px;width:90%;">
+            <h3 style="margin-bottom:8px;color:var(--text-primary);">Reset Password</h3>
+            
+            <div id="forgotStep1">
+                <div class="input-group">
+                    <label for="forgotEmail">Email</label>
+                    <input type="email" id="forgotEmail" placeholder="Your email">
+                </div>
+                <button onclick="sendResetCode()" style="width:100%;padding:12px;background:var(--primary);color:white;border:none;border-radius:8px;cursor:pointer;">Send Code</button>
+            </div>
+            
+            <div id="forgotStep2" style="display:none;">
+                <div class="input-group">
+                    <label for="resetCode">Code</label>
+                    <input type="text" id="resetCode" placeholder="Enter code">
+                </div>
+                <div class="input-group">
+                    <label for="newResetPassword">New Password</label>
+                    <input type="password" id="newResetPassword" placeholder="New password">
+                </div>
+                <button onclick="resetPassword()" style="width:100%;padding:12px;background:var(--primary);color:white;border:none;border-radius:8px;cursor:pointer;">Reset</button>
+            </div>
+            
+            <p id="forgotMessage" style="margin-top:12px;text-align:center;"></p>
+            <button onclick="closeForgotPassword()" style="margin-top:12px;width:100%;padding:10px;background:#64748b;color:white;border:none;border-radius:8px;cursor:pointer;">Cancel</button>
+        </div>
+    </div>
+
+    <script src="../js/login.js"></script>
+    <script>
+        function togglePassword(inputId, toggleBtn) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+            } else {
+                input.type = 'password';
+                toggleBtn.innerHTML = '<i class="fas fa-eye"></i>';
+            }
+        }
+
+        function showForgotPassword() {
+            document.getElementById('forgotPasswordModal').style.display = 'flex';
+            document.getElementById('forgotStep1').style.display = 'block';
+            document.getElementById('forgotStep2').style.display = 'none';
+            document.getElementById('forgotMessage').textContent = '';
+        }
+
+        function closeForgotPassword() {
+            document.getElementById('forgotPasswordModal').style.display = 'none';
+        }
+
+        async function sendResetCode() {
+            const email = document.getElementById('forgotEmail').value;
+            if (!email) {
+                document.getElementById('forgotMessage').textContent = 'Please enter your email';
+                return;
+            }
+            try {
+                const res = await fetch('http://localhost:3000/user_auth/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('forgotStep1').style.display = 'none';
+                    document.getElementById('forgotStep2').style.display = 'block';
+                    document.getElementById('forgotMessage').textContent = 'Code sent! Check your email.';
+                    document.getElementById('forgotMessage').style.color = 'var(--success)';
+                } else {
+                    document.getElementById('forgotMessage').textContent = data.message;
+                    document.getElementById('forgotMessage').style.color = 'var(--error)';
+                }
+            } catch (err) {
+                document.getElementById('forgotMessage').textContent = 'Error connecting to server';
+                document.getElementById('forgotMessage').style.color = 'var(--error)';
+            }
+        }
+
+        async function resetPassword() {
+            const email = document.getElementById('forgotEmail').value;
+            const code = document.getElementById('resetCode').value;
+            const newPassword = document.getElementById('newResetPassword').value;
+            if (!code || !newPassword) {
+                document.getElementById('forgotMessage').textContent = 'Please enter code and new password';
+                return;
+            }
+            try {
+                const res = await fetch('http://localhost:3000/user_auth/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, otp: code, newPassword })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('forgotMessage').textContent = 'Password reset successful!';
+                    document.getElementById('forgotMessage').style.color = 'var(--success)';
+                    setTimeout(closeForgotPassword, 2000);
+                } else {
+                    document.getElementById('forgotMessage').textContent = data.message;
+                    document.getElementById('forgotMessage').style.color = 'var(--error)';
+                }
+            } catch (err) {
+                document.getElementById('forgotMessage').textContent = 'Error connecting to server';
+                document.getElementById('forgotMessage').style.color = 'var(--error)';
+            }
+        }
+    </script>
+</body>
+</html>

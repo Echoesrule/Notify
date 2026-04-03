@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Noteify</title>
+    <link href="https://fonts.googleapis.com/css?family=Fredoka|Inter&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="../css/dashboard.css" rel="stylesheet" />
+    <link href="../css/footer.css" rel="stylesheet" />
+    <link href="../css/settings.css" rel="stylesheet" />
+    <link href="../css/modal.css" rel="stylesheet" />
+<script src="../js/themes.js"></script>
+
+</head>
+<body>
+    <div class="dashboard-cont">
+        <div class="page-content">
+            
+            <!-- Loading Spinner 
+            <div class="loading-course" id="lottieLoader">
+                <div class="css-spinner"></div>
+                <p>Loading Settings...</p>
+            </div>
+-->
+            <!-- Settings Content -->
+            <div class="settings-content" id="settingsContent">
+                <a href="dashboard.html"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+                
+                <div class="settings-header">
+                    <div>
+                        <h1 id="pageTitle">Settings</h1>
+                        <p class="settings-subtitle">Customize your Noteify experience</p>
+                    </div>
+
+                    <div class="header-actions">
+                        <button class="btn-outline" id="resetSettings">
+                            <i class="fas fa-undo"></i> Reset to Default
+                        </button>
+                        <button class="btn-primary" id="saveSettings">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Section Navigation -->
+                <div class="section-links" id="sectionLinks">
+                    <h2 data-section-id="profile"><i class="fas fa-user"></i> Profile</h2>
+                    <h2 data-section-id="appearance"><i class="fas fa-paint-brush"></i> Appearance</h2>
+                    <h2 data-section-id="notifications"><i class="fas fa-bell"></i> Notifications</h2>
+                    <h2 data-section-id="privacy"><i class="fas fa-lock"></i> Privacy</h2>
+                    <h2 data-section-id="downloads"><i class="fas fa-download"></i> Downloads</h2>
+                    <h2 data-section-id="security"><i class="fas fa-shield-alt"></i> Security</h2>
+                </div>
+
+                <!-- ===== PROFILE SECTION ===== -->
+                <section id="profile" class="active">
+                    <h2>Profile Information</h2>
+                    
+                    <div class="profile-image">
+                        <img src="../images/dashboardImages/v3321_68.png" alt="Profile" id="profileImage">
+                        <div class="profile-image-actions">
+                            <p>Change your profile image<br><small>JPEG or PNG only, max 2MB</small></p>
+                            <div class="buttons">
+                                <button class="btn-outline btn-sm" id="changeProfileImage">
+                                    <i class="fas fa-camera"></i> Change
+                                </button>
+                                <button class="btn-outline btn-sm" id="removeProfileImage">
+                                    <i class="fas fa-trash"></i> Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3>Personal Details</h3>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="fullName">Full Name</label>
+                            <input type="text" id="fullName" value="Kemboi Emmanuel" placeholder="Enter your full name">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" value="emmanuel@student.edu" placeholder="your@email.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="studentId">Student ID</label>
+                            <input type="text" id="studentId" value="STU2024-001" placeholder="e.g., STU2024-001">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="gradYear">Graduation Year</label>
+                            <select id="gradYear">
+                                <option>2024</option>
+                                <option selected>2025</option>
+                                <option>2026</option>
+                                <option>2027</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="school">School/Faculty</label>
+                            <select id="school">
+                                <option value="">Loading schools...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="department">Department</label>
+                            <select id="department">
+                                <option value="">Select a school first</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="yearOfStudy">Year of Study</label>
+                            <select id="yearOfStudy">
+                                <option>Year 1</option>
+                                <option selected>Year 2</option>
+                                <option>Year 3</option>
+                                <option>Year 4</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="bio">Bio / About Me</label>
+                            <textarea id="bio" rows="3" placeholder="Tell us something about yourself..."></textarea>
+                        </div>
+
+                      
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Member Since</span>
+                            <span class="stat-value">January 2024</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Account Type</span>
+                            <span class="stat-value">Student</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Reputation</span>
+                            <span class="stat-value">450 pts</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Notes Shared</span>
+                            <span class="stat-value">12</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== APPEARANCE SECTION ===== -->
+                <section id="appearance">
+                    <h2>Appearance</h2>
+                    
+                    <div class="settings-subsection">
+                        <h3>Theme</h3>
+                        <div class="theme-options">
+                            <label class="theme-option">
+                                <input type="radio" name="theme" value="light" checked>
+                                <div class="theme-preview light">
+                                    <i class="fas fa-sun"></i>
+                                    <span>Light</span>
+                                </div>
+                            </label>
+                            <label class="theme-option">
+                                <input type="radio" name="theme" value="dark">
+                                <div class="theme-preview dark">
+                                    <i class="fas fa-moon"></i>
+                                    <span>Dark</span>
+                                </div>
+                            </label>
+                            <label class="theme-option">
+                                <input type="radio" name="theme" value="auto">
+                                <div class="theme-preview auto">
+                                    <i class="fas fa-clock"></i>
+                                    <span>Auto</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-subsection">
+                        <h3>Accent Color</h3>
+                        <div class="color-options">
+                            <label class="color-option">
+                                <input type="radio" name="accent" value="blue" checked>
+                                <span class="color-preview blue"></span>
+                            </label>
+                            <label class="color-option">
+                                <input type="radio" name="accent" value="purple">
+                                <span class="color-preview purple"></span>
+                            </label>
+                            <label class="color-option">
+                                <input type="radio" name="accent" value="green">
+                                <span class="color-preview green"></span>
+                            </label>
+                            <label class="color-option">
+                                <input type="radio" name="accent" value="orange">
+                                <span class="color-preview orange"></span>
+                            </label>
+                            <label class="color-option">
+                                <input type="radio" name="accent" value="red">
+                                <span class="color-preview red"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-subsection">
+                        <h3>Font Size</h3>
+                        <div class="font-size-slider">
+                            <input type="range" id="fontSize" min="12" max="20" value="14" step="1">
+                            <div class="slider-labels">
+                                <span>Small</span>
+                                <span>Normal</span>
+                                <span>Large</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-subsection">
+                        <h3>Layout Preferences</h3>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="compactView" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Compact view</span>
+                        </label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="animations" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Enable animations</span>
+                        </label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="blurEffects" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Blur effects</span>
+                        </label>
+                    </div>
+                </section>
+
+                <!-- ===== NOTIFICATIONS SECTION ===== -->
+                <section id="notifications">
+                    <h2>Notifications</h2>
+                    
+                    <div class="settings-subsection">
+                        <h3>Email Notifications</h3>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="emailUpdates" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">New note uploads</span>
+                        </label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="emailComments" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Comments on my notes</span>
+                        </label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="emailReplies">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Replies to comments</span>
+                        </label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="emailDigest">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Weekly digest</span>
+                        </label>
+                    </div>
+
+                    <div class="settings-subsection">
+                        <h3>Push Notifications</h3>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="pushUpdates" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Course updates</span>
+                        </label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="pushMessages" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Messages</span>
+                        </label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="pushReminders" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Study reminders</span>
+                        </label>
+                    </div>
+
+                    <div class="settings-subsection">
+                        <h3>Quiet Hours</h3>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="quietHours">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Enable quiet hours</span>
+                        </label>
+                        <div class="time-range" id="quietHoursRange" style="display: none;">
+                            <select id="quietStart">
+                                <option>10:00 PM</option>
+                                <option>11:00 PM</option>
+                                <option>12:00 AM</option>
+                            </select>
+                            <span>to</span>
+                            <select id="quietEnd">
+                                <option>6:00 AM</option>
+                                <option>7:00 AM</option>
+                                <option>8:00 AM</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== PRIVACY SECTION ===== -->
+                <section id="privacy">
+                    <h2>Privacy</h2>
+                    
+                    <div class="settings-subsection">
+                        <h3>Profile Visibility</h3>
+                        <label class="radio-option">
+                            <input type="radio" name="profileVisibility" value="public" checked>
+                            <span>Public - Anyone can see my profile</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="profileVisibility" value="school">
+                            <span>School only</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="profileVisibility" value="private">
+                            <span>Private - Only me</span>
+                        </label>
+                    </div>
+
+                    <div class="settings-subsection">
+                        <h3>Note Visibility</h3>
+                        <label class="radio-option">
+                            <input type="radio" name="noteVisibility" value="public" checked>
+                            <span>Public - Everyone can see</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="noteVisibility" value="school">
+                            <span>School only</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="noteVisibility" value="private">
+                            <span>Private - Only me</span>
+                        </label>
+                    </div>
+
+                    <div class="settings-subsection">
+                        <h3>Activity Status</h3>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="showOnlineStatus" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Show when I'm online</span>
+                        </label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="showDownloadHistory">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Show download history</span>
+                        </label>
+                    </div>
+
+                    <div class="settings-subsection">
+                        <h3>Data Sharing</h3>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="anonymousStats" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Share anonymous usage stats</span>
+                        </label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="personalizedRecs" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Personalized recommendations</span>
+                        </label>
+                    </div>
+                </section>
+
+                <!-- ===== DOWNLOADS SECTION ===== -->
+                <section id="downloads">
+                    <h2>Downloads</h2>
+                    
+                    <div class="settings-subsection">
+                        <h3>Download Location</h3>
+                        <div class="file-path">
+                            <input type="text" id="downloadPath" value="~/Downloads/Notify Notes" readonly>
+                            <button class="btn-outline btn-sm" id="changeDownloadPath">Change</button>
+                        </div>
+                    </div>
+
+                    <div class="settings-subsection">
+                        <h3>File Naming</h3>
+                        <select id="fileNaming">
+                            <option>[Course] [Title] - [Date]</option>
+                            <option>[Date] [Course] [Title]</option>
+                            <option>[Title] - [Lecturer]</option>
+                        </select>
+                    </div>
+
+                    <div class="settings-subsection">
+                        <h3>Download Quality</h3>
+                        <label class="radio-option">
+                            <input type="radio" name="quality" value="original" checked>
+                            <span>Original quality</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="quality" value="compressed">
+                            <span>Compressed (smaller files)</span>
+                        </label>
+                    </div>
+
+                    <div class="settings-subsection">
+                        <h3>Auto-Download</h3>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="autoDownload">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Auto-download new notes</span>
+                        </label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="wifiOnly" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Wi-Fi only</span>
+                        </label>
+                    </div>
+
+                    <div class="settings-subsection">
+                        <h3>Storage</h3>
+                        <div class="storage-bar">
+                            <div class="storage-used" style="width: 45%"></div>
+                        </div>
+                        <p class="storage-text">2.3 GB of 5 GB used</p>
+                        <button class="btn-outline btn-sm" id="clearCache">Clear Cache</button>
+                    </div>
+                </section>
+
+                <!-- ===== SECURITY SECTION ===== -->
+                <section id="security">
+                    <h2>Security</h2>
+                    
+                    <div class="settings-subsection">
+                        <h3>Change Password</h3>
+                        <div class="form-group">
+                            <input type="password" id="currentPassword" placeholder="Current password">
+                        </div>
+                        <div class="form-group">
+                            <input type="password" id="newPassword" placeholder="New password">
+                        </div>
+                        <div class="form-group">
+                            <input type="password" id="confirmPassword" placeholder="Confirm new password">
+                        </div>
+                        <button class="btn-primary" id="updatePassword">Update Password</button>
+                    </div>
+
+                    <div class="settings-subsection">
+                        <h3>Two-Factor Authentication</h3>
+                        <div class="twofa-status">
+                            <span class="status-badge disabled" id="twoFAStatus">
+                                <i class="fas fa-times-circle"></i> Disabled
+                            </span>
+                        </div>
+                        <button class="btn-outline" id="enable2FA">Enable 2FA</button>
+                    </div>
+
+                    <div class="settings-subsection">
+                        <h3>Active Sessions</h3>
+                        <div class="session-item">
+                            <div class="session-info">
+                                <i class="fas fa-laptop"></i>
+                                <div>
+                                    <strong>Current Device</strong>
+                                    <p>Chrome • Nairobi, Kenya</p>
+                                </div>
+                            </div>
+                            <span class="session-status active">Active Now</span>
+                        </div>
+                        <div class="session-item">
+                            <div class="session-info">
+                                <i class="fas fa-mobile-alt"></i>
+                                <div>
+                                    <strong>iPhone 13</strong>
+                                    <p>Nairobi, Kenya • 2 hours ago</p>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn-outline btn-sm" id="logoutAll">Logout All Devices</button>
+                    </div>
+
+                    <div class="danger-zone">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Danger Zone</h3>
+                        <button class="btn-outline" id="deactivateAccount">Deactivate Account</button>
+                        <button class="btn-danger" id="deleteAccount">Delete Account</button>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notification-container"></div>
+
+    <!-- Scripts -->
+    <div id="modalContainer"></div>
+    <script>
+    function showModal(options) {
+        const { title, message, icon = 'info', confirmText = 'Confirm', cancelText = 'Cancel', onConfirm, isDanger = false } = options;
+        const modalHtml = `
+            <div class="modal-overlay" id="customModal">
+                <div class="modal-dialog">
+                    <div class="modal-icon ${icon}">
+                        <i class="fas ${icon === 'warning' ? 'fa-exclamation-triangle' : icon === 'danger' ? 'fa-trash-alt' : 'fa-question-circle'}"></i>
+                    </div>
+                    <h3 class="modal-title">${title}</h3>
+                    <p class="modal-message">${message}</p>
+                    <div class="modal-actions">
+                        <button class="modal-btn-cancel" onclick="closeModal()">${cancelText}</button>
+                        <button class="modal-btn-confirm ${isDanger ? 'danger' : 'primary'}" id="modalConfirmBtn">${confirmText}</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('modalContainer').innerHTML = modalHtml;
+        const modal = document.getElementById('customModal');
+        setTimeout(() => modal.classList.add('show'), 10);
+        document.getElementById('modalConfirmBtn').onclick = () => { closeModal(); if (onConfirm) onConfirm(); };
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    }
+    function closeModal() {
+        const modal = document.getElementById('customModal');
+        if (modal) { modal.classList.remove('show'); setTimeout(() => modal.remove(), 200); }
+    }
+    function friendlyConfirm(options) {
+        return new Promise((resolve) => {
+            showModal({ ...options, onConfirm: () => resolve(true), icon: options.isDanger ? 'danger' : 'warning' });
+        });
+    }
+    </script>
+    <script src="../js/navigation.js"></script>
+    <script src="../js/settings.js"></script>
+   
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <h3><i class="fas fa-graduation-cap"></i> Notify</h3>
+                <p>Your ultimate university notes platform. Access, share, and excel with comprehensive study materials across all faculties.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="dashboard.html">Dashboard</a></li>
+                    <li><a href="search.html">Search Notes</a></li>
+                    <li><a href="updates.html">Updates</a></li>
+                    <li><a href="bookmarks.html">Bookmarks</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Faculties</h4>
+                <ul>
+                    <li><a href="#">Science & Computing</a></li>
+                    <li><a href="#">Business</a></li>
+                    <li><a href="#">Medicine</a></li>
+                    <li><a href="#">Engineering</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Support</h4>
+                <ul>
+                    <li><a href="#">Help Center</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Notify. All rights reserved.</p>
+            <div class="footer-social">
+                <a href="#"><i class="fab fa-facebook-f"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-linkedin-in"></i></a>
+            </div>
+            <div class="footer-links">
+                <a href="#">Privacy</a>
+                <span>|</span>
+                <a href="#">Terms</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

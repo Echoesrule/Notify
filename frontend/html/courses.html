@@ -1,0 +1,183 @@
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course section</title>
+    <link href="https://fonts.googleapis.com/css?family=Fredoka|Inter&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+     <link href="../css/dashboard.css" rel="stylesheet" />
+    <link href="../css/courses.css" rel="stylesheet" />
+    <link href="../css/footer.css" rel="stylesheet" />
+    <link href="../css/modal.css" rel="stylesheet" />
+
+    //scripts
+       <script src="../js/navigation.js"></script>
+        <script src="../js/themes.js"></script>
+</head>
+ <body>
+       <div class="dashboard-cont">
+        
+            
+        <!-- Main Content Area -->
+<div class="page-content-wrapper">
+            
+            <!-- Page Content Container -->
+            <div class="page-content">
+                <!-- Breadcrumbs -->
+                <div class="breadcrumbs" id="breadcrumbs">
+                    <a href="dashboard.html">Home</a>
+                    <i class="fas fa-chevron-right"></i>
+                    <a href="schools.html">Faculties</a>
+                    <i class="fas fa-chevron-right"></i>
+                    <span id="currentSchool"></span>
+                </div>
+
+                   
+<div class="loader-container" id="lottieLoader">
+    <div class="loader-ring"></div>
+    <div class="loader-ring"></div>
+    <div class="loader-ring"></div>
+    <p>Loading Courses...</p>
+</div>
+
+    <div class="course-content" id="courseContent">
+                    <div class="course-header">
+                <div>
+                    <h1 id="pageTitle">Select Your Course</h1>
+                    <p class="course-subtitle">Please Choose Course to view Units</p>
+                </div>
+                <div class="header-action">
+                    <span class="school-badge" id="schoolBadge">
+                         <i class="fas fa-university"></i> 
+                            <span id="schoolNameDisplay"></span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="course-stats">
+            
+                <div class="stat-card">
+                    <h3 id="totalDepts"></h3>
+                    <p>Departments</p>
+                </div>
+                <div class="stat-card">
+                      <h3 id="totalCourses"></h3>
+                        <p>Total Units</p>
+                </div>
+                <div class="stat-card">
+                     <h3 id="totalStudents"></h3>
+                    <p>Students</p>
+                </div>
+      
+                
+            </div>
+            <div class="course-section">
+    <h2>Available Departments</h2>
+
+    <div class="course-grid" id="courseGrid">
+<div class="error-message" id="errorMessage"></div>
+  <div class="no-dept" id="noDept"></div>
+    </div>
+</div>
+
+            <div class="course-insights">
+                <h3>Department Insights</h3>
+                <div class="insights-grid" id="insightsGrid">
+                </div>
+            </div>
+    </div>
+
+       <script src="../js/courses.js"></script>
+   
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <h3><i class="fas fa-graduation-cap"></i> Notify</h3>
+                <p>Your ultimate university notes platform. Access, share, and excel with comprehensive study materials across all faculties.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="dashboard.html">Dashboard</a></li>
+                    <li><a href="search.html">Search Notes</a></li>
+                    <li><a href="updates.html">Updates</a></li>
+                    <li><a href="bookmarks.html">Bookmarks</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Faculties</h4>
+                <ul>
+                    <li><a href="#">Science & Computing</a></li>
+                    <li><a href="#">Business</a></li>
+                    <li><a href="#">Medicine</a></li>
+                    <li><a href="#">Engineering</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Support</h4>
+                <ul>
+                    <li><a href="#">Help Center</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Notify. All rights reserved.</p>
+            <div class="footer-social">
+                <a href="#"><i class="fab fa-facebook-f"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-linkedin-in"></i></a>
+            </div>
+            <div class="footer-links">
+                <a href="#">Privacy</a>
+                <span>|</span>
+                <a href="#">Terms</a>
+                <span>|</span>
+                <a href="#">Support</a>
+            </div>
+        </div>
+    </footer>
+
+    <div id="modalContainer"></div>
+    <script>
+    function showModal(options) {
+        const { title, message, icon = 'info', confirmText = 'Confirm', cancelText = 'Cancel', onConfirm, isDanger = false } = options;
+        const modalHtml = `
+            <div class="modal-overlay" id="customModal">
+                <div class="modal-dialog">
+                    <div class="modal-icon ${icon}">
+                        <i class="fas ${icon === 'warning' ? 'fa-exclamation-triangle' : icon === 'danger' ? 'fa-trash-alt' : 'fa-question-circle'}"></i>
+                    </div>
+                    <h3 class="modal-title">${title}</h3>
+                    <p class="modal-message">${message}</p>
+                    <div class="modal-actions">
+                        <button class="modal-btn-cancel" onclick="closeModal()">${cancelText}</button>
+                        <button class="modal-btn-confirm ${isDanger ? 'danger' : 'primary'}" id="modalConfirmBtn">${confirmText}</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('modalContainer').innerHTML = modalHtml;
+        const modal = document.getElementById('customModal');
+        setTimeout(() => modal.classList.add('show'), 10);
+        document.getElementById('modalConfirmBtn').onclick = () => { closeModal(); if (onConfirm) onConfirm(); };
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    }
+    function closeModal() {
+        const modal = document.getElementById('customModal');
+        if (modal) { modal.classList.remove('show'); setTimeout(() => modal.remove(), 200); }
+    }
+    function friendlyConfirm(options) {
+        return new Promise((resolve) => {
+            showModal({ ...options, onConfirm: () => resolve(true), icon: options.isDanger ? 'danger' : 'warning' });
+        });
+    }
+    </script>
+    <script src="../js/courses.js"></script>
+  </body>
+ </html>

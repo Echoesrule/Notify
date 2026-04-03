@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notes - Notify</title>
+    <link href="https://fonts.googleapis.com/css?family=Fredoka|Inter&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="../css/dashboard.css" rel="stylesheet" />
+    <link href="../css/footer.css" rel="stylesheet" />
+    <link href="../css/notes.css" rel="stylesheet" />
+<script src="../js/themes.js"></script>
+</head>
+<body>
+
+    <div class="dashboard-cont">
+        <div class="page-content">
+            <!-- Breadcrumbs -->
+            <div class="breadcrumbs" id="breadcrumbs">
+                <a href="dashboard.html">Home</a>
+                <i class="fas fa-chevron-right"></i>
+                <a href="schools.html">Faculties</a>
+                <i class="fas fa-chevron-right"></i>
+                <a href="courses.html" id="currentSchoolLink">
+                    <span id="currentSchool"></span>
+                </a>
+                <i class="fas fa-chevron-right"></i>
+                <a href="units.html" id="currentDeptLink">
+                    <span id="currentDepartment"></span>
+                </a>
+                <i class="fas fa-chevron-right"></i>
+                <span id="currentSubject"></span>
+            </div>
+    <!-- LOTTIE LOADER -->
+            <div class="loader-container" id="lottieLoader">
+                <div class="loader-ring"></div>
+                <div class="loader-ring"></div>
+                <div class="loader-ring"></div>
+                <p>Loading Notes...</p>
+            </div>
+        
+
+  
+            <div class="notes-content" id="notesContent">
+                <!-- Page Header -->
+                <div class="notes-header">
+                    <div>
+                        <h1 id="pageTitle">Notes</h1>
+                        <p class="notes-subtitle" id="subjectSubtitle"></p>
+                    </div>
+                    <div class="header-actions">
+                        <span class="school-badge" id="schoolBadge">
+                            <i class="fas fa-university"></i> 
+                            <span id="schoolNameDisplay"></span>
+                        </span>
+                        <span class="dept-badge" id="deptBadge">
+                            <i class="fas fa-book"></i> 
+                            <span id="departmentNameDisplay"></span>
+                        </span>
+                        <span class="subject-badge" id="subjectBadge">
+                            <i class="fas fa-file-pdf"></i> 
+                            <span id="subjectNameDisplay"></span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="notes-stats">
+                    <div class="stat-card">
+                        <h3 id="totalNotes">0</h3>
+                        <p>Total Notes</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="totalDownloads">0</h3>
+                        <p>Downloads</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="lastUpdated">-</h3>
+                        <p>Last Updated</p>
+                    </div>
+                </div>
+
+                <!-- Notes Grid Section -->
+                <div class="notes-section">
+                    <h2>Available Notes</h2>
+                    <div class="notes-grid" id="notesGrid">
+                        <!-- Notes will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <button class="btn-outline" id="sortRecent">
+                        <i class="fas fa-clock"></i> Most Recent
+                    </button>
+                    <button class="btn-outline" id="sortPopular">
+                        <i class="fas fa-fire"></i> Most Popular
+                    </button>
+                    <button class="btn-outline" id="sortDownloads">
+                        <i class="fas fa-download"></i> Most Downloaded
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../js/navigation.js"></script>
+    <script src="../js/notes.js"></script>
+   
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <h3><i class="fas fa-graduation-cap"></i> Notify</h3>
+                <p>Your ultimate university notes platform. Access, share, and excel with comprehensive study materials across all faculties.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="dashboard.html">Dashboard</a></li>
+                    <li><a href="search.html">Search Notes</a></li>
+                    <li><a href="updates.html">Updates</a></li>
+                    <li><a href="bookmarks.html">Bookmarks</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Faculties</h4>
+                <ul>
+                    <li><a href="#">Science & Computing</a></li>
+                    <li><a href="#">Business</a></li>
+                    <li><a href="#">Medicine</a></li>
+                    <li><a href="#">Engineering</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Support</h4>
+                <ul>
+                    <li><a href="#">Help Center</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Notify. All rights reserved.</p>
+            <div class="footer-social">
+                <a href="#"><i class="fab fa-facebook-f"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-linkedin-in"></i></a>
+            </div>
+            <div class="footer-links">
+                <a href="#">Privacy</a>
+                <span>|</span>
+                <a href="#">Terms</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

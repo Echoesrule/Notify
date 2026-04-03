@@ -1,0 +1,407 @@
+{
+  "schools": [
+    {
+      "id": "science",
+      "name": "School of Science & Computing",
+      "code": "SSC",
+      "icon": "fa-flask",
+      "iconColor": "#1976d2",
+      "iconBg": "#e3f2fd",
+      "description": "Explore Computing, IT, and Data Science programs",
+      "totalStudents": 3560,
+      "departments": [
+        {
+          "id": "cs",
+          "name": "Computer Science",
+          "code": "CS",
+          "icon": "fa-laptop-code",
+          "iconColor": "#1976d2",
+          "iconBg": "#e3f2fd",
+          "description": "Programming, Algorithms, AI, Software Development",
+          "students": 1250,
+          "popular": true,
+          "units": [
+            {
+              "id": "cs201",
+              "name": "Data Structures & Algorithms",
+              "code": "CS201",
+              "level": "Year 2",
+              "semester": "Sem 1",
+              "lecturer": "Dr. Shikali",
+              "description": "Arrays, Linked Lists, Trees, Graphs, Sorting",
+              "units": 4,
+              "students": 450,
+              "popular": true,
+              "notes": [
+                {
+                  "id": "note1",
+                  "title": "Arrays and Linked Lists",
+                  "uploadedBy": "Dr. Shikali",
+                  "date": "2024-01-15",
+                  "pages": 23,
+                  "downloads": 234,
+                  "fileUrl": "/notes/cs201/arrays.pdf",
+                  "preview": true
+                },
+                {
+                  "id": "note2",
+                  "title": "Trees and Graphs",
+                  "uploadedBy": "Dr. Shikali",
+                  "date": "2024-01-22",
+                  "pages": 32,
+                  "downloads": 189,
+                  "fileUrl": "/notes/cs201/trees.pdf",
+                  "preview": true
+                }
+              ]
+            },
+            {
+              "id": "cs202",
+              "name": "Database Systems",
+              "code": "CS202",
+              "level": "Year 2",
+              "semester": "Sem 1",
+              "lecturer": "Dr. Omola",
+              "description": "SQL, Database Design, Normalization",
+              "units": 4,
+              "students": 380,
+              "popular": true,
+              "notes": [
+                {
+                  "id": "note3",
+                  "title": "SQL Fundamentals",
+                  "uploadedBy": "Dr. Omola",
+                  "date": "2024-01-18",
+                  "pages": 28,
+                  "downloads": 156,
+                  "fileUrl": "/notes/cs202/sql.pdf",
+                  "preview": true
+                }
+              ]
+            },
+            {
+              "id": "cs203",
+              "name": "Operating Systems",
+              "code": "CS203",
+              "level": "Year 2",
+              "semester": "Sem 2",
+              "lecturer": "Dr. Mutua",
+              "description": "Process Management, Memory, File Systems",
+              "units": 4,
+              "students": 320,
+              "popular": false,
+              "notes": []
+            },
+            {
+              "id": "1774276537801",
+              "name": "aroww",
+              "code": "wer",
+              "notes": []
+            }
+          ]
+        },
+        {
+          "id": "it",
+          "name": "Information Technology",
+          "code": "IT",
+          "icon": "fa-network-wired",
+          "iconColor": "#7b1fa2",
+          "iconBg": "#f3e5f5",
+          "description": "Networks, Cybersecurity, Cloud Computing",
+          "students": 980,
+          "popular": true,
+          "units": [
+            {
+              "id": "it201",
+              "name": "Computer Networks",
+              "code": "IT201",
+              "level": "Year 2",
+              "semester": "Sem 1",
+              "lecturer": "Dr. Akinyi",
+              "description": "OSI Model, TCP/IP, Routing, Switching",
+              "units": 4,
+              "students": 320,
+              "popular": true,
+              "notes": [
+                {
+                  "id": "note4",
+                  "title": "Network Fundamentals",
+                  "uploadedBy": "Dr. Akinyi",
+                  "date": "2024-01-20",
+                  "pages": 25,
+                  "downloads": 145,
+                  "fileUrl": "/notes/it201/network.pdf",
+                  "preview": true
+                }
+              ]
+            },
+            {
+              "id": "it202",
+              "name": "Cybersecurity",
+              "code": "IT202",
+              "level": "Year 3",
+              "semester": "Sem 1",
+              "lecturer": "Dr. Odhiambo",
+              "description": "Security, Cryptography, Ethical Hacking",
+              "units": 4,
+              "students": 280,
+              "popular": true,
+              "notes": []
+            }
+          ]
+        },
+        {
+          "id": "ds",
+          "name": "Data Science",
+          "code": "DS",
+          "icon": "fa-chart-bar",
+          "iconColor": "#d97706",
+          "iconBg": "#fef3c7",
+          "description": "Machine Learning, Analytics, Big Data",
+          "students": 450,
+          "popular": true,
+          "units": [
+            {
+              "id": "ds301",
+              "name": "Machine Learning",
+              "code": "DS301",
+              "level": "Year 3",
+              "semester": "Sem 1",
+              "lecturer": "Dr. Mutua",
+              "description": "Supervised Learning, Neural Networks, NLP",
+              "units": 4,
+              "students": 210,
+              "popular": true,
+              "notes": [
+                {
+                  "id": "1774276838444",
+                  "title": "SQL Fundamentals",
+                  "content": "",
+                  "date": "2026-03-23",
+                  "uploadedBy": "Nanami",
+                  "popular": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "1774277139794",
+          "name": "Electronics",
+          "code": "el",
+          "units": [
+            {
+              "id": "1774277139805",
+              "name": "death elecs",
+              "code": "de",
+              "notes": []
+            },
+            {
+              "id": "1774277139813",
+              "name": "test2",
+              "code": "test2",
+              "notes": []
+            }
+          ],
+          "popular": false
+        }
+      ]
+    },
+    {
+      "id": "business",
+      "name": "School of Business",
+      "code": "SB",
+      "icon": "fa-briefcase",
+      "iconColor": "#d97706",
+      "iconBg": "#fef3c7",
+      "description": "Accounting, Finance, Marketing, Management",
+      "totalStudents": 2100,
+      "departments": [
+        {
+          "id": "acc",
+          "name": "Accounting",
+          "code": "ACC",
+          "icon": "fa-chart-line",
+          "iconColor": "#d97706",
+          "iconBg": "#fef3c7",
+          "description": "Financial Accounting, Auditing, Taxation",
+          "students": 650,
+          "popular": true,
+          "units": [
+            {
+              "id": "acc101",
+              "name": "Financial Accounting",
+              "code": "ACC101",
+              "level": "Year 1",
+              "semester": "Sem 1",
+              "lecturer": "Prof. Odhiambo",
+              "description": "Basic accounting principles, ledgers, financial statements",
+              "units": 4,
+              "students": 320,
+              "notes": []
+            }
+          ]
+        },
+        {
+          "id": "fin",
+          "name": "Finance",
+          "code": "FIN",
+          "icon": "fa-coins",
+          "iconColor": "#16a34a",
+          "iconBg": "#dcfce7",
+          "description": "Investment, Banking, Risk Management",
+          "students": 540,
+          "popular": true,
+          "courses": []
+        },
+        {
+          "id": "mkt",
+          "name": "Marketing",
+          "code": "MKT",
+          "icon": "fa-bullhorn",
+          "iconColor": "#dc2626",
+          "iconBg": "#fee2e2",
+          "description": "Digital Marketing, Brand Management",
+          "students": 480,
+          "popular": false,
+          "courses": []
+        }
+      ]
+    },
+    {
+      "id": "health",
+      "name": "School of Medicine",
+      "code": "SM",
+      "icon": "fa-heartbeat",
+      "iconColor": "#16a34a",
+      "iconBg": "#dcfce7",
+      "description": "Medicine, Nursing, Pharmacy, Public Health",
+      "totalStudents": 1450,
+      "departments": [
+        {
+          "id": "med",
+          "name": "Medicine",
+          "code": "MED",
+          "icon": "fa-stethoscope",
+          "iconColor": "#16a34a",
+          "iconBg": "#dcfce7",
+          "description": "Clinical Medicine, Surgery, Pediatrics",
+          "students": 450,
+          "popular": true,
+          "units": [
+            {
+              "id": "med101",
+              "name": "Human Anatomy",
+              "code": "MED101",
+              "level": "Year 1",
+              "semester": "Sem 1",
+              "lecturer": "Dr. Kimani",
+              "description": "Structure of human body, organ systems",
+              "units": 5,
+              "students": 450,
+              "notes": []
+            }
+          ]
+        },
+        {
+          "id": "nur",
+          "name": "Nursing",
+          "code": "NUR",
+          "icon": "fa-user-nurse",
+          "iconColor": "#7c3aed",
+          "iconBg": "#f3e8ff",
+          "description": "Patient Care, Critical Care, Community Health",
+          "students": 680,
+          "popular": true,
+          "courses": []
+        },
+        {
+          "id": "pharm",
+          "name": "Pharmacy",
+          "code": "PHA",
+          "icon": "fa-pills",
+          "iconColor": "#1976d2",
+          "iconBg": "#e3f2fd",
+          "description": "Pharmacology, Drug Development",
+          "students": 320,
+          "popular": false,
+          "courses": []
+        }
+      ]
+    },
+    {
+      "id": "engineering",
+      "name": "School of Engineering",
+      "code": "SE",
+      "icon": "fa-cog",
+      "iconColor": "#0284c7",
+      "iconBg": "#dbeafe",
+      "description": "Electrical, Mechanical, Civil, Chemical",
+      "totalStudents": 1850,
+      "departments": [
+        {
+          "id": "elec",
+          "name": "Electrical Engineering",
+          "code": "ELE",
+          "icon": "fa-bolt",
+          "iconColor": "#f59e0b",
+          "iconBg": "#fef3c7",
+          "description": "Circuits, Power Systems, Electronics",
+          "students": 520,
+          "courses": []
+        },
+        {
+          "id": "mech",
+          "name": "Mechanical Engineering",
+          "code": "MEC",
+          "icon": "fa-cogs",
+          "iconColor": "#6b7280",
+          "iconBg": "#f3f4f6",
+          "description": "Thermodynamics, Fluid Mechanics, Design",
+          "students": 480,
+          "courses": []
+        }
+      ]
+    },
+    {
+      "id": "school_hq633g",
+      "name": "School of jaba",
+      "departments": [
+        {
+          "id": "dept_9p0o73",
+          "name": "miraa",
+          "code": "mir",
+          "units": [
+            {
+              "id": "unit_cz03jd",
+              "name": "chana",
+              "code": "ch",
+              "notes": [
+                {
+                  "id": "note_9j580x",
+                  "title": "hhfhfh",
+                  "content": "dfgm,",
+                  "description": "",
+                  "date": "2026-03-23",
+                  "uploadedBy": "Nanami",
+                  "popular": false
+                }
+              ]
+            }
+          ],
+          "popular": false
+        }
+      ],
+      "totalStudents": 0
+    }
+  ],
+  "updates": [
+    {
+      "id": "update_hm421e",
+      "title": "frrrrrrrrrrrrrrrrrrrrrrrrrr",
+      "content": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+      "date": "2026-03-23",
+      "postedBy": "Retro"
+    }
+  ]
+}

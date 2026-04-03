@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bitcount+Single:wght@100..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lilita+One&family=Manrope:wght@200..800&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Work+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="../css/dashboard.css" rel="stylesheet" />
+    <link href="../css/schools.css" rel="stylesheet" />
+    <link href="../css/footer.css" rel="stylesheet" />
+    <link href="../css/modal.css" rel="stylesheet" />
+
+    //scripts
+    
+       <script src="../js/navigation.js"></script>
+        <script src="../js/themes.js"></script>
+</head>
+<body>
+    <div class="dashboard-cont">
+        <div class="page-content-wrapper">
+            <div class="page-content">
+                <div class="breadcrumbs">
+                    <a href="dashboard.html">Home</a>
+                    <i class="fas fa-chevron-right"></i>
+                    <span>Faculties</span>
+                </div>
+
+                <div class="content-section">
+                    <div class="section-header">
+                        <h2>Select Your Faculty</h2>
+                        <p class="section-subtitle">Choose a faculty to view courses and materials</p>
+                        <div class="section-meta">Notify / Select Your Faculty / User: Emmanuel Kemboi</div>
+                    </div>
+
+                    <div class="schools-grid" id="schoolsGrid">                        <div class="branch-label">(main branch)</div>                        <div class="loader-container" id="lottieLoader">
+                            <div class="loader-ring"></div>
+                            <div class="loader-ring"></div>
+                            <div class="loader-ring"></div>
+                            <p>Loading Faculties...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <h3><i class="fas fa-graduation-cap"></i> Notify</h3>
+                <p>Your ultimate university notes platform. Access, share, and excel with comprehensive study materials across all faculties.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="dashboard.html">Dashboard</a></li>
+                    <li><a href="search.html">Search Notes</a></li>
+                    <li><a href="updates.html">Updates</a></li>
+                    <li><a href="bookmarks.html">Bookmarks</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Faculties</h4>
+                <ul>
+                    <li><a href="#">Science & Computing</a></li>
+                    <li><a href="#">Business</a></li>
+                    <li><a href="#">Medicine</a></li>
+                    <li><a href="#">Engineering</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Support</h4>
+                <ul>
+                    <li><a href="#">Help Center</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Notify. All rights reserved.</p>
+            <div class="footer-social">
+                <a href="#"><i class="fab fa-facebook-f"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-linkedin-in"></i></a>
+            </div>
+            <div class="footer-links">
+                <a href="#">Privacy</a>
+                <span>|</span>
+                <a href="#">Terms</a>
+                <span>|</span>
+                <a href="#">Support</a>
+            </div>
+        </div>
+    </footer>
+
+    <div id="modalContainer"></div>
+    <script>
+    function showModal(options) {
+        const { title, message, icon = 'info', confirmText = 'Confirm', cancelText = 'Cancel', onConfirm, isDanger = false } = options;
+        const modalHtml = `
+            <div class="modal-overlay" id="customModal">
+                <div class="modal-dialog">
+                    <div class="modal-icon ${icon}">
+                        <i class="fas ${icon === 'warning' ? 'fa-exclamation-triangle' : icon === 'danger' ? 'fa-trash-alt' : 'fa-question-circle'}"></i>
+                    </div>
+                    <h3 class="modal-title">${title}</h3>
+                    <p class="modal-message">${message}</p>
+                    <div class="modal-actions">
+                        <button class="modal-btn-cancel" onclick="closeModal()">${cancelText}</button>
+                        <button class="modal-btn-confirm ${isDanger ? 'danger' : 'primary'}" id="modalConfirmBtn">${confirmText}</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('modalContainer').innerHTML = modalHtml;
+        const modal = document.getElementById('customModal');
+        setTimeout(() => modal.classList.add('show'), 10);
+        document.getElementById('modalConfirmBtn').onclick = () => { closeModal(); if (onConfirm) onConfirm(); };
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    }
+    function closeModal() {
+        const modal = document.getElementById('customModal');
+        if (modal) { modal.classList.remove('show'); setTimeout(() => modal.remove(), 200); }
+    }
+    function friendlyConfirm(options) {
+        return new Promise((resolve) => {
+            showModal({ ...options, onConfirm: () => resolve(true), icon: options.isDanger ? 'danger' : 'warning' });
+        });
+    }
+    </script>
+    <script src="../js/schools.js"></script>
+</body>
+</html>

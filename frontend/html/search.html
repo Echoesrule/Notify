@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search - Noteify</title>
+    <link href="https://fonts.googleapis.com/css?family=Fredoka|Inter&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="../css/dashboard.css" rel="stylesheet" />
+    <link href="../css/footer.css" rel="stylesheet" />
+    <link href="../css/search.css" rel="stylesheet" />
+<script src="../js/themes.js"></script>
+
+</head>
+<body>
+    <div class="dashboard-cont">
+        <div class="page-content">
+            
+            <!-- Loading Spinner -->
+            <div class="loader-container" id="lottieLoader">
+                <div class="loader-ring"></div>
+                <div class="loader-ring"></div>
+                <div class="loader-ring"></div>
+                <p>Loading Search...</p>
+            </div>
+
+            <!-- Search Content -->
+            <div class="search-content" id="searchContent">
+                
+                <!-- Header -->
+                <div class="search-header">
+                    <a href="dashboard.html" class="back-link">
+                        <i class="fas fa-arrow-left"></i> Dashboard
+                    </a>
+                </div>
+
+                <!-- Main Search Bar -->
+                <div class="main-search">
+                    <div class="search-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input 
+                            type="text" 
+                            id="globalSearch" 
+                            placeholder="Search for notes, courses, professors, topics..." 
+                            autofocus
+                        >
+                        <button class="btn-primary" id="searchButton">Search</button>
+                    </div>
+                    
+                    <div class="search-filters-summary" id="activeFilters">
+                        <!-- Active filters will appear here dynamically -->
+                    </div>
+                </div>
+
+                <!-- Search Options Tabs -->
+                <div class="search-tabs">
+                    <button class="tab-btn active" data-tab="all">All Results</button>
+                    <button class="tab-btn" data-tab="notes">Notes</button>
+                    <button class="tab-btn" data-tab="courses">Courses</button>
+                    <button class="tab-btn" data-tab="professors">Professors</button>
+                    <button class="tab-btn" data-tab="bookmarks">Bookmarks</button>
+                </div>
+
+                <!-- Advanced Filters -->
+                <div class="advanced-filters" id="advancedFilters">
+                    <button class="filter-toggle" id="filterToggle">
+                        <i class="fas fa-filter"></i> Filters <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="filter-content" id="filterContent">
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label>Course</label>
+                                <select id="filterCourse">
+                                    <option value="">All Courses</option>
+                                </select>
+                            </div>
+
+                            <div class="filter-group">
+                                <label>Department</label>
+                                <select id="filterDepartment">
+                                    <option value="">All Departments</option>
+                                </select>
+                            </div>
+
+                            <div class="filter-group">
+                                <label>Year</label>
+                                <select id="filterYear">
+                                    <option value="">All Years</option>
+                                </select>
+                            </div>
+
+                            <div class="filter-group">
+                                <label>File Type</label>
+                                <div class="checkbox-group">
+                                    <label><input type="checkbox" value="pdf" checked> PDF</label>
+                                    <label><input type="checkbox" value="video"> Video</label>
+                                    <label><input type="checkbox" value="audio"> Audio</label>
+                                    <label><input type="checkbox" value="image"> Image</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="filter-actions">
+                            <button class="btn-outline btn-sm" id="clearFilters">Clear</button>
+                            <button class="btn-primary btn-sm" id="applyFilters">Apply</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search Results Stats -->
+                <div class="results-stats" id="resultsStats" style="display: none;">
+                    <span id="resultCount">0 results</span>
+                    <span>•</span>
+                    <span id="searchTime">0 seconds</span>
+                </div>
+
+                <!-- Search Results -->
+                <div class="search-results" id="searchResults"></div>
+
+                <!-- Load More -->
+                <div class="load-more">
+                    <button class="btn-outline" id="loadMore">Load More Results</button>
+                </div>
+
+                <!-- Related Searches -->
+                <div class="related-searches" id="relatedSearches" style="display: none;">
+                    <h4>Related Searches</h4>
+                    <div class="related-tags" id="relatedTags"></div>
+                </div>
+
+                <!-- No Results (hidden by default) -->
+                <div class="no-results" id="noResults" style="display: none;">
+                    <i class="fas fa-search"></i>
+                    <h3>No results found</h3>
+                    <p>Try adjusting your search or filters</p>
+                    <button class="btn-outline" id="clearSearch">Clear Search</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick View Modal -->
+    <div class="modal" id="quickViewModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3>Quick View</h3>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="quickViewContent">
+                <!-- Dynamic content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notification-container"></div>
+
+    <!-- Scripts -->
+    <script src="../js/navigation.js"></script>
+    <script src="../js/search.js"></script>
+   
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <h3><i class="fas fa-graduation-cap"></i> Notify</h3>
+                <p>Your ultimate university notes platform. Access, share, and excel with comprehensive study materials across all faculties.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="dashboard.html">Dashboard</a></li>
+                    <li><a href="search.html">Search Notes</a></li>
+                    <li><a href="updates.html">Updates</a></li>
+                    <li><a href="bookmarks.html">Bookmarks</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Faculties</h4>
+                <ul>
+                    <li><a href="#">Science & Computing</a></li>
+                    <li><a href="#">Business</a></li>
+                    <li><a href="#">Medicine</a></li>
+                    <li><a href="#">Engineering</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Support</h4>
+                <ul>
+                    <li><a href="#">Help Center</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Notify. All rights reserved.</p>
+            <div class="footer-social">
+                <a href="#"><i class="fab fa-facebook-f"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-linkedin-in"></i></a>
+            </div>
+            <div class="footer-links">
+                <a href="#">Privacy</a>
+                <span>|</span>
+                <a href="#">Terms</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

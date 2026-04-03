@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Notify</title>
+    <link href="../css/dashboard.css" rel="stylesheet" />
+    <link href="../css/footer.css" rel="stylesheet" />
+    <link href="../css/settings.css" rel="stylesheet" />
+    <link href="../css/courses.css" rel="stylesheet" />
+    <link href="admin.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Fredoka|Inter&display=swap" rel="stylesheet" />
+</head>
+<body>
+    <div class="dashboard-cont">
+        <div class="sidebar">
+            <button id="sidebarToggleBtn" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
+            <div class="sidebar-nav">
+                <a href="#" onclick="showSection('home')" data-page="home">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" onclick="showSection('users')" data-page="users">
+                    <i class="fas fa-users"></i>
+                    <span>Manage Users</span>
+                </a>
+                <a href="#" onclick="showSection('institutions')" data-page="institutions">
+                    <i class="fas fa-university"></i>
+                    <span>Universities</span>
+                </a>
+                <a href="#" onclick="showSection('schools')" data-page="schools">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>Schools/Faculties</span>
+                </a>
+                <a href="#" onclick="showSection('courses')" data-page="courses">
+                    <i class="fas fa-book"></i>
+                    <span>Courses</span>
+                </a>
+                <a href="#" onclick="showSection('units')" data-page="units">
+                    <i class="fas fa-layer-group"></i>
+                    <span>Units</span>
+                </a>
+                <a href="#" onclick="showSection('reports')" data-page="reports">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Reports</span>
+                </a>
+                <a href="#" onclick="showSection('notes')" data-page="notes">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>Notes</span>
+                </a>
+                <a href="#" onclick="showSection('updates')" data-page="updates">
+                    <i class="fas fa-bell"></i>
+                    <span>Updates</span>
+                </a>
+                <a href="#" onclick="showSection('settings')" data-page="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+                <a href="#" onclick="showLogoutModal()" data-page="logout" class="logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+            <div class="sidebar-footer" id="sidebarFooter"></div>
+        </div>
+
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <div class="main-content">
+            <div class="topbar">
+                <button class="mobile-menu-btn" title="Open Menu"><i class="fas fa-bars"></i></button>
+                <div class="topbar-logo"><i class="fas fa-graduation-cap"></i> NOTIFY</div>
+                <div class="search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search..." id="globalSearch">
+                </div>
+                <div class="topbar-right">
+                    <div class="notif" onclick="showSection('updates')">
+                        <i class="fas fa-bell"></i>
+                        <span class="notif-badge" id="notifBadge">0</span>
+                    </div>
+                    <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+                        <i class="fas fa-sun"></i>
+                        <i class="fas fa-moon"></i>
+                    </div>
+                    <div class="profile" id="profileDropdown" onclick="toggleProfileMenu()">
+                        <img src="../images/dashboardImages/v3321_68.png" alt="Profile" id="profileImg">
+                        <div class="profile-info">
+                            <span class="profile-name" id="topUserName">Admin</span>
+                            <span class="profile-role" id="topUserRole">Administrator</span>
+                        </div>
+                        <i class="fas fa-chevron-down"></i>
+                        <div class="profile-menu" id="profileMenu">
+                            <a href="#" onclick="showSection('settings')"><i class="fas fa-cog"></i> Settings</a>
+                            <a href="#" onclick="showLogoutModal()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="breadcrumbs">
+                <a href="#"><i class="fas fa-home"></i></a>
+                <i class="fas fa-chevron-right"></i>
+                <span id="breadcrumb">Home</span>
+            </div>
+
+            <div class="loading-course hide" id="lottieLoader">
+                <div class="css-spinner"></div>
+                <p>Loading...</p>
+            </div>
+
+            <div class="page-content">
+                <div id="home" class="section">
+                    <div class="welcome-section">
+                        <div class="welcome-content">
+                            <h2 id="greetingText">Good morning</h2>
+                            <h1>Welcome back, <span id="userNameDisplay">Admin</span>!</h1>
+                            <p class="welcome-subtitle">Here's what's happening with your platform today</p>
+                        </div>
+                        
+                        <div class="welcome-actions">
+                            <button class="btn-outline" onclick="showSection('users')">
+                                <i class="fas fa-users"></i> Manage Users</button>
+                            <button class="btn-outline" onclick="showSection('reports')"><i class="fas fa-chart-bar"></i> View Reports</button>
+                            <button class="btn-primary" onclick="showSection('settings')"><i class="fas fa-cog"></i> Settings</button>
+                        </div>
+                        <div class="admin-img">
+                            <img src="../images/dashboardImages/admin2-removebg-preview.png" alt="Admin Dashboard">
+                        </div>
+                    </div>
+                    <div class="stats-cards">
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-users"></i></div>
+                            <div class="stat-info">
+                                <span class="stat-number" id="totalUsers">--</span>
+                                <span class="stat-label">Total Users</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-university"></i></div>
+                            <div class="stat-info">
+                                <span class="stat-number" id="totalInstitutions">--</span>
+                                <span class="stat-label">Institutions</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-file-pdf"></i></div>
+                            <div class="stat-info">
+                                <span class="stat-number" id="totalNotes">--</span>
+                                <span class="stat-label">Notes Uploaded</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-bell"></i></div>
+                            <div class="stat-info">
+                                <span class="stat-number" id="totalUpdates">--</span>
+                                <span class="stat-label">Updates</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="skeleton-home" id="skeletonHome">
+                        <div class="skeleton-grid">
+                            <div class="skeleton-card"></div>
+                            <div class="skeleton-card"></div>
+                            <div class="skeleton-card"></div>
+                            <div class="skeleton-card"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                   
+                <div id="users" class="section" style="display:none;">
+                    <div class="section-header">
+                        <h2>Manage Users</h2>
+                    </div>
+                    <div class="admin-filters">
+                        <input type="text" id="userSearch" placeholder="Search users..." onkeyup="filterUsers()">
+                        <select id="roleFilter" onchange="filterUsers()">
+                            <option value="">All Roles</option>
+                            <option value="student">Students</option>
+                            <option value="lecturer">Lecturers</option>
+                            <option value="admin">Admins</option>
+                        </select>
+                    </div>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Institution</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userList"></tbody>
+                    </table>
+                </div>
+
+                <div id="institutions" class="section" style="display:none;">
+                    <div class="section-header">
+                        <h2>Universities / Institutions</h2>
+                    </div>
+                    <form id="institutionForm" class="content-section">
+                        <input type="text" name="name" placeholder="University Name (e.g., University of Nairobi)" required>
+                        <input type="text" name="staffDomain" placeholder="Staff Email Domain (e.g., staff.uonbi.ac.ke)" required>
+                        <input type="text" name="studentDomain" placeholder="Student Email Domain (e.g., students.uonbi.ac.ke)" required>
+                        <button type="submit" class="btn-primary"><i class="fas fa-plus"></i> Add University</button>
+                    </form>
+                    <div id="institutionList"></div>
+                </div>
+
+                <div id="schools" class="section" style="display:none;">
+                    <div class="section-header">
+                        <h2>Schools / Faculties</h2>
+                    </div>
+                    <form id="schoolForm" class="content-section">
+                        <input type="text" name="name" placeholder="School Name (e.g., School of Science)" required>
+                        <button type="submit" class="btn-primary"><i class="fas fa-plus"></i> Add School</button>
+                    </form>
+                    <div id="schoolList"></div>
+                </div>
+
+                <div id="courses" class="section" style="display:none;">
+                    <div class="section-header">
+                        <h2>Manage Courses</h2>
+                    </div>
+                    <form id="courseForm" class="content-section">
+                        <input type="text" name="name" placeholder="Course Name" required>
+                        <select name="school" id="courseSchoolSelect" required>
+                            <option value="">Select School</option>
+                        </select>
+                        <button type="submit" class="btn-primary"><i class="fas fa-plus"></i> Add Course</button>
+                    </form>
+                    <div id="courseList"></div>
+                </div>
+
+                <div id="units" class="section" style="display:none;">
+                    <div class="section-header">
+                        <h2>Manage Units</h2>
+                    </div>
+                    <form id="unitForm" class="content-section">
+                        <input type="text" name="name" placeholder="Unit Name" required>
+                        <input type="text" name="code" placeholder="Unit Code" required>
+                        <select name="course" id="unitCourseSelect" required>
+                            <option value="">Select Course</option>
+                        </select>
+                        <button type="submit" class="btn-primary"><i class="fas fa-plus"></i> Add Unit</button>
+                    </form>
+                    <div id="unitList"></div>
+                </div>
+
+                <div id="reports" class="section" style="display:none;">
+                    <h2>Reports</h2>
+                    <p>System reports coming soon...</p>
+                </div>
+
+                <div id="notes" class="section" style="display:none;">
+                    <div class="section-header">
+                        <h2>Manage Notes</h2>
+                    </div>
+                    <div class="skeleton-notes" id="skeletonNotes">
+                        <div class="skeleton-filters">
+                            <div class="skeleton-select"></div>
+                            <div class="skeleton-select"></div>
+                            <div class="skeleton-select"></div>
+                        </div>
+                        <div class="skeleton-grid">
+                            <div class="skeleton-card"></div>
+                            <div class="skeleton-card"></div>
+                            <div class="skeleton-card"></div>
+                            <div class="skeleton-card"></div>
+                        </div>
+                    </div>
+                    <div class="notes-admin-controls">
+                        <select id="notesSchoolFilter">
+                            <option value="">All Schools</option>
+                        </select>
+                        <select id="notesCourseFilter">
+                            <option value="">All Courses</option>
+                        </select>
+                        <select id="notesStatusFilter">
+                            <option value="">All Status</option>
+                            <option value="approved">Approved</option>
+                            <option value="pending">Pending</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <div id="notesList" class="notes-grid"></div>
+                </div>
+
+                <div id="updates" class="section" style="display:none;">
+                    <div class="section-header">
+                        <h2>System Updates</h2>
+                        <button class="btn-primary" id="createUpdateBtn">
+                            <i class="fas fa-plus"></i> Create Update
+                        </button>
+                    </div>
+                    <div id="updatesList"></div>
+                </div>
+
+                <div id="settings" class="section settings-content" style="display:none;">
+                    <a href="#" onclick="showSection('home')"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+                    
+                    <div class="settings-header">
+                        <div>
+                            <h1>Settings</h1>
+                            <p class="settings-subtitle">Customize your Admin experience</p>
+                        </div>
+
+                        <div class="header-actions">
+                            <button class="btn-outline" id="resetSettings">
+                                <i class="fas fa-undo"></i> Reset to Default
+                            </button>
+                            <button class="btn-primary" id="saveSettings">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="section-links" id="sectionLinks">
+                        <h2 data-section-id="adminProfile"><i class="fas fa-user"></i> Profile</h2>
+                        <h2 data-section-id="adminAppearance"><i class="fas fa-paint-brush"></i> Appearance</h2>
+                        <h2 data-section-id="adminNotifications"><i class="fas fa-bell"></i> Notifications</h2>
+                        <h2 data-section-id="adminSystem"><i class="fas fa-cogs"></i> System</h2>
+                        <h2 data-section-id="adminSecurity"><i class="fas fa-shield-alt"></i> Security</h2>
+                    </div>
+
+                    <section id="adminProfile" class="active">
+                        <h2>Admin Profile</h2>
+                        
+                        <div class="profile-image">
+                            <img src="../images/dashboardImages/v3321_68.png" alt="Profile" id="profileImage">
+                            <div class="profile-image-actions">
+                                <p>Change your profile image<br><small>JPEG or PNG only, max 2MB</small></p>
+                                <div class="buttons">
+                                    <button class="btn-outline btn-sm" id="changeProfileImage">
+                                        <i class="fas fa-camera"></i> Change
+                                    </button>
+                                    <button class="btn-outline btn-sm" id="removeProfileImage">
+                                        <i class="fas fa-trash"></i> Remove
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h3>Personal Details</h3>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="fullName">Full Name</label>
+                                <input type="text" id="fullName" placeholder="Enter your full name">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="email">Email Address</label>
+                                <input type="email" id="email" placeholder="your@email.com">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="adminId">Admin ID</label>
+                                <input type="text" id="adminId" disabled>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="role">Role</label>
+                                <select id="role">
+                                    <option>Super Admin</option>
+                                    <option selected>Admin</option>
+                                    <option>Moderator</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group full-width">
+                                <label for="department">Department</label>
+                                <select id="department">
+                                    <option>IT Administration</option>
+                                    <option>Student Affairs</option>
+                                    <option selected>Academic Administration</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group full-width">
+                                <label for="bio">Bio / About Me</label>
+                                <textarea id="bio" rows="3" placeholder="Tell us about yourself...">System administrator managing the Notify platform.</textarea>
+                            </div>
+                        </div>
+
+                        <div class="profile-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Member Since</span>
+                                <span class="stat-value">January 2023</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Account Type</span>
+                                <span class="stat-value">Administrator</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Users Managed</span>
+                                <span class="stat-value">1,250</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="adminAppearance">
+                        <h2>Appearance</h2>
+                        
+                        <div class="settings-subsection">
+                            <h3>Theme</h3>
+                            <div class="theme-options">
+                                <label class="theme-option">
+                                    <input type="radio" name="theme" value="light" checked>
+                                    <div class="theme-preview light">
+                                        <i class="fas fa-sun"></i>
+                                        <span>Light</span>
+                                    </div>
+                                </label>
+                                <label class="theme-option">
+                                    <input type="radio" name="theme" value="dark">
+                                    <div class="theme-preview dark">
+                                        <i class="fas fa-moon"></i>
+                                        <span>Dark</span>
+                                    </div>
+                                </label>
+                                <label class="theme-option">
+                                    <input type="radio" name="theme" value="auto">
+                                    <div class="theme-preview auto">
+                                        <i class="fas fa-clock"></i>
+                                        <span>Auto</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="settings-subsection">
+                            <h3>Accent Color</h3>
+                            <div class="color-options">
+                                <label class="color-option">
+                                    <input type="radio" name="accent" value="blue" checked>
+                                    <span class="color-preview blue"></span>
+                                </label>
+                                <label class="color-option">
+                                    <input type="radio" name="accent" value="purple">
+                                    <span class="color-preview purple"></span>
+                                </label>
+                                <label class="color-option">
+                                    <input type="radio" name="accent" value="green">
+                                    <span class="color-preview green"></span>
+                                </label>
+                                <label class="color-option">
+                                    <input type="radio" name="accent" value="orange">
+                                    <span class="color-preview orange"></span>
+                                </label>
+                                <label class="color-option">
+                                    <input type="radio" name="accent" value="red">
+                                    <span class="color-preview red"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="settings-subsection">
+                            <h3>Layout Preferences</h3>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="compactView" checked>
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Compact view</span>
+                            </label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="animations" checked>
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Enable animations</span>
+                            </label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="sidebarCollapsed">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Sidebar collapsed by default</span>
+                            </label>
+                        </div>
+                    </section>
+
+                    <section id="adminNotifications">
+                        <h2>Notifications</h2>
+                        
+                        <div class="settings-subsection">
+                            <h3>Email Notifications</h3>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="emailUsers" checked>
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">User registration alerts</span>
+                            </label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="emailReports" checked>
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">System reports</span>
+                            </label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="emailIssues" checked>
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">System issues</span>
+                            </label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="emailDigest">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Weekly digest</span>
+                            </label>
+                        </div>
+
+                        <div class="settings-subsection">
+                            <h3>Push Notifications</h3>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="pushAlerts" checked>
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Real-time alerts</span>
+                            </label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="pushUsers" checked>
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">User activity</span>
+                            </label>
+                        </div>
+
+                        <div class="settings-subsection">
+                            <h3>Admin Alerts</h3>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="alertNewUsers" checked>
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">New user registrations</span>
+                            </label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="alertContent" checked>
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Content moderation</span>
+                            </label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="alertSystem" checked>
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">System health</span>
+                            </label>
+                        </div>
+                    </section>
+
+                    <section id="adminSystem">
+                        <h2>System Settings</h2>
+                        
+                        <div class="settings-subsection">
+                            <h3>Platform Configuration</h3>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="maintenanceMode">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Maintenance mode</span>
+                            </label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="registrationOpen" checked>
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Allow user registration</span>
+                            </label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="emailVerification" checked>
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Require email verification</span>
+                            </label>
+                        </div>
+
+                        <div class="settings-subsection">
+                            <h3>Storage Settings</h3>
+                            <div class="storage-bar">
+                                <div class="storage-used" style="width: 65%"></div>
+                            </div>
+                            <p class="storage-text">32.5 GB of 50 GB used</p>
+                            <button class="btn-outline btn-sm" id="clearCache">Clear Cache</button>
+                        </div>
+
+                        <div class="settings-subsection">
+                            <h3>Backup Settings</h3>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="autoBackup" checked>
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Auto backup</span>
+                            </label>
+                            <div class="form-group">
+                                <label for="backupFrequency">Backup Frequency</label>
+                                <select id="backupFrequency">
+                                    <option>Daily</option>
+                                    <option selected>Weekly</option>
+                                    <option>Monthly</option>
+                                </select>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="adminSecurity">
+                        <h2>Security</h2>
+                        
+                        <div class="settings-subsection">
+                            <h3>Change Password</h3>
+                            <div class="form-group">
+                                <input type="password" id="currentPassword" placeholder="Current password">
+                            </div>
+                            <div class="form-group">
+                                <input type="password" id="newPassword" placeholder="New password">
+                            </div>
+                            <div class="form-group">
+                                <input type="password" id="confirmPassword" placeholder="Confirm new password">
+                            </div>
+                            <button class="btn-primary" id="updatePassword">Update Password</button>
+                        </div>
+
+                        <div class="settings-subsection">
+                            <h3>Two-Factor Authentication</h3>
+                            <div class="twofa-status">
+                                <span class="status-badge enabled" id="twoFAStatus">
+                                    <i class="fas fa-check-circle"></i> Enabled
+                                </span>
+                            </div>
+                            <button class="btn-outline" id="enable2FA">Manage 2FA</button>
+                        </div>
+
+                        <div class="settings-subsection">
+                            <h3>Active Sessions</h3>
+                            <div class="session-item">
+                                <div class="session-info">
+                                    <i class="fas fa-laptop"></i>
+                                    <div>
+                                        <strong>Current Device</strong>
+                                        <p>Chrome • Nairobi, Kenya</p>
+                                    </div>
+                                </div>
+                                <span class="session-status active">Active Now</span>
+                            </div>
+                            <button class="btn-outline btn-sm" id="logoutAll">Logout All Devices</button>
+                        </div>
+
+                        <div class="danger-zone">
+                            <h3><i class="fas fa-exclamation-triangle"></i> Danger Zone</h3>
+                            <button class="btn-outline" id="deactivateAccount">Deactivate Account</button>
+                            <button class="btn-danger" id="deleteAccount">Delete Account</button>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="admin.js"></script>
+    <script>
+        const userRole = localStorage.getItem('notify_role') || '';
+        
+        if (userRole !== 'admin') {
+            window.location.href = '../html/dashboard.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const settingsLinks = document.querySelectorAll('#settings #sectionLinks h2');
+            const settingsSections = document.querySelectorAll('#settings section');
+
+            if (settingsLinks.length > 0) {
+                settingsLinks.forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const sectionId = this.getAttribute('data-section-id');
+                        settingsLinks.forEach(l => l.classList.remove('active'));
+                        this.classList.add('active');
+                        settingsSections.forEach(sect => {
+                            sect.classList.remove('active', 'animate');
+                        });
+                        const target = document.getElementById(sectionId);
+                        if (target) {
+                            target.classList.add('active');
+                            setTimeout(() => target.classList.add('animate'), 50);
+                        }
+                    });
+                });
+            }
+
+            function toggleProfileMenu() {
+                const menu = document.getElementById('profileMenu');
+                if (menu) menu.classList.toggle('active');
+            }
+            window.toggleProfileMenu = toggleProfileMenu;
+
+            document.addEventListener('click', function(e) {
+                const profile = document.getElementById('profileDropdown');
+                const menu = document.getElementById('profileMenu');
+                if (profile && menu && !profile.contains(e.target)) {
+                    menu.classList.remove('active');
+                }
+            });
+
+            function loadUserData() {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                const userName = localStorage.getItem('user_name') || 'Admin';
+                const topUserName = document.getElementById('topUserName');
+                const topUserRole = document.getElementById('topUserRole');
+                const userNameDisplay = document.getElementById('userNameDisplay');
+                if (topUserName) topUserName.textContent = userName;
+                if (userNameDisplay) userNameDisplay.textContent = userName;
+                if (topUserRole && user.role === 'admin') topUserRole.textContent = 'Administrator';
+            }
+            loadUserData();
+
+            function getGreeting() {
+                const hour = new Date().getHours();
+                if (hour < 12) return 'Good morning';
+                if (hour < 18) return 'Good afternoon';
+                return 'Good evening';
+            }
+            document.getElementById('greetingText').textContent = getGreeting();
+            showSection('home');
+        });
+    </script>
+</body>
+</html>

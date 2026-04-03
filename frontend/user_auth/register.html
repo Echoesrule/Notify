@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Notify</title>
+    <link href="https://fonts.googleapis.com/css?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/login.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="side-hero">
+            <i class="fas fa-graduation-cap" style="font-size: 3rem; margin-bottom: 16px;"></i>
+            <h3>Join Notify</h3>
+            <p>Start your learning journey today</p>
+            <p style="margin-top: 16px; opacity: 0.8; font-size: 0.9rem;">Get access to thousands of university notes, share with peers, and excel in your studies.</p>
+            <div style="margin-top: 30px; display: flex; gap: 20px; font-size: 0.85rem;">
+                <span><i class="fas fa-book"></i> Notes</span>
+                <span><i class="fas fa-users"></i> Community</span>
+                <span><i class="fas fa-star"></i> Best Resources</span>
+            </div>
+        </div>
+    
+        <div class="auth-container">
+            <h2>Create Account</h2>
+            <p class="subtitle">Fill in your details to get started</p>
+            
+            <form id="registerForm" class="auth-form">
+                <div class="input-group">
+                    <label for="regName">Full Name</label>
+                    <input type="text" name="name" id="regName" placeholder="Enter your name" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="regEmail">Email</label>
+                    <input type="email" name="email" id="regEmail" placeholder="Enter your email" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="regPassword">Password</label>
+                    <input type="password" name="password" id="regPassword" placeholder="Create a password" required>
+                    <span toggle="#regPassword" class="password-toggle" onclick="togglePassword('regPassword', this)">
+                        <i class="fas fa-eye"></i>
+                    </span>
+                </div>
+                
+                <div class="input-group">
+                    <label for="regConfirmPassword">Confirm Password</label>
+                    <input type="password" name="Confirmpassword" id="regConfirmPassword" placeholder="Confirm your password" required>
+                    <span toggle="#regConfirmPassword" class="password-toggle" onclick="togglePassword('regConfirmPassword', this)">
+                        <i class="fas fa-eye"></i>
+                    </span>
+                </div>
+                
+                <button type="submit">Create Account</button>
+            </form>
+            
+            <div class="divider">
+                <span>or</span>
+            </div>
+            
+            <div class="social-login">
+                <button class="social-btn">
+                    <i class="fab fa-google"></i> Google
+                </button>
+                <button class="social-btn">
+                    <i class="fab fa-apple"></i> Apple
+                </button>
+            </div>
+            
+            <p class="auth-footer">
+                Already have an account? <a href="index.html">Sign in</a>
+            </p>
+            
+            <div id="registerMessage"></div>
+        </div>
+    </div>
+
+    <script src="../js/register.js"></script>
+    <script>
+        function togglePassword(inputId, toggleBtn) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+            } else {
+                input.type = 'password';
+                toggleBtn.innerHTML = '<i class="fas fa-eye"></i>';
+            }
+        }
+    </script>
+</body>
+</html>

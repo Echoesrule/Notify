@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Updates - Notify</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bitcount+Single:wght@100..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lilita+One&family=Manrope:wght@200..800&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Work+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Fredoka|Inter&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="../css/dashboard.css" rel="stylesheet" />
+    <link href="../css/footer.css" rel="stylesheet" />
+    <link href="../css/updates.css" rel="stylesheet" />
+    
+<script src="../js/themes.js"></script>
+
+</head>
+<body>
+    <div class="dashboard-cont">
+
+        
+
+        <div class="page-content">
+           
+            <div class="breadcrumbs" id="breadcrumbs">
+                <a href="dashboard.html">Home</a>
+                <i class="fas fa-chevron-right"></i>
+                <span>Updates</span>
+            </div>
+
+                   <div class="loader-container" id="lottieLoader">
+                    <div class="loader-ring"></div>
+                    <div class="loader-ring"></div>
+                    <div class="loader-ring"></div>
+                      <p>Loading Notes...</p>
+            </div>
+
+            <div class="updates-content" id="updatesContent">
+                
+                <div class="updates-header">
+                    <div>
+                        <h1 id="pageTitle">Recent Updates</h1>
+                        <p class="updates-subtitle">Stay informed with the latest notes and activities</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn-outline" id="markAllRead">
+                            <i class="fas fa-check-double"></i> Mark All Read
+                        </button>
+                        <button class="btn-primary" id="refreshUpdates">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="updates-stats">
+                    <div class="stat-card">
+                        <h3 id="totalUpdates">0</h3>
+                        <p>Total Updates</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="newToday">0</h3>
+                        <p>New Today</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="unread">0</h3>
+                        <p>Unread</p>
+                    </div>
+                </div>
+
+              
+                <div class="updates-tabs">
+                    <button class="tab-btn active" data-filter="all">All Updates</button>
+                    <button class="tab-btn" data-filter="today">Today</button>
+                    <button class="tab-btn" data-filter="week">This Week</button>
+                    <button class="tab-btn" data-filter="month">This Month</button>
+                    <button class="tab-btn" data-filter="unread">Unread</button>
+                </div>
+
+                <!-- Updates Timeline -->
+                <div class="updates-timeline" id="updatesTimeline">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/navigation.js"></script>
+    <script src="../js/updates.js"></script>
+   
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <h3><i class="fas fa-graduation-cap"></i> Notify</h3>
+                <p>Your ultimate university notes platform. Access, share, and excel with comprehensive study materials across all faculties.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="dashboard.html">Dashboard</a></li>
+                    <li><a href="search.html">Search Notes</a></li>
+                    <li><a href="updates.html">Updates</a></li>
+                    <li><a href="bookmarks.html">Bookmarks</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Faculties</h4>
+                <ul>
+                    <li><a href="#">Science & Computing</a></li>
+                    <li><a href="#">Business</a></li>
+                    <li><a href="#">Medicine</a></li>
+                    <li><a href="#">Engineering</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Support</h4>
+                <ul>
+                    <li><a href="#">Help Center</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Notify. All rights reserved.</p>
+            <div class="footer-social">
+                <a href="#"><i class="fab fa-facebook-f"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-linkedin-in"></i></a>
+            </div>
+            <div class="footer-links">
+                <a href="#">Privacy</a>
+                <span>|</span>
+                <a href="#">Terms</a>
+                <span>|</span>
+                <a href="#">Support</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

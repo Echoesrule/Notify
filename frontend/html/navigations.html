@@ -1,0 +1,91 @@
+<div class="sidebar">
+    <button id="sidebarToggleBtn" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
+    <div class="sidebar-nav">
+        <a href="dashboard.html" data-page="dashboard">
+            <i class="fas fa-home"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="schools.html" data-page="schools">
+            <i class="fas fa-university"></i>
+            <span>Faculties</span>
+        </a>
+        <a href="courses.html" data-page="courses">
+            <i class="fas fa-book"></i>
+            <span>Course</span>
+        </a>
+        <a href="units.html" data-page="units">
+            <i class="fas fa-chalkboard-teacher"></i>
+            <span>My Units</span>
+        </a>
+        <a href="notes.html" data-page="notes">
+            <i class="fas fa-file-pdf"></i>
+            <span>Notes</span>
+        </a>
+        <a href="updates.html" data-page="updates">
+            <i class="fas fa-bell"></i>
+            <span>Updates</span>
+        </a>
+        <a href="search.html" data-page="search">
+            <i class="fas fa-search"></i>
+            <span>Search Notes</span>
+        </a>
+        <a href="bookmarks.html" data-page="bookmarks">
+            <i class="fas fa-bookmark"></i>
+            <span>Bookmarks</span>
+        </a>
+        <a href="settings.html" data-page="settings">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+        </a>
+        <a href="#" data-page="logout">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+        </a>
+    </div>
+    
+    <div class="sidebar-footer" id="sidebarFooter">
+    </div>
+</div>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="main-content">
+    <div class="topbar">
+        <div class="topbar-logo"><i class="fas fa-graduation-cap"></i> NOTIFY</div>
+        <button class="mobile-menu-btn" title="Open Menu"><i class="fas fa-bars"></i></button>
+        <div class="search">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Search notes, courses, lecturers..." id="globalSearch" onkeyup="handleTopSearch(this.value, event)" />
+        </div>
+        
+        <div class="topbar-right">
+            <div class="notif" onclick="window.location.href='updates.html'">
+                <i class="fas fa-bell"></i>
+                <span class="notif-badge" id="notifBadge">0</span>
+            </div>
+
+            <div class="theme-toggle" id="themeToggle">
+                <i class="fas fa-sun"></i>
+                <i class="fas fa-moon"></i>
+            </div>
+            
+            <div class="profile" id="profileDropdown" onclick="toggleProfileMenu()">
+                <img src="../images/dashboardImages/v3321_68.png" alt="Profile" id="profileImg">
+                <div class="profile-info">
+                    <span class="profile-name" id="topUserName">User</span>
+                    <span class="profile-role" id="topUserRole">Student</span>
+                </div>
+                <i class="fas fa-chevron-down"></i>
+                <div class="profile-menu" id="profileMenu">
+                    <a href="settings.html"><i class="fas fa-cog"></i> Settings</a>
+                    <a href="#" onclick="showLogoutModal()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                </div>
+            </div>
+        </div> 
+    </div>
+    
+    <div class="breadcrumbs">
+        <a href="dashboard.html"><i class="fas fa-home"></i></a>
+        <i class="fas fa-chevron-right"></i>
+        <span>Dashboard</span>
+    </div>
