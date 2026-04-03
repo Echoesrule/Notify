@@ -19,6 +19,19 @@ const SECRET = process.env.JWT_SECRET || 'notify_fallback_dev_key_change_in_prod
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3001';
 
+const app = express();
+
+// Health check endpoint for Render
+app.get('/health', (req, res) => {
+    res.status(200).json({ 
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+    });
+});
+
+
+
 // =====================
 // Ensure upload directories exist
 // =====================
@@ -36,14 +49,7 @@ if (!fs.existsSync(pfpsDir)) {
     fs.mkdirSync(pfpsDir, { recursive: true });
 }
 
-// Health check endpoint for Render
-app.get('/health', (req, res) => {
-    res.status(200).json({ 
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime()
-    });
-});
+
 
 // =====================
 // Multer Configuration
@@ -78,10 +84,7 @@ const upload = multer({
     limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit for notes
 });
 
-// =====================
-// Express App
-// =====================
-const app = express();
+
 
 // =====================
 // CORS Configuration
