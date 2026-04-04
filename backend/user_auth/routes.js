@@ -6,12 +6,10 @@ const rateLimit = require('express-rate-limit');
 const nodemailer = require('nodemailer'); 
 const router = express.Router(); 
 
-// Import db wrapper (NOT pool directly)
 const db = require('../db');
 
 const SECRET = process.env.JWT_SECRET || 'notify_fallback_dev_key_change_in_production';
 
-// Email transporter (optional - for production use real SMTP)
 const transporter = nodemailer.createTransport({
     host: 'smtp.ethereal.email',
     port: 587,
@@ -29,12 +27,11 @@ const authLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-// Test route - to verify auth routes are working
 router.get('/test', (req, res) => {
     res.json({ message: 'Auth routes are working on PostgreSQL!' });
 });
 
-// Login route - PostgreSQL compatible
+// Login route
 router.post('/login', authLimiter, async (req, res) => {
     const { email, password } = req.body;
     
@@ -45,8 +42,6 @@ router.post('/login', authLimiter, async (req, res) => {
             'SELECT * FROM notify_users WHERE email = ?',
             [email]
         );
-
-        console.log('Query result:', rows ? rows.length : 0, 'rows');
 
         if (!rows || rows.length === 0) {
             return res.status(401).json({ message: "Invalid email or password" });
@@ -85,12 +80,11 @@ router.post('/login', authLimiter, async (req, res) => {
     }
 });
 
-// Register route - WITH ROLE ASSIGNMENT BASED ON EMAIL DOMAIN
+// Register route - Institutions only for role assignment, NOT a foreign key constraint
 router.post('/register', async (req, res) => {
     const { name, email, password } = req.body;
     console.log('Registration attempt for:', email);
     
-    // Extract email domain
     const emailDomain = email.split('@')[1];
     console.log('Email domain:', emailDomain);
 
@@ -105,69 +99,52 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        // Check institution by domain (staff, student, or admin domain)
-        const [institution] = await db.query(
-            `SELECT * FROM institutions 
-             WHERE staff_domain = ? 
-                OR student_domain = ? 
-                OR admin_domain = ?`,
-            [emailDomain, emailDomain, emailDomain]
-        );
-
-        // Determine role based on email domain
-        let role = 'student'; // Default role
+        // Determine role based on email domain (institutions table is OPTIONAL)
+        let role = 'student';
         
-        if (institution && institution.length > 0) {
-            const inst = institution[0];
-            
-            // Debug logging
-            console.log('Institution found:', inst.name);
-            console.log('Staff domain:', inst.staff_domain);
-            console.log('Student domain:', inst.student_domain);
-            console.log('Admin domain:', inst.admin_domain);
-            console.log('Email domain:', emailDomain);
-            
-            // Check admin domain first (highest privilege)
-            if (inst.admin_domain && emailDomain === inst.admin_domain) {
-                role = 'admin';
-                console.log('Admin detected for domain:', emailDomain);
-            } 
-            // Check staff domain
-            else if (inst.staff_domain && emailDomain === inst.staff_domain) {
-                role = 'lecturer';
-                console.log('Lecturer detected for domain:', emailDomain);
-            } 
-            // Check student domain
-            else if (inst.student_domain && emailDomain === inst.student_domain) {
-                role = 'student';
-                console.log('Student detected for domain:', emailDomain);
+        try {
+            // Try to find institution by domain (for role assignment only)
+            const [institution] = await db.query(
+                `SELECT * FROM institutions 
+                 WHERE staff_domain = ? 
+                    OR student_domain = ? 
+                    OR admin_domain = ?`,
+                [emailDomain, emailDomain, emailDomain]
+            );
+
+            if (institution && institution.length > 0) {
+                const inst = institution[0];
+                
+                if (inst.admin_domain && emailDomain === inst.admin_domain) {
+                    role = 'admin';
+                    console.log('Admin detected for domain:', emailDomain);
+                } 
+                else if (inst.staff_domain && emailDomain === inst.staff_domain) {
+                    role = 'lecturer';
+                    console.log('Lecturer detected for domain:', emailDomain);
+                } 
+                else if (inst.student_domain && emailDomain === inst.student_domain) {
+                    role = 'student';
+                    console.log('Student detected for domain:', emailDomain);
+                }
+            } else {
+                console.log('No institution found for domain:', emailDomain, '- using default student role');
             }
-            else {
-                console.log('No domain match in institution record');
-            }
-        } else {
-            console.log('No institution found for domain:', emailDomain);
-            
-            // Fallback: Check domain patterns if no institution match
-            if (emailDomain.includes('staff') || emailDomain.includes('lecturer') || emailDomain.includes('faculty')) {
-                role = 'lecturer';
-                console.log('Lecturer detected by pattern');
-            } else if (emailDomain.includes('admin')) {
-                role = 'admin';
-                console.log('Admin detected by pattern');
-            }
+        } catch (err) {
+            // If institutions table doesn't exist or has issues, just use default role
+            console.log('Error checking institutions, using default student role:', err.message);
         }
 
-        console.log('Final assigned role:', role);
+        console.log('Assigned role:', role);
 
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
         
-        // Insert user with determined role
+        // Insert user WITHOUT institution_id to avoid foreign key constraints
         await db.query(
-            `INSERT INTO notify_users (name, email, password, role, institution_id) 
-             VALUES (?, ?, ?, ?, ?)`,
-            [name, email, hashedPassword, role, institution && institution.length > 0 ? institution[0].id : null]
+            `INSERT INTO notify_users (name, email, password, role) 
+             VALUES (?, ?, ?, ?)`,
+            [name, email, hashedPassword, role]
         );
 
         console.log('User registered successfully with role:', role);
@@ -276,7 +253,7 @@ router.put('/change-password', async (req, res) => {
     }
 });
 
-// Forgot password - send reset OTP (simplified)
+// Forgot password
 router.post('/forgot-password', async (req, res) => {
     const { email } = req.body;
     
