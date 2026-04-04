@@ -92,13 +92,20 @@
                         </div>
                         <i class="fas fa-chevron-down"></i>
                         <div class="profile-menu" id="profileMenu">
+                            <div class="profile-menu-header">
+                                <span class="menu-name" id="menuUserName">Admin</span>
+                                <span class="menu-role" id="menuUserRole">Administrator</span>
+                            </div>
                             <a href="#" onclick="showSection('settings')"><i class="fas fa-cog"></i> Settings</a>
                             <a href="#" onclick="showLogoutModal()"><i class="fas fa-sign-out-alt"></i> Logout</a>
                         </div>
                     </div>
                 </div>
             </div>
-
+            
+            <!-- Notification container inside main-content -->
+            <div id="notification-container"></div>
+            
             <div class="breadcrumbs">
                 <a href="#"><i class="fas fa-home"></i></a>
                 <i class="fas fa-chevron-right"></i>

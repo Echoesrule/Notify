@@ -1428,4 +1428,40 @@ body.loaded .continue-card-actual {
     }
 }
 
+/* Notification Container - default top-right */
+#notification-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 350px;
+    left: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+}
+
+/* Override for mobile - handled in responsive.css */
+
+/* Profile Menu Header - name and role in dropdown */
+.profile-menu-header {
+    display: none;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-tertiary);
+}
+
+.profile-menu-header .menu-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+    display: block;
+}
+
+.profile-menu-header .menu-role {
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: block;
+    margin-top: 2px;
+}
+
 @import url('responsive.css');

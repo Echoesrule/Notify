@@ -137,6 +137,9 @@ function reinitializeAfterNavLoad() {
     
     // Initialize sidebar toggle
     initSidebarToggle();
+    
+    // Mark body as loaded to hide skeleton loaders
+    document.body.classList.add('loaded');
 }
 
 
@@ -472,14 +475,25 @@ function updateTopbar() {
     
     const userNameEl = document.getElementById('topUserName');
     const userRoleEl = document.getElementById('topUserRole');
+    const menuUserName = document.getElementById('menuUserName');
+    const menuUserRole = document.getElementById('menuUserRole');
     const notifBadge = document.getElementById('notifBadge');
     const profileImg = document.getElementById('profileImg');
     
+    const displayName = user.name || 'User';
+    const displayRole = role.charAt(0).toUpperCase() + role.slice(1);
+    
     if (userNameEl) {
-        userNameEl.textContent = user.name || 'User';
+        userNameEl.textContent = displayName;
     }
     if (userRoleEl) {
-        userRoleEl.textContent = role.charAt(0).toUpperCase() + role.slice(1);
+        userRoleEl.textContent = displayRole;
+    }
+    if (menuUserName) {
+        menuUserName.textContent = displayName;
+    }
+    if (menuUserRole) {
+        menuUserRole.textContent = displayRole;
     }
     if (profileImg) {
         if (userPfp) {

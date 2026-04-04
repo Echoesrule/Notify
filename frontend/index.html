@@ -1,16 +1,139 @@
-cd C:\.vscode\notify\frontend
-
-# Create a simple index.html that redirects to your dashboard
-cat > index.html << 'EOF'
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="refresh" content="0; url=html/dashboard.html">
-    <title>Notify - Redirecting...</title>
+    <title>Notify - Loading...</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0066ff;
+            --primary-dark: #1d4ed8;
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-tertiary: #94a3b8;
+            --sidebar-bg: #2A2C3C;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--sidebar-bg) 0%, #1a1d2e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .loader-container {
+            text-align: center;
+            padding: 40px;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+        
+        .logo i {
+            color: var(--primary);
+        }
+        
+        .tagline {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-bottom: 30px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--bg-primary);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .redirect-text {
+            color: var(--text-tertiary);
+            font-size: 0.9rem;
+        }
+        
+        .redirect-text a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .redirect-text a:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+        
+        /* Progress bar */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--bg-primary);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+        
+        .progress {
+            height: 100%;
+            background: var(--primary);
+            animation: progress 2s ease-in-out infinite;
+        }
+        
+        @keyframes progress {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+    </style>
 </head>
 <body>
-    <p>Redirecting to <a href="./html/dashboard.html">Notify Dashboard</a>...</p>
+    <div class="loader-container">
+        <div class="logo">
+            <i class="fas fa-graduation-cap"></i> NOTIFY
+        </div>
+        <p class="tagline">Your smart university notes hub</p>
+        
+        <div class="spinner"></div>
+        
+        <div class="progress-bar">
+            <div class="progress"></div>
+        </div>
+        
+        <p class="redirect-text">
+            Redirecting to dashboard...<br>
+            <a href="html/dashboard.html">Click here if it doesn't redirect</a>
+        </p>
+    </div>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </body>
 </html>
-EOF
