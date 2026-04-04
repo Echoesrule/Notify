@@ -537,6 +537,16 @@
     .card-connector::after {
         display: none;
     }
+       .section-header{
+        display: flex;
+        flex-direction: column;
+    }
+       .section-header h2 {
+        font-size: 0.85rem;
+    }
+    .section-header p {
+        font-size: 0.65rem;
+    }
 }
 
 @media (max-width: 768px) {
@@ -567,6 +577,16 @@
         padding: 10px 16px;
         font-size: 13px;
     }
+       .section-header{
+        display: flex;
+        flex-direction: column;
+    }
+    .section-header h2 {
+        font-size: 0.85rem;
+    }
+    .section-header p {
+        font-size: 0.65rem;
+    }
 }
 
 @media (max-width: 480px) {
@@ -578,6 +598,16 @@
 
     .school-card-image {
         height: 160px;
+    }
+    .section-header{
+        display: flex;
+        flex-direction: column;
+    }
+       .section-header h2 {
+        font-size: 0.85rem;
+    }
+    .section-header p {
+        font-size: 0.65rem;
     }
 
     .school-card-content {
@@ -709,6 +739,12 @@
     .section-meta {
         font-size: 0.8rem;
         padding: 6px 10px;
+    }
+       .section-header h2 {
+        font-size: 0.85rem;
+    }
+    .section-header p {
+        font-size: 0.65rem;
     }
 
 

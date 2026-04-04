@@ -397,6 +397,12 @@ body {
     gap: 20px;
     flex-shrink: 0;
 }
+
+/* Show rows on desktop, hide on mobile */
+.topbar-row-1, .topbar-row-2 {
+    display: contents;
+}
+
 .topbar-logo {
     font-size: 1.8rem;
     font-weight: 800;
@@ -428,7 +434,7 @@ body {
     color: var(--text-secondary);
     padding: 0 15px;
     white-space: nowrap;
-}
+} 
 
 .breadcrumbs-inline a {
     color: var(--text-tertiary);
