@@ -1,28 +1,39 @@
 // frontend/js/login.js
-// Ensure API_URL is defined
-if (typeof window.API_URL === 'undefined') {
-    console.warn('API_URL not defined, checking localStorage...');
-    window.API_URL = localStorage.getItem('api_url') || 'https://notify-sxkf.onrender.com/api';
-}
 
-console.log('Login.js using API_URL:', window.API_URL);
+const API_URL = 'https://notify-sxkf.onrender.com/api';
+
+window.API_URL = API_URL;
+
+console.log('Login.js - HARDCODED API_URL:', API_URL);
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
     const message = document.getElementById('loginMessage');
 
-    if (!loginForm) return;
+    if (!loginForm) {
+        console.error('Login form not found');
+        return;
+    }
 
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const email = loginForm.email.value;
-        const password = loginForm.password.value;
+        const email = loginForm.email?.value;
+        const password = loginForm.password?.value;
 
-        console.log('Attempting login to:', `${window.API_URL}/user_auth/login`);
+        if (!email || !password) {
+            if (message) {
+                message.style.color = 'red';
+                message.textContent = 'Please enter email and password';
+            }
+            return;
+        }
+
+        const loginUrl = `${API_URL}/user_auth/login`;
+        console.log('📡 Attempting login to:', loginUrl);
 
         try {
-            const res = await fetch(`${window.API_URL}/user_auth/login`, {
+            const res = await fetch(loginUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
@@ -46,8 +57,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     pfp: userData.pfp || null
                 }));
 
-                message.style.color = 'green';
-                message.textContent = 'Login successful! Redirecting...';
+                if (message) {
+                    message.style.color = 'green';
+                    message.textContent = 'Login successful! Redirecting...';
+                }
 
                 setTimeout(() => {
                     if (userData.role === 'admin') {
@@ -59,13 +72,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }, 1500);
             } else {
-                message.style.color = 'red';
-                message.textContent = userData.message || 'Invalid email or password';
+                if (message) {
+                    message.style.color = 'red';
+                    message.textContent = userData.message || 'Invalid email or password';
+                }
             }
         } catch (err) {
-            console.error('Login fetch error:', err);
-            message.style.color = 'red';
-            message.textContent = 'Failed to connect to server. Please try again later.';
+            console.error('❌ Login fetch error:', err);
+            if (message) {
+                message.style.color = 'red';
+                message.textContent = 'Failed to connect to server. Please try again later.';
+            }
         }
     });
 });

@@ -24,7 +24,6 @@ window.showLogoutModal = function() {
 
 window.logout = function(clearData = false) {
     console.log('logout called with clearData:', clearData);
-    // Always clear everything on logout - schools, courses, units, enrollment, etc.
     localStorage.clear();
     sessionStorage.clear();
     window.location.href = '../user_auth/index.html';
