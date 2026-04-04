@@ -398,11 +398,6 @@ body {
     flex-shrink: 0;
 }
 
-/* Show rows on desktop, hide on mobile */
-.topbar-row-1, .topbar-row-2 {
-    display: contents;
-}
-
 .topbar-logo {
     font-size: 1.8rem;
     font-weight: 800;
