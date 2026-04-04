@@ -563,3 +563,5 @@
 .subject-card:nth-child(3) { animation-delay: 0.3s; }
 .subject-card:nth-child(4) { animation-delay: 0.4s; }
 .subject-card:nth-child(5) { animation-delay: 0.5s; }
+
+@import url('responsive.css');

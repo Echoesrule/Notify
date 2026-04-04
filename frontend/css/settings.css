@@ -849,3 +849,5 @@ input[type="checkbox"]:checked + .toggle-slider:before {
         text-align: center;
     }
 }
+
+@import url('responsive.css');

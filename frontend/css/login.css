@@ -244,6 +244,8 @@ body {
     border: 1px solid var(--error);
 }
 
+@import url('responsive.css');
+
 @media (max-width: 640px) {
     .login-container {
         flex-direction: column;

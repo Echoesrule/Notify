@@ -152,3 +152,5 @@ a:hover {
         padding: 40px 30px;
     }
 }
+
+@import url('responsive.css');

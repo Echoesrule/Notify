@@ -1427,3 +1427,5 @@ body.loaded .continue-card-actual {
         box-shadow: none;
     }
 }
+
+@import url('responsive.css');

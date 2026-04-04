@@ -133,3 +133,5 @@
         border-radius: 12px !important;
     }
 }
+
+@import url('responsive.css');

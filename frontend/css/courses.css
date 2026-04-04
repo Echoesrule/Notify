@@ -665,3 +665,5 @@
     border: 2px solid #10b981;
     box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);
 }
+
+@import url('responsive.css');

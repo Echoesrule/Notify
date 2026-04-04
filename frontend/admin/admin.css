@@ -1508,6 +1508,8 @@
     }
 }
 
+@import url('../css/responsive.css');
+
 .modal-wide {
     max-width: 800px;
 }
