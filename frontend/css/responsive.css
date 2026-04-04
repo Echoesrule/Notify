@@ -1,12 +1,5 @@
 /* Mobile Responsive Styles - Complete Fix */
 
-/* TEST: On mobile (max-width: 768px), background turns red if responsive.css loads */
-@media (max-width: 768px) {
-    html {
-        background-color: #ffcccc !important;
-    }
-}
-
 /* Base text sizes for mobile - shrink big text */
 @media (max-width: 480px) {
     html { font-size: 14px; }
