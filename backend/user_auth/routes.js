@@ -1,4 +1,4 @@
-// backend/user_auth/routes.js - PostgreSQL Version
+// backend/user_auth/routes.js - PostgreSQL Version with Role Assignment
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -38,46 +38,36 @@ router.get('/test', (req, res) => {
 router.post('/login', authLimiter, async (req, res) => {
     const { email, password } = req.body;
     
-    console.log('🔐 Login attempt for:', email);
+    console.log('Login attempt for:', email);
 
     try {
-        // Use db.query (NOT pool.execute) - wrapper converts ? to $1
         const [rows] = await db.query(
             'SELECT * FROM notify_users WHERE email = ?',
             [email]
         );
 
-        console.log('📊 Query result:', rows ? rows.length : 0, 'rows');
+        console.log('Query result:', rows ? rows.length : 0, 'rows');
 
         if (!rows || rows.length === 0) {
             return res.status(401).json({ message: "Invalid email or password" });
         }
 
         const user = rows[0];
-        console.log('👤 User found:', user.email, 'Role:', user.role);
+        console.log('User found:', user.email, 'Role:', user.role);
         
-        // Check if verified (if your table has is_verified column)
-        // If not, comment this out
-        // if (user.is_verified === false) {
-        //     return res.status(401).json({ message: "Please verify your email first" });
-        // }
-        
-        // Compare password
         const match = await bcrypt.compare(password, user.password);
-        console.log('🔑 Password match:', match);
+        console.log('Password match:', match);
 
         if (!match) {
             return res.status(401).json({ message: "Invalid email or password" });
         }
 
-        // Generate JWT token
         const token = jwt.sign(
             { id: user.id, role: user.role, email: user.email },
             SECRET,
             { expiresIn: '7d' }
         );
 
-        // Return user data (excluding password)
         res.json({
             success: true,
             message: 'Login successful',
@@ -90,15 +80,19 @@ router.post('/login', authLimiter, async (req, res) => {
         });
 
     } catch (err) {
-        console.error('❌ Login error:', err);
+        console.error('Login error:', err);
         res.status(500).json({ message: 'Server error: ' + err.message });
     }
 });
 
-// Register route - PostgreSQL compatible
+// Register route - WITH ROLE ASSIGNMENT BASED ON EMAIL DOMAIN
 router.post('/register', async (req, res) => {
     const { name, email, password } = req.body;
-    console.log('📝 Registration attempt for:', email);
+    console.log('Registration attempt for:', email);
+    
+    // Extract email domain
+    const emailDomain = email.split('@')[1];
+    console.log('Email domain:', emailDomain);
 
     try {
         // Check if user exists
@@ -111,23 +105,81 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ message: 'User already exists' });
         }
 
+        // Check institution by domain (staff, student, or admin domain)
+        const [institution] = await db.query(
+            `SELECT * FROM institutions 
+             WHERE staff_domain = ? 
+                OR student_domain = ? 
+                OR admin_domain = ?`,
+            [emailDomain, emailDomain, emailDomain]
+        );
+
+        // Determine role based on email domain
+        let role = 'student'; // Default role
+        
+        if (institution && institution.length > 0) {
+            const inst = institution[0];
+            
+            // Debug logging
+            console.log('Institution found:', inst.name);
+            console.log('Staff domain:', inst.staff_domain);
+            console.log('Student domain:', inst.student_domain);
+            console.log('Admin domain:', inst.admin_domain);
+            console.log('Email domain:', emailDomain);
+            
+            // Check admin domain first (highest privilege)
+            if (inst.admin_domain && emailDomain === inst.admin_domain) {
+                role = 'admin';
+                console.log('Admin detected for domain:', emailDomain);
+            } 
+            // Check staff domain
+            else if (inst.staff_domain && emailDomain === inst.staff_domain) {
+                role = 'lecturer';
+                console.log('Lecturer detected for domain:', emailDomain);
+            } 
+            // Check student domain
+            else if (inst.student_domain && emailDomain === inst.student_domain) {
+                role = 'student';
+                console.log('Student detected for domain:', emailDomain);
+            }
+            else {
+                console.log('No domain match in institution record');
+            }
+        } else {
+            console.log('No institution found for domain:', emailDomain);
+            
+            // Fallback: Check domain patterns if no institution match
+            if (emailDomain.includes('staff') || emailDomain.includes('lecturer') || emailDomain.includes('faculty')) {
+                role = 'lecturer';
+                console.log('Lecturer detected by pattern');
+            } else if (emailDomain.includes('admin')) {
+                role = 'admin';
+                console.log('Admin detected by pattern');
+            }
+        }
+
+        console.log('Final assigned role:', role);
+
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
         
-        // Insert user - PostgreSQL syntax (wrapper handles ? conversion)
+        // Insert user with determined role
         await db.query(
-            `INSERT INTO notify_users (name, email, password, role) 
-             VALUES (?, ?, ?, ?)`,
-            [name, email, hashedPassword, 'student']
+            `INSERT INTO notify_users (name, email, password, role, institution_id) 
+             VALUES (?, ?, ?, ?, ?)`,
+            [name, email, hashedPassword, role, institution && institution.length > 0 ? institution[0].id : null]
         );
 
+        console.log('User registered successfully with role:', role);
+        
         res.status(201).json({ 
             success: true,
-            message: 'Registration successful! Please login.'
+            message: 'Registration successful! Please login.',
+            role: role
         });
         
     } catch (error) {
-        console.error('❌ Registration error:', error);
+        console.error('Registration error:', error);
         res.status(500).json({ message: 'Registration Failed: ' + error.message });
     }
 });
@@ -152,7 +204,7 @@ router.get('/me', async (req, res) => {
         
         res.json(rows[0]);
     } catch (err) {
-        console.error('❌ Auth error:', err);
+        console.error('Auth error:', err);
         res.status(401).json({ message: 'Invalid token' });
     }
 });
@@ -235,12 +287,9 @@ router.post('/forgot-password', async (req, res) => {
         );
         
         if (!rows || rows.length === 0) {
-            // Don't reveal if email exists or not for security
             return res.json({ message: 'If the email exists, a reset code has been sent' });
         }
         
-        // For production, implement OTP sending here
-        // For now, just return success
         res.json({ message: 'If the email exists, a reset code has been sent' });
     } catch (err) {
         console.error(err);
