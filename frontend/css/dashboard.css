@@ -792,6 +792,8 @@ body.loaded .continue-card-actual {
     .welcome-actions button {
         width: 100%;
         justify-content: center;
+        margin-bottom: 12px;
+
     }
     
     .welcome-content h1 {
