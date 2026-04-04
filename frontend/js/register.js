@@ -1,7 +1,7 @@
 // frontend/js/register.js
 // Ensure API_URL is defined
 if (typeof window.API_URL === 'undefined') {
-    window.API_URL = localStorage.getItem('api_url') || 'https://notify-sxkf.onrender.com/api';
+    window.API_URL = 'https://notify-sxkf.onrender.com/api';
 }
 
 console.log('Register.js using API_URL:', window.API_URL);
@@ -15,11 +15,35 @@ document.addEventListener('DOMContentLoaded', () => {
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        // Get form values
+        const name = registerForm.name?.value;
+        const email = registerForm.email.value;
+        const password = registerForm.password.value;
+        const confirmPassword = registerForm.Confirmpassword?.value;
+
+        // Validate password match
+        if (password !== confirmPassword) {
+            if (message) {
+                message.style.color = 'red';
+                message.textContent = 'Passwords do not match';
+            }
+            return;
+        }
+
+        // Validate password length
+        if (password.length < 6) {
+            if (message) {
+                message.style.color = 'red';
+                message.textContent = 'Password must be at least 6 characters';
+            }
+            return;
+        }
+
         const formData = {
-            name: registerForm.name?.value,
-            email: registerForm.email.value,
-            password: registerForm.password.value,
-            role: registerForm.role?.value || 'student'
+            name: name,
+            email: email,
+            password: password,
+            role: 'student' // Default role
         };
 
         try {
@@ -32,19 +56,25 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
 
             if (res.ok) {
-                message.style.color = 'green';
-                message.textContent = 'Registration successful! Redirecting to login...';
+                if (message) {
+                    message.style.color = 'green';
+                    message.textContent = 'Registration successful! Redirecting to login...';
+                }
                 setTimeout(() => {
                     window.location.href = 'index.html';
                 }, 2000);
             } else {
-                message.style.color = 'red';
-                message.textContent = data.message || 'Registration failed';
+                if (message) {
+                    message.style.color = 'red';
+                    message.textContent = data.message || 'Registration failed';
+                }
             }
         } catch (err) {
             console.error('Register error:', err);
-            message.style.color = 'red';
-            message.textContent = 'Failed to connect to server';
+            if (message) {
+                message.style.color = 'red';
+                message.textContent = 'Failed to connect to server';
+            }
         }
     });
 });

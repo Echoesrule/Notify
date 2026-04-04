@@ -1,10 +1,11 @@
-// frontend/js/login.js
 
-const API_URL = 'https://notify-sxkf.onrender.com/api';
+if (typeof window.API_URL === 'undefined') {
+    window.API_URL = 'https://notify-sxkf.onrender.com/api';
+}
 
-window.API_URL = API_URL;
+const API_URL = window.API_URL;
 
-console.log('Login.js - HARDCODED API_URL:', API_URL);
+console.log('Login.js - API_URL:', API_URL);
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
@@ -78,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         } catch (err) {
-            console.error('❌ Login fetch error:', err);
+            console.error(' Login fetch error:', err);
             if (message) {
                 message.style.color = 'red';
                 message.textContent = 'Failed to connect to server. Please try again later.';
