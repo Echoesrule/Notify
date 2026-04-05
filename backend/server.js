@@ -169,6 +169,24 @@ app.get('/health', (req, res) => {
         timestamp: new Date().toISOString()
     });
 });
+// Add this right after your health check endpoints
+app.get('/api/db-health', async (req, res) => {
+    try {
+        await db.query('SELECT 1');
+        res.json({ 
+            status: 'healthy', 
+            database: 'connected',
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            status: 'unhealthy', 
+            database: 'disconnected',
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
+});
 
 app.get('/api/test', (req, res) => {
     res.json({ message: 'API is working!', timestamp: new Date().toISOString() });
@@ -404,8 +422,6 @@ app.get('/api/setup', async (req, res) => {
 // =====================
 // MAIN API ENDPOINTS
 // =====================
-
-// SCHOOLS - FIXED VERSION with proper counts
 app.get('/api/schools', async (req, res) => {
     try {
         const [schools] = await db.query(`
@@ -413,31 +429,38 @@ app.get('/api/schools', async (req, res) => {
                 s.id,
                 s.name,
                 COUNT(DISTINCT u.id) as studentCount,
-                COUNT(DISTINCT c.id) as courseCount
+                COUNT(DISTINCT c.id) as courseCount,
+                COUNT(DISTINCT CASE WHEN units.id IS NOT NULL THEN units.id END) as unitCount
             FROM schools s
             LEFT JOIN notify_users u ON u.school_id = s.id
             LEFT JOIN courses c ON c.school_id = s.id
+            LEFT JOIN units ON units.dept_id = c.id OR units.is_common = true
             GROUP BY s.id, s.name
         `);
         
         const schoolsWithDetails = await Promise.all(schools.map(async (school) => {
             // Get departments
             const [departments] = await db.query(`
-                SELECT c.*, COUNT(DISTINCT uc.user_id) as studentCount
+                SELECT 
+                    c.*, 
+                    COUNT(DISTINCT uc.user_id) as studentCount,
+                    COUNT(DISTINCT u.id) as unitCount
                 FROM courses c
                 LEFT JOIN user_courses uc ON uc.course_id = c.id
+                LEFT JOIN units u ON u.dept_id = c.id
                 WHERE c.school_id = ?
                 GROUP BY c.id
             `, [school.id]);
             
-            // Get units for each department (works with your structure)
+            // Get units for each department (including common units)
             const departmentsWithUnits = await Promise.all(departments.map(async (dept) => {
                 const [units] = await db.query(`
                     SELECT u.*, COUNT(DISTINCT n.id) as noteCount
                     FROM units u
                     LEFT JOIN notes n ON n.unit_id = u.id
-                    WHERE u.dept_id = ?  -- This works with your current structure
+                    WHERE u.dept_id = ? OR u.is_common = true
                     GROUP BY u.id
+                    ORDER BY u.is_common DESC, u.name
                 `, [dept.id]);
                 
                 return {
@@ -447,7 +470,16 @@ app.get('/api/schools', async (req, res) => {
                 };
             }));
             
-            // Calculate total unique units
+            // Get common units for the school
+            const [commonUnits] = await db.query(`
+                SELECT u.*, COUNT(DISTINCT n.id) as noteCount
+                FROM units u
+                LEFT JOIN notes n ON n.unit_id = u.id
+                WHERE u.is_common = true
+                GROUP BY u.id
+                ORDER BY u.name
+            `);
+            
             const totalUnits = departmentsWithUnits.reduce((sum, dept) => sum + dept.unitCount, 0);
             
             return {
@@ -456,6 +488,7 @@ app.get('/api/schools', async (req, res) => {
                 studentCount: parseInt(school.studentCount) || 0,
                 courseCount: parseInt(school.courseCount) || 0,
                 unitCount: totalUnits,
+                commonUnits: commonUnits,
                 departments: departmentsWithUnits
             };
         }));
@@ -1169,7 +1202,55 @@ app.get('/api/admin/stats', adminMiddleware, async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch stats' });
     }
 });
-
+app.post('/api/admin/distribute-units', adminMiddleware, async (req, res) => {
+    try {
+        const results = [];
+        
+        // Move Computer Science units to stay (do nothing)
+        
+        // Create Business units
+        const businessDept = await db.query('SELECT id FROM courses WHERE school_id = 6 LIMIT 1');
+        if (businessDept[0][0]) {
+            await db.query(`
+                INSERT INTO units (name, code, dept_id, is_common) VALUES 
+                ('Principles of Management', 'BUS101', ?, false),
+                ('Business Mathematics', 'BUS102', ?, false),
+                ('Financial Accounting', 'ACC101', ?, false)
+            `, [businessDept[0][0].id, businessDept[0][0].id, businessDept[0][0].id]);
+            results.push({ school: 'Business', unitsAdded: 3 });
+        }
+        
+        // Create Law units
+        const lawDept = await db.query('SELECT id FROM courses WHERE school_id = 8 LIMIT 1');
+        if (lawDept[0][0]) {
+            await db.query(`
+                INSERT INTO units (name, code, dept_id, is_common) VALUES 
+                ('Legal Methods', 'LAW101', ?, false),
+                ('Constitutional Law', 'LAW102', ?, false),
+                ('Criminal Law', 'LAW103', ?, false)
+            `, [lawDept[0][0].id, lawDept[0][0].id, lawDept[0][0].id]);
+            results.push({ school: 'Law', unitsAdded: 3 });
+        }
+        
+        // Add common units
+        await db.query(`
+            INSERT INTO units (name, code, dept_id, is_common) VALUES 
+            ('Communication Skills', 'COM101', NULL, true),
+            ('Computer Literacy', 'CIT101', NULL, true),
+            ('Research Methodology', 'RES101', NULL, true)
+            ON CONFLICT DO NOTHING
+        `);
+        results.push({ action: 'Common units added', unitsAdded: 3 });
+        
+        res.json({
+            message: 'Units distributed successfully',
+            results: results
+        });
+    } catch (error) {
+        console.error('Error distributing units:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 // Profile picture upload
 app.post('/api/user/pfp', async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
