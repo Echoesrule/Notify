@@ -333,7 +333,7 @@ app.get('/api/setup', async (req, res) => {
                 ('School of Engineering'),
                 ('School of Medicine')
             `);
-            console.log('✅ Sample schools added');
+            console.log('Sample schools added');
         }
 
         // Seed users if empty
@@ -344,7 +344,7 @@ app.get('/api/setup', async (req, res) => {
                 INSERT INTO notify_users (name, email, password, role, school_id)
                 VALUES ('Test Student', 'student@test.com', $1, 'student', 1)
             `, [hashedPassword]);
-            console.log('✅ Sample user added');
+            console.log('Sample user added');
         }
 
         res.json({
@@ -963,20 +963,28 @@ app.get('/api/schools/:schoolId/counts', async (req, res) => {
 // =====================
 app.get('/api/admin/users', adminMiddleware, async (req, res) => {
     try {
+        // Remove the institutions join since institution_id doesn't exist
         const [users] = await db.query(`
-            SELECT nu.*, i.name as "institutionName", s.name as "schoolName"
+            SELECT 
+                nu.id,
+                nu.name,
+                nu.email,
+                nu.role,
+                nu.school_id,
+                nu.pfp,
+                nu.created_at,
+                s.name as "schoolName"
             FROM notify_users nu
-            LEFT JOIN institutions i ON nu.institution_id = i.id
             LEFT JOIN schools s ON nu.school_id = s.id
             ORDER BY nu.created_at DESC
         `);
+        
         res.json(users);
     } catch (error) {
         console.error('Error fetching users:', error);
-        res.status(500).json({ error: 'Failed to fetch users' });
+        res.status(500).json({ error: 'Failed to fetch users: ' + error.message });
     }
 });
-
 app.get('/api/admin/schools', adminMiddleware, async (req, res) => {
     try {
         const [schools] = await db.query(`
