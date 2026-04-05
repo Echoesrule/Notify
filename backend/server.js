@@ -408,78 +408,62 @@ app.get('/api/setup', async (req, res) => {
 // SCHOOLS - FIXED VERSION with proper counts
 app.get('/api/schools', async (req, res) => {
     try {
-        // Direct SQL query to get schools with counts - more reliable than dataService
-        const [schoolsData] = await db.query(`
+        const [schools] = await db.query(`
             SELECT 
                 s.id,
                 s.name,
-                s.created_at,
                 COUNT(DISTINCT u.id) as studentCount,
-                COUNT(DISTINCT c.id) as courseCount,
-                COUNT(DISTINCT n.id) as noteCount
+                COUNT(DISTINCT c.id) as courseCount
             FROM schools s
             LEFT JOIN notify_users u ON u.school_id = s.id
             LEFT JOIN courses c ON c.school_id = s.id
-            LEFT JOIN notes n ON n.school_id = s.id
-            GROUP BY s.id, s.name, s.created_at
-            ORDER BY s.name
+            GROUP BY s.id, s.name
         `);
         
-        // Get departments for each school
-        const schoolsWithDepartments = await Promise.all(schoolsData.map(async (school) => {
+        const schoolsWithDetails = await Promise.all(schools.map(async (school) => {
+            // Get departments
             const [departments] = await db.query(`
-                SELECT 
-                    c.id,
-                    c.name,
-                    c.code,
-                    COUNT(DISTINCT u.id) as unitCount,
-                    COUNT(DISTINCT n.id) as noteCount
+                SELECT c.*, COUNT(DISTINCT uc.user_id) as studentCount
                 FROM courses c
-                LEFT JOIN units u ON u.dept_id = c.id
-                LEFT JOIN notes n ON n.dept_id = c.id
+                LEFT JOIN user_courses uc ON uc.course_id = c.id
                 WHERE c.school_id = ?
-                GROUP BY c.id, c.name, c.code
-                ORDER BY c.name
+                GROUP BY c.id
             `, [school.id]);
             
-            // Get units for each department
+            // Get units for each department (works with your structure)
             const departmentsWithUnits = await Promise.all(departments.map(async (dept) => {
                 const [units] = await db.query(`
-                    SELECT 
-                        u.id,
-                        u.name,
-                        u.code,
-                        COUNT(DISTINCT n.id) as noteCount
+                    SELECT u.*, COUNT(DISTINCT n.id) as noteCount
                     FROM units u
                     LEFT JOIN notes n ON n.unit_id = u.id
-                    WHERE u.dept_id = ?
-                    GROUP BY u.id, u.name, u.code
-                    ORDER BY u.name
+                    WHERE u.dept_id = ?  -- This works with your current structure
+                    GROUP BY u.id
                 `, [dept.id]);
                 
                 return {
                     ...dept,
-                    units: units
+                    units: units,
+                    unitCount: units.length
                 };
             }));
+            
+            // Calculate total unique units
+            const totalUnits = departmentsWithUnits.reduce((sum, dept) => sum + dept.unitCount, 0);
             
             return {
                 id: school.id,
                 name: school.name,
-                created_at: school.created_at,
                 studentCount: parseInt(school.studentCount) || 0,
                 courseCount: parseInt(school.courseCount) || 0,
-                noteCount: parseInt(school.noteCount) || 0,
+                unitCount: totalUnits,
                 departments: departmentsWithUnits
             };
         }));
         
-        console.log(`✅ Fetched ${schoolsWithDepartments.length} schools with counts`);
-        res.json(schoolsWithDepartments);
-        
+        res.json(schoolsWithDetails);
     } catch (error) {
-        console.error('Error fetching schools:', error);
-        res.status(500).json({ error: 'Failed to fetch schools: ' + error.message });
+        console.error('Error:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 
