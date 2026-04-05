@@ -424,46 +424,36 @@ app.get('/api/setup', async (req, res) => {
 // =====================
 app.get('/api/schools', async (req, res) => {
     try {
-        // Get schools with their student and course counts in separate subqueries
+        // Simple query to get schools with counts
         const [schools] = await db.query(`
             SELECT 
                 s.id,
                 s.name,
                 s.created_at,
-                COALESCE((
-                    SELECT COUNT(DISTINCT u.id) 
-                    FROM notify_users u 
-                    WHERE u.school_id = s.id
-                ), 0) as studentCount,
-                COALESCE((
-                    SELECT COUNT(DISTINCT c.id) 
-                    FROM courses c 
-                    WHERE c.school_id = s.id
-                ), 0) as courseCount
+                COUNT(DISTINCT u.id) as studentCount,
+                COUNT(DISTINCT c.id) as courseCount
             FROM schools s
+            LEFT JOIN notify_users u ON u.school_id = s.id
+            LEFT JOIN courses c ON c.school_id = s.id
+            GROUP BY s.id, s.name, s.created_at
             ORDER BY s.name
         `);
         
-        // For each school, get departments and units
+        // For each school, get detailed department and unit info
         const schoolsWithDetails = await Promise.all(schools.map(async (school) => {
-            // Get departments for this school
+            // Get departments (courses) for this school
             const [departments] = await db.query(`
                 SELECT 
                     c.id,
                     c.name,
                     c.code,
-                    COALESCE((
-                        SELECT COUNT(DISTINCT u.id)
-                        FROM units u
-                        WHERE u.dept_id = c.id
-                    ), 0) as unitCount,
-                    COALESCE((
-                        SELECT COUNT(DISTINCT uc.user_id)
-                        FROM user_courses uc
-                        WHERE uc.course_id = c.id
-                    ), 0) as studentCount
+                    COUNT(DISTINCT u.id) as unitCount,
+                    COUNT(DISTINCT uc.user_id) as studentCount
                 FROM courses c
+                LEFT JOIN units u ON u.dept_id = c.id
+                LEFT JOIN user_courses uc ON uc.course_id = c.id
                 WHERE c.school_id = ?
+                GROUP BY c.id, c.name, c.code
                 ORDER BY c.name
             `, [school.id]);
             
@@ -475,59 +465,56 @@ app.get('/api/schools', async (req, res) => {
                         u.name,
                         u.code,
                         u.is_common,
-                        COALESCE((
-                            SELECT COUNT(DISTINCT n.id)
-                            FROM notes n
-                            WHERE n.unit_id = u.id
-                        ), 0) as noteCount
+                        COUNT(DISTINCT n.id) as noteCount
                     FROM units u
+                    LEFT JOIN notes n ON n.unit_id = u.id
                     WHERE u.dept_id = ?
+                    GROUP BY u.id, u.name, u.code, u.is_common
                     ORDER BY u.name
                 `, [dept.id]);
                 
                 return {
                     ...dept,
                     units: units,
-                    unitCount: units.length
+                    unitCount: units.length,
+                    studentCount: parseInt(dept.studentCount) || 0
                 };
             }));
             
-            // Get common units (not tied to any department)
+            // Get common units (shared across all schools)
             const [commonUnits] = await db.query(`
                 SELECT 
                     u.id,
                     u.name,
                     u.code,
                     u.is_common,
-                    COALESCE((
-                        SELECT COUNT(DISTINCT n.id)
-                        FROM notes n
-                        WHERE n.unit_id = u.id
-                    ), 0) as noteCount
+                    COUNT(DISTINCT n.id) as noteCount
                 FROM units u
+                LEFT JOIN notes n ON n.unit_id = u.id
                 WHERE u.is_common = true
+                GROUP BY u.id, u.name, u.code, u.is_common
                 ORDER BY u.name
             `);
             
-            // Calculate total units (department units + common units)
+            // Calculate total units
             const totalUnits = departmentsWithUnits.reduce((sum, dept) => sum + dept.unitCount, 0) + commonUnits.length;
             
             return {
                 id: school.id,
                 name: school.name,
                 created_at: school.created_at,
-                studentCount: parseInt(school.studentCount),
-                courseCount: parseInt(school.courseCount),
+                studentCount: parseInt(school.studentCount) || 0,
+                courseCount: parseInt(school.courseCount) || 0,
                 unitCount: totalUnits,
                 commonUnits: commonUnits,
                 departments: departmentsWithUnits
             };
         }));
         
-        console.log(`✅ Fetched ${schoolsWithDetails.length} schools`);
-        if (schoolsWithDetails.length > 0) {
-            console.log(`📊 Sample - ${schoolsWithDetails[0].name}: ${schoolsWithDetails[0].courseCount} courses, ${schoolsWithDetails[0].studentCount} students`);
-        }
+        console.log('✅ Schools fetched successfully:');
+        schoolsWithDetails.forEach(s => {
+            console.log(`  📚 ${s.name}: ${s.courseCount} courses, ${s.studentCount} students`);
+        });
         
         res.json(schoolsWithDetails);
         
@@ -536,7 +523,6 @@ app.get('/api/schools', async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch schools: ' + error.message });
     }
 });
-
 // Get single school with details
 app.get('/api/schools/:schoolId', async (req, res) => {
     try {

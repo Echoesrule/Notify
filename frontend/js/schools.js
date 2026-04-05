@@ -114,9 +114,9 @@ async function displaySchools() {
             const isEnrolled = currentSchoolId == school.id;
 
        
+            const courseCount = school.courseCount !== null ? school.courseCount : 0;
+            const studentCount = school.studentCount !== null ? school.studentCount : 0;
 
-            const courseCount = school.courseCount || 0;
-            const studentCount = school.studentCount || 0;
             
            
 
