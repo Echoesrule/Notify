@@ -1050,6 +1050,104 @@ app.get('/api/admin/courses', adminMiddleware, async (req, res) => {
     }
 });
 
+
+
+// Admin institutions endpoint
+app.get('/api/admin/institutions', adminMiddleware, async (req, res) => {
+    try {
+        const [institutions] = await db.query(`
+            SELECT * FROM institutions ORDER BY name
+        `);
+        res.json(institutions);
+    } catch (error) {
+        console.error('Error fetching institutions:', error);
+        res.status(500).json({ error: 'Failed to fetch institutions' });
+    }
+});
+
+// Admin updates endpoint
+app.get('/api/admin/updates', adminMiddleware, async (req, res) => {
+    try {
+        const [updates] = await db.query(`
+            SELECT u.*, 
+                   c.name as "courseName", 
+                   p.name as "postedByName"
+            FROM updates u
+            LEFT JOIN courses c ON u.course_id = c.id
+            LEFT JOIN notify_users p ON u.user_id = p.id
+            ORDER BY u.created_at DESC
+        `);
+        res.json(updates);
+    } catch (error) {
+        console.error('Error fetching updates:', error);
+        res.status(500).json({ error: 'Failed to fetch updates' });
+    }
+});
+
+// Admin notes endpoint
+app.get('/api/admin/notes', adminMiddleware, async (req, res) => {
+    try {
+        const [notes] = await db.query(`
+            SELECT n.*, 
+                   s.name as "schoolName", 
+                   c.name as "courseName", 
+                   u.name as "unitName",
+                   p.name as "uploadedByName"
+            FROM notes n
+            LEFT JOIN schools s ON n.school_id = s.id
+            LEFT JOIN courses c ON n.dept_id = c.id
+            LEFT JOIN units u ON n.unit_id = u.id
+            LEFT JOIN notify_users p ON n.user_id = p.id
+            ORDER BY n.created_at DESC
+        `);
+        res.json(notes);
+    } catch (error) {
+        console.error('Error fetching notes:', error);
+        res.status(500).json({ error: 'Failed to fetch notes' });
+    }
+});
+
+// Create institution endpoint
+app.post('/api/admin/institutions', adminMiddleware, async (req, res) => {
+    try {
+        const { name, staff_domain, student_domain } = req.body;
+        const [rows] = await db.query(
+            'INSERT INTO institutions (name, staff_domain, student_domain) VALUES ($1, $2, $3) RETURNING id',
+            [name, staff_domain, student_domain]
+        );
+        res.json({ id: rows[0].id, name, staff_domain, student_domain });
+    } catch (error) {
+        console.error('Error creating institution:', error);
+        res.status(500).json({ error: 'Failed to create institution' });
+    }
+});
+
+// Update institution endpoint
+app.put('/api/admin/institutions/:id', adminMiddleware, async (req, res) => {
+    try {
+        const { name, staff_domain, student_domain } = req.body;
+        await db.query(
+            'UPDATE institutions SET name = $1, staff_domain = $2, student_domain = $3 WHERE id = $4',
+            [name, staff_domain, student_domain, req.params.id]
+        );
+        res.json({ message: 'Institution updated successfully' });
+    } catch (error) {
+        console.error('Error updating institution:', error);
+        res.status(500).json({ error: 'Failed to update institution' });
+    }
+});
+
+// Delete institution endpoint
+app.delete('/api/admin/institutions/:id', adminMiddleware, async (req, res) => {
+    try {
+        await db.query('DELETE FROM institutions WHERE id = $1', [req.params.id]);
+        res.json({ message: 'Institution deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting institution:', error);
+        res.status(500).json({ error: 'Failed to delete institution' });
+    }
+});
+
 app.get('/api/admin/stats', adminMiddleware, async (req, res) => {
     try {
         const [tu]  = await db.query(`SELECT COUNT(*) as count FROM notify_users`);
