@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 
 const db = require('./db');
 const dataService = require('./Data_fetcher/data_service');
@@ -20,17 +21,6 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3001';
 
 const app = express();
-
-// Health check endpoint for Render
-app.get('/health', (req, res) => {
-    res.status(200).json({ 
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime()
-    });
-});
-
-
 
 // =====================
 // Ensure upload directories exist
@@ -48,27 +38,6 @@ if (!fs.existsSync(notesDir)) {
 if (!fs.existsSync(pfpsDir)) {
     fs.mkdirSync(pfpsDir, { recursive: true });
 }
-//check if tables exist
-// Add this route to check database tables
-app.get('/api/check-tables', async (req, res) => {
-    try {
-        const [tables] = await db.query(`
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public'
-            ORDER BY table_name
-        `);
-        
-        res.json({
-            status: 'ok',
-            tables: tables.map(t => t.table_name),
-            count: tables.length
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
 
 // =====================
 // Multer Configuration
@@ -103,8 +72,6 @@ const upload = multer({
     limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit for notes
 });
 
-
-
 // =====================
 // CORS Configuration
 // =====================
@@ -120,7 +87,6 @@ const allowedOrigins = [
 
 app.use(cors({
     origin: function(origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl)
         if (!origin) return callback(null, true);
         
         if (allowedOrigins.some(allowed => {
@@ -133,7 +99,7 @@ app.use(cors({
             callback(null, true);
         } else {
             console.log('CORS blocked origin:', origin);
-            callback(null, true); // Allow but log - change to false in production
+            callback(null, true);
         }
     },
     credentials: true,
@@ -146,10 +112,6 @@ app.use(cors({
 // =====================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// =====================
-// Static Files
-// =====================
 app.use('/uploads', express.static(uploadsDir));
 
 // Request logging middleware
@@ -189,14 +151,117 @@ const adminMiddleware = (req, res, next) => {
 // Routes
 // =====================
 app.use('/api/user_auth', authRoutes);
-// Simple test endpoint - Add this FIRST
+
+// Health check endpoint
+app.get('/', (req, res) => {
+    res.json({ 
+        status: 'OK', 
+        message: 'API is running 🚀',
+        environment: NODE_ENV,
+        timestamp: new Date().toISOString()
+    });
+});
+
+app.get('/health', (req, res) => {
+    res.status(200).json({ 
+        status: 'healthy',
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString()
+    });
+});
+
 app.get('/api/test', (req, res) => {
     res.json({ message: 'API is working!', timestamp: new Date().toISOString() });
 });
 
+// =====================
+// DEBUG ENDPOINTS
+// =====================
 
+// Check database tables
+app.get('/api/check-tables', async (req, res) => {
+    try {
+        const [tables] = await db.query(`
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public'
+            ORDER BY table_name
+        `);
+        
+        res.json({
+            status: 'ok',
+            tables: tables.map(t => t.table_name),
+            count: tables.length
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
-// DATABASE SETUP ENDPOINT - Run this first!
+// Debug counts - check what's in the database
+app.get('/api/debug/counts', async (req, res) => {
+    try {
+        // Get all schools
+        const [schools] = await db.query('SELECT id, name FROM schools');
+        
+        // Get users with school_id
+        const [usersWithSchool] = await db.query('SELECT id, name, email, school_id FROM notify_users WHERE school_id IS NOT NULL');
+        
+        // Get courses with school_id
+        const [coursesWithSchool] = await db.query('SELECT id, name, school_id FROM courses WHERE school_id IS NOT NULL');
+        
+        // Get all counts
+        const [[{ totalUsers }]] = await db.query('SELECT COUNT(*) as total FROM notify_users');
+        const [[{ totalCourses }]] = await db.query('SELECT COUNT(*) as total FROM courses');
+        const [[{ totalUnits }]] = await db.query('SELECT COUNT(*) as total FROM units');
+        
+        // Get counts per school
+        const schoolStats = await Promise.all(schools.map(async (school) => {
+            const [[{ userCount }]] = await db.query('SELECT COUNT(*) as count FROM notify_users WHERE school_id = ?', [school.id]);
+            const [[{ courseCount }]] = await db.query('SELECT COUNT(*) as count FROM courses WHERE school_id = ?', [school.id]);
+            return {
+                schoolId: school.id,
+                schoolName: school.name,
+                userCount: userCount || 0,
+                courseCount: courseCount || 0
+            };
+        }));
+        
+        res.json({
+            schools: schools,
+            usersWithSchool: usersWithSchool,
+            usersWithSchoolCount: usersWithSchool.length,
+            totalUsers: totalUsers || 0,
+            coursesWithSchool: coursesWithSchool,
+            coursesWithSchoolCount: coursesWithSchool.length,
+            totalCourses: totalCourses || 0,
+            totalUnits: totalUnits || 0,
+            schoolStats: schoolStats
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Debug dataService response
+app.get('/api/debug/dataService', async (req, res) => {
+    try {
+        const schools = await dataService.getSchools();
+        res.json({
+            schoolsCount: schools.length,
+            firstSchool: schools[0] || null,
+            firstSchoolDepartments: schools[0]?.departments || [],
+            firstSchoolDepartmentsCount: schools[0]?.departments?.length || 0,
+            sampleDepartment: schools[0]?.departments?.[0] || null
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// =====================
+// DATABASE SETUP ENDPOINT
+// =====================
 app.get('/api/setup', async (req, res) => {
     try {
         console.log('🔧 Running database setup...');
@@ -296,28 +361,36 @@ app.get('/api/setup', async (req, res) => {
         await db.query(`CREATE INDEX IF NOT EXISTS idx_notes_dept ON notes(dept_id)`);
         await db.query(`CREATE INDEX IF NOT EXISTS idx_notes_unit ON notes(unit_id)`);
         await db.query(`CREATE INDEX IF NOT EXISTS idx_updates_course ON updates(course_id)`);
+        await db.query(`CREATE INDEX IF NOT EXISTS idx_users_school ON notify_users(school_id)`);
+        await db.query(`CREATE INDEX IF NOT EXISTS idx_courses_school ON courses(school_id)`);
         
-        // Create test user
-        const bcrypt = require('bcrypt');
-        const hashedPassword = await bcrypt.hash('password123', 10);
-        await db.query(`
-            INSERT INTO notify_users (name, email, password, role) 
-            VALUES ('Test User', 'test@example.com', $1, 'student')
-            ON CONFLICT (email) DO NOTHING
-        `, [hashedPassword]);
+        // Insert sample data if tables are empty
+        const [[{ schoolCount }]] = await db.query('SELECT COUNT(*) as count FROM schools');
+        if (schoolCount === 0) {
+            await db.query(`INSERT INTO schools (name) VALUES 
+                ('School of Computing'),
+                ('School of Business'),
+                ('School of Engineering'),
+                ('School of Medicine')
+            `);
+            console.log('✅ Sample schools added');
+        }
         
-        // Add test school
-        await db.query(`
-            INSERT INTO schools (name) 
-            VALUES ('Test University') 
-            ON CONFLICT DO NOTHING
-        `);
+        const [[{ userCount }]] = await db.query('SELECT COUNT(*) as count FROM notify_users');
+        if (userCount === 0) {
+            const hashedPassword = await bcrypt.hash('password123', 10);
+            await db.query(`
+                INSERT INTO notify_users (name, email, password, role, school_id) 
+                VALUES ('Test Student', 'student@test.com', $1, 'student', 1)
+            `, [hashedPassword]);
+            console.log('✅ Sample user added');
+        }
         
         res.json({ 
             success: true, 
             message: 'Database setup complete!',
-            credentials: {
-                email: 'test@example.com',
+            sampleCredentials: {
+                email: 'student@test.com',
                 password: 'password123'
             }
         });
@@ -328,82 +401,135 @@ app.get('/api/setup', async (req, res) => {
     }
 });
 
-// Database is ready - tables will be created via /api/setup endpoint
-console.log('✅ Database ready. Visit /api/setup to create tables.');
+// =====================
+// MAIN API ENDPOINTS
+// =====================
 
-// Health check endpoint
-app.get('/', (req, res) => {
-    res.json({ 
-        status: 'OK', 
-        message: 'API is running 🚀',
-        environment: NODE_ENV,
-        timestamp: new Date().toISOString()
-    });
-});
-
-// Health check for Render
-app.get('/health', (req, res) => {
-    res.status(200).json({ 
-        status: 'healthy',
-        uptime: process.uptime(),
-        timestamp: new Date().toISOString()
-    });
-});
-
-// ==================== SCHOOLS ====================
+// SCHOOLS - FIXED VERSION with proper counts
 app.get('/api/schools', async (req, res) => {
     try {
-        const schools = await dataService.getSchools();
+        // Direct SQL query to get schools with counts - more reliable than dataService
+        const [schoolsData] = await db.query(`
+            SELECT 
+                s.id,
+                s.name,
+                s.created_at,
+                COUNT(DISTINCT u.id) as studentCount,
+                COUNT(DISTINCT c.id) as courseCount,
+                COUNT(DISTINCT n.id) as noteCount
+            FROM schools s
+            LEFT JOIN notify_users u ON u.school_id = s.id
+            LEFT JOIN courses c ON c.school_id = s.id
+            LEFT JOIN notes n ON n.school_id = s.id
+            GROUP BY s.id, s.name, s.created_at
+            ORDER BY s.name
+        `);
         
-        // Get counts for each school
-        const schoolsWithCounts = await Promise.all(schools.map(async (school) => {
-            const schoolId = parseInt(school.id);
+        // Get departments for each school
+        const schoolsWithDepartments = await Promise.all(schoolsData.map(async (school) => {
+            const [departments] = await db.query(`
+                SELECT 
+                    c.id,
+                    c.name,
+                    c.code,
+                    COUNT(DISTINCT u.id) as unitCount,
+                    COUNT(DISTINCT n.id) as noteCount
+                FROM courses c
+                LEFT JOIN units u ON u.dept_id = c.id
+                LEFT JOIN notes n ON n.dept_id = c.id
+                WHERE c.school_id = ?
+                GROUP BY c.id, c.name, c.code
+                ORDER BY c.name
+            `, [school.id]);
             
-            const departments = school.departments || [];
-            
-            // Count students - just count users with this school_id (their primary school)
-            const [[{ studentCount }]] = await db.query(
-                'SELECT COUNT(*) as studentCount FROM notify_users WHERE school_id = ?',
-                [schoolId]
-            );
-            
-            const [[{ noteCount }]] = await db.query(
-                'SELECT COUNT(*) as noteCount FROM notes WHERE school_id = ?',
-                [schoolId]
-            );
-            const [[{ courseCount }]] = await db.query(
-                'SELECT COUNT(*) as courseCount FROM courses WHERE school_id = ?',
-                [schoolId]
-            );
+            // Get units for each department
+            const departmentsWithUnits = await Promise.all(departments.map(async (dept) => {
+                const [units] = await db.query(`
+                    SELECT 
+                        u.id,
+                        u.name,
+                        u.code,
+                        COUNT(DISTINCT n.id) as noteCount
+                    FROM units u
+                    LEFT JOIN notes n ON n.unit_id = u.id
+                    WHERE u.dept_id = ?
+                    GROUP BY u.id, u.name, u.code
+                    ORDER BY u.name
+                `, [dept.id]);
+                
+                return {
+                    ...dept,
+                    units: units
+                };
+            }));
             
             return {
-                ...school,
-                departments: departments,
-                studentCount: studentCount || 0,
-                noteCount: noteCount || 0,
-                courseCount: courseCount || 0
+                id: school.id,
+                name: school.name,
+                created_at: school.created_at,
+                studentCount: parseInt(school.studentCount) || 0,
+                courseCount: parseInt(school.courseCount) || 0,
+                noteCount: parseInt(school.noteCount) || 0,
+                departments: departmentsWithUnits
             };
         }));
         
-        res.json(schoolsWithCounts);
+        console.log(`✅ Fetched ${schoolsWithDepartments.length} schools with counts`);
+        res.json(schoolsWithDepartments);
+        
     } catch (error) {
         console.error('Error fetching schools:', error);
-        res.status(500).json({ error: 'Failed to fetch schools' });
+        res.status(500).json({ error: 'Failed to fetch schools: ' + error.message });
     }
 });
 
+// Get single school with details
 app.get('/api/schools/:schoolId', async (req, res) => {
     try {
-        const school = await dataService.getSchoolById(req.params.schoolId);
-        if (!school) return res.status(404).json({ message: "School not found" });
+        const schoolId = parseInt(req.params.schoolId);
         
-        // Get departments with units
-        const [departments] = await db.query('SELECT * FROM courses WHERE school_id = ? ORDER BY name', [school.id]);
+        const [schools] = await db.query(`
+            SELECT s.*, 
+                   COUNT(DISTINCT u.id) as studentCount,
+                   COUNT(DISTINCT c.id) as courseCount
+            FROM schools s
+            LEFT JOIN notify_users u ON u.school_id = s.id
+            LEFT JOIN courses c ON c.school_id = s.id
+            WHERE s.id = ?
+            GROUP BY s.id
+        `, [schoolId]);
+        
+        if (!schools[0]) {
+            return res.status(404).json({ message: "School not found" });
+        }
+        
+        const [departments] = await db.query(`
+            SELECT c.*, COUNT(DISTINCT u.id) as unitCount
+            FROM courses c
+            LEFT JOIN units u ON u.dept_id = c.id
+            WHERE c.school_id = ?
+            GROUP BY c.id
+            ORDER BY c.name
+        `, [schoolId]);
+        
         for (const dept of departments) {
-            const [units] = await db.query('SELECT * FROM units WHERE dept_id = ? ORDER BY name', [dept.id]);
+            const [units] = await db.query(`
+                SELECT u.*, COUNT(DISTINCT n.id) as noteCount
+                FROM units u
+                LEFT JOIN notes n ON n.unit_id = u.id
+                WHERE u.dept_id = ?
+                GROUP BY u.id
+                ORDER BY u.name
+            `, [dept.id]);
             dept.units = units;
         }
-        school.departments = departments;
+        
+        const school = {
+            ...schools[0],
+            departments: departments,
+            studentCount: parseInt(schools[0].studentCount) || 0,
+            courseCount: parseInt(schools[0].courseCount) || 0
+        };
         
         res.json(school);
     } catch (error) {
@@ -412,24 +538,41 @@ app.get('/api/schools/:schoolId', async (req, res) => {
     }
 });
 
+// Get schools from dataService (backup)
+app.get('/api/schools-legacy', async (req, res) => {
+    try {
+        const schools = await dataService.getSchools();
+        res.json(schools);
+    } catch (error) {
+        console.error('Error fetching schools from dataService:', error);
+        res.status(500).json({ error: 'Failed to fetch schools' });
+    }
+});
+
+// Create new school
 app.post('/api/schools', async (req, res) => {
     try {
         const { name } = req.body;
         if (!name) {
             return res.status(400).json({ error: 'School name is required' });
         }
-        const newSchool = await dataService.addSchool(name);
-        res.json(newSchool);
+        const [result] = await db.query('INSERT INTO schools (name) VALUES (?)', [name]);
+        res.json({ id: result.insertId, name });
     } catch (error) {
         console.error('Error creating school:', error);
         res.status(500).json({ error: 'Failed to create school' });
     }
 });
 
-// Get all departments (for search filters)
+// Get all departments
 app.get('/api/departments', async (req, res) => {
     try {
-        const [departments] = await db.query('SELECT * FROM courses ORDER BY name');
+        const [departments] = await db.query(`
+            SELECT c.*, s.name as schoolName
+            FROM courses c
+            LEFT JOIN schools s ON c.school_id = s.id
+            ORDER BY c.name
+        `);
         res.json(departments);
     } catch (error) {
         console.error('Error fetching departments:', error);
@@ -437,130 +580,135 @@ app.get('/api/departments', async (req, res) => {
     }
 });
 
-// ==================== DEPARTMENTS ====================
+// Get departments by school
 app.get('/api/schools/:schoolId/departments', async (req, res) => {
     try {
-        const { schoolId } = req.params;
-        const schoolIdInt = parseInt(schoolId);
-        const departments = await dataService.getDepartmentsBySchool(schoolIdInt);
+        const schoolId = parseInt(req.params.schoolId);
         
-        // Get counts for each department
-        const departmentsWithCounts = [];
+        const [departments] = await db.query(`
+            SELECT 
+                c.*,
+                COUNT(DISTINCT u.id) as unitCount,
+                COUNT(DISTINCT uc.user_id) as studentCount,
+                COUNT(DISTINCT n.id) as noteCount
+            FROM courses c
+            LEFT JOIN units u ON u.dept_id = c.id
+            LEFT JOIN user_courses uc ON uc.course_id = c.id
+            LEFT JOIN notes n ON n.dept_id = c.id
+            WHERE c.school_id = ?
+            GROUP BY c.id
+            ORDER BY c.name
+        `, [schoolId]);
         
-        for (const dept of departments) {
-            const deptId = parseInt(String(dept.id));
-            
-            // Count students - from user_courses for this specific course
-            const [studentResult] = await db.query(
-                'SELECT COUNT(*) as studentCount FROM user_courses WHERE course_id = ?',
-                [deptId]
-            );
-            const [noteResult] = await db.query(
-                'SELECT COUNT(*) as noteCount FROM notes WHERE dept_id = ?',
-                [deptId]
-            );
-            const [unitResult] = await db.query(
-                'SELECT COUNT(*) as unitCount FROM units WHERE dept_id = ?',
-                [deptId]
-            );
-            
-            departmentsWithCounts.push({
-                ...dept,
-                studentCount: studentResult[0]?.studentCount || 0,
-                noteCount: noteResult[0]?.noteCount || 0,
-                unitCount: unitResult[0]?.unitCount || 0
-            });
-        }
-        
-        res.json(departmentsWithCounts);
+        res.json(departments);
     } catch (error) {
         console.error('Error fetching departments:', error);
         res.status(500).json({ error: 'Failed to fetch departments' });
     }
 });
 
+// Get single department
 app.get('/api/schools/:schoolId/departments/:deptId', async (req, res) => {
     try {
-        const dept = await dataService.getDepartmentById(req.params.schoolId, req.params.deptId);
-        if (!dept) return res.status(404).json({ message: "Department not found" });
-        res.json(dept);
+        const [departments] = await db.query(`
+            SELECT c.*, s.name as schoolName
+            FROM courses c
+            LEFT JOIN schools s ON c.school_id = s.id
+            WHERE c.id = ? AND c.school_id = ?
+        `, [req.params.deptId, req.params.schoolId]);
+        
+        if (!departments[0]) {
+            return res.status(404).json({ message: "Department not found" });
+        }
+        
+        res.json(departments[0]);
     } catch (error) {
         console.error('Error fetching department:', error);
         res.status(500).json({ error: 'Failed to fetch department' });
     }
 });
 
+// Create department
 app.post('/api/departments', async (req, res) => {
     try {
         const { name, code, school_id } = req.body;
         if (!name || !school_id) {
             return res.status(400).json({ error: 'Name and school_id are required' });
         }
-        const newDept = await dataService.addDepartment(school_id, name, code);
-        if (!newDept) return res.status(404).json({ error: 'School not found' });
-        res.json(newDept);
+        const [result] = await db.query(
+            'INSERT INTO courses (name, code, school_id) VALUES (?, ?, ?)',
+            [name, code, school_id]
+        );
+        res.json({ id: result.insertId, name, code, school_id });
     } catch (error) {
         console.error('Error creating department:', error);
         res.status(500).json({ error: 'Failed to create department' });
     }
 });
 
-// ==================== UNITS ====================
+// Get units by department
 app.get('/api/schools/:schoolId/departments/:deptId/units', async (req, res) => {
     try {
-        const units = await dataService.getUnitsByDepartment(req.params.schoolId, req.params.deptId);
+        const [units] = await db.query(`
+            SELECT u.*, COUNT(DISTINCT n.id) as noteCount
+            FROM units u
+            LEFT JOIN notes n ON n.unit_id = u.id
+            WHERE u.dept_id = ?
+            GROUP BY u.id
+            ORDER BY u.name
+        `, [req.params.deptId]);
         
-        // Add note counts for each unit
-        const unitsWithCounts = [];
-        for (const unit of units) {
-            const unitId = parseInt(String(unit.id));
-            const [noteResult] = await db.query(
-                'SELECT COUNT(*) as noteCount FROM notes WHERE unit_id = ?',
-                [unitId]
-            );
-            unitsWithCounts.push({
-                ...unit,
-                noteCount: noteResult[0]?.noteCount || 0
-            });
-        }
-        
-        res.json(unitsWithCounts);
+        res.json(units);
     } catch (error) {
         console.error('Error fetching units:', error);
         res.status(500).json({ error: 'Failed to fetch units' });
     }
 });
 
+// Get single unit
 app.get('/api/schools/:schoolId/departments/:deptId/units/:unitId', async (req, res) => {
     try {
-        const unit = await dataService.getUnitById(req.params.schoolId, req.params.deptId, req.params.unitId);
-        if (!unit) return res.status(404).json({ message: "Unit not found" });
-        res.json(unit);
+        const [units] = await db.query(`
+            SELECT u.*, c.name as courseName, s.name as schoolName
+            FROM units u
+            LEFT JOIN courses c ON u.dept_id = c.id
+            LEFT JOIN schools s ON c.school_id = s.id
+            WHERE u.id = ?
+        `, [req.params.unitId]);
+        
+        if (!units[0]) {
+            return res.status(404).json({ message: "Unit not found" });
+        }
+        
+        res.json(units[0]);
     } catch (error) {
         console.error('Error fetching unit:', error);
         res.status(500).json({ error: 'Failed to fetch unit' });
     }
 });
 
+// Create unit
 app.post('/api/units', async (req, res) => {
     try {
         const { name, code, school_id, dept_id } = req.body;
         if (!name || !school_id || !dept_id) {
             return res.status(400).json({ error: 'Name, school_id, and dept_id are required' });
         }
-        const newUnit = await dataService.addUnit(school_id, dept_id, name, code);
-        if (!newUnit) return res.status(404).json({ error: 'Department not found' });
-        res.json(newUnit);
+        const [result] = await db.query(
+            'INSERT INTO units (name, code, dept_id) VALUES (?, ?, ?)',
+            [name, code, dept_id]
+        );
+        res.json({ id: result.insertId, name, code, dept_id });
     } catch (error) {
         console.error('Error creating unit:', error);
         res.status(500).json({ error: 'Failed to create unit' });
     }
 });
 
+// Delete unit
 app.delete('/api/units/:id', async (req, res) => {
     try {
-        const { id } = req.params;
-        await db.query('DELETE FROM units WHERE id = ?', [parseInt(id)]);
+        await db.query('DELETE FROM units WHERE id = ?', [parseInt(req.params.id)]);
         res.json({ message: 'Unit deleted successfully' });
     } catch (error) {
         console.error('Error deleting unit:', error);
@@ -568,14 +716,23 @@ app.delete('/api/units/:id', async (req, res) => {
     }
 });
 
-// ==================== NOTES ====================
+// =====================
+// NOTES ENDPOINTS
+// =====================
+
 app.get('/api/schools/:schoolId/departments/:deptId/units/:unitId/notes', async (req, res) => {
     try {
-        const { schoolId, deptId, unitId } = req.params;
-        const notes = await dataService.getNotesByUnit(parseInt(schoolId), parseInt(deptId), parseInt(unitId));
+        const [notes] = await db.query(`
+            SELECT n.*, u.name as uploadedByName
+            FROM notes n
+            LEFT JOIN notify_users u ON n.user_id = u.id
+            WHERE n.unit_id = ?
+            ORDER BY n.created_at DESC
+        `, [req.params.unitId]);
+        
         res.json(notes);
     } catch (error) {
-        console.error("Backend error", error);
+        console.error("Error fetching notes:", error);
         res.status(500).json({ error: 'Failed to fetch notes' });
     }
 });
@@ -594,14 +751,15 @@ app.get('/api/notes', async (req, res) => {
             LEFT JOIN notify_users p ON n.user_id = p.id
         `;
         
-        const parsedSchoolId = parseInt(schoolId);
-        if (schoolId && !isNaN(parsedSchoolId)) {
-            query += ` WHERE n.school_id = ${parsedSchoolId}`;
+        const params = [];
+        if (schoolId && !isNaN(parseInt(schoolId))) {
+            query += ` WHERE n.school_id = ?`;
+            params.push(parseInt(schoolId));
         }
         
         query += ` ORDER BY n.created_at DESC`;
         
-        const [notes] = await db.query(query);
+        const [notes] = await db.query(query, params);
         res.json(notes);
     } catch (error) {
         console.error('Error fetching notes:', error);
@@ -643,14 +801,12 @@ app.post('/api/notes', upload.single('file'), async (req, res) => {
         
         const filePath = req.file ? '/uploads/notes/' + req.file.filename : null;
         
-        const newNote = await dataService.addNote(school_id, dept_id, unit_id, {
-            title,
-            description,
-            userId,
-            filePath
-        });
-        if (!newNote) return res.status(404).json({ error: 'Unit not found' });
-        res.json(newNote);
+        const [result] = await db.query(`
+            INSERT INTO notes (title, description, file_path, school_id, dept_id, unit_id, user_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [title, description, filePath, school_id, dept_id, unit_id, userId || null]);
+        
+        res.json({ id: result.insertId, title, description, file_path: filePath });
     } catch (error) {
         console.error('Error creating note:', error);
         res.status(500).json({ error: 'Failed to create note' });
@@ -659,8 +815,7 @@ app.post('/api/notes', upload.single('file'), async (req, res) => {
 
 app.delete('/api/notes/:id', async (req, res) => {
     try {
-        const { schoolId, deptId, unitId } = req.query;
-        await dataService.deleteNote(parseInt(schoolId), parseInt(deptId), parseInt(unitId), parseInt(req.params.id));
+        await db.query('DELETE FROM notes WHERE id = ?', [parseInt(req.params.id)]);
         res.json({ message: 'Note deleted' });
     } catch (error) {
         console.error('Error deleting note:', error);
@@ -717,32 +872,10 @@ app.get('/api/notes/:id/download', async (req, res) => {
     }
 });
 
-app.get('/api/notes/:id/preview', async (req, res) => {
-    try {
-        const [notes] = await db.query('SELECT * FROM notes WHERE id = ?', [parseInt(req.params.id)]);
-        if (!notes[0]) return res.status(404).json({ error: 'Note not found' });
-        
-        const note = notes[0];
-        
-        if (!note.file_path) {
-            return res.status(404).json({ error: 'No file attached to this note' });
-        }
-        
-        const fileName = note.file_path.split('/').pop();
-        const fullPath = path.join(__dirname, 'uploads', 'notes', fileName);
-        
-        if (!fs.existsSync(fullPath)) {
-            return res.status(404).json({ error: 'File not found on server' });
-        }
-        
-        res.sendFile(fullPath);
-    } catch (error) {
-        console.error('Error previewing note:', error);
-        res.status(500).json({ error: 'Failed to preview note' });
-    }
-});
+// =====================
+// UPDATES ENDPOINTS
+// =====================
 
-// ==================== UPDATES ====================
 app.get('/api/updates', async (req, res) => {
     try {
         const schoolId = req.query.schoolId;
@@ -753,14 +886,15 @@ app.get('/api/updates', async (req, res) => {
             LEFT JOIN notify_users p ON u.user_id = p.id
         `;
         
-        const parsedSchoolId = parseInt(schoolId);
-        if (schoolId && !isNaN(parsedSchoolId) && parsedSchoolId > 0) {
-            query += ` WHERE (c.school_id = ${parsedSchoolId} OR u.course_id IS NULL OR u.course_id = 0)`;
+        const params = [];
+        if (schoolId && !isNaN(parseInt(schoolId)) && parseInt(schoolId) > 0) {
+            query += ` WHERE (c.school_id = ? OR u.course_id IS NULL OR u.course_id = 0)`;
+            params.push(parseInt(schoolId));
         }
         
         query += ` ORDER BY u.created_at DESC`;
         
-        const [updates] = await db.query(query);
+        const [updates] = await db.query(query, params);
         res.json(updates);
     } catch (error) {
         console.error('Updates error:', error);
@@ -768,87 +902,123 @@ app.get('/api/updates', async (req, res) => {
     }
 });
 
-app.get('/api/updates/my-updates', async (req, res) => {
-    try {
-        const userId = req.query.userId;
-        if (!userId) return res.status(400).json({ error: 'User ID required' });
-        
-        const [updates] = await db.query(`
-            SELECT u.*, c.name as courseName, p.name as postedByName
-            FROM updates u 
-            LEFT JOIN courses c ON u.course_id = c.id 
-            LEFT JOIN notify_users p ON u.user_id = p.id
-            WHERE u.user_id = ?
-            ORDER BY u.created_at DESC
-        `, [userId]);
-        res.json(updates);
-    } catch (error) {
-        console.error('Error fetching my updates:', error);
-        res.status(500).json({ error: 'Failed to fetch updates' });
-    }
-});
-
 app.post('/api/updates', async (req, res) => {
     try {
-        const { title, content, course_id, userId, postedBy } = req.body;
+        const { title, content, course_id, userId } = req.body;
         
         if (!title || !content) {
             return res.status(400).json({ error: 'Title and content are required' });
         }
         
-        const newUpdate = await dataService.addUpdate({ 
-            title, 
-            content, 
-            course_id,
-            userId,
-            postedBy 
-        });
-        res.json(newUpdate);
+        const [result] = await db.query(
+            'INSERT INTO updates (title, content, course_id, user_id) VALUES (?, ?, ?, ?)',
+            [title, content, course_id || null, userId || null]
+        );
+        res.json({ id: result.insertId, title, content });
     } catch (error) {
         console.error('Error creating update:', error);
         res.status(500).json({ error: 'Failed to create update' });
     }
 });
 
-app.delete('/api/updates/:id', async (req, res) => {
+// =====================
+// USER ENROLLMENT
+// =====================
+
+app.post('/api/users/enroll', async (req, res) => {
     try {
-        const { id } = req.params;
-        await db.query('DELETE FROM updates WHERE id = ?', [parseInt(id)]);
-        res.json({ message: 'Update deleted successfully' });
+        const { userId, schoolId, courseId } = req.body;
+        console.log('Enroll request:', { userId, schoolId, courseId });
+        
+        const userIdInt = parseInt(userId);
+        const courseIdInt = parseInt(courseId);
+        const schoolIdInt = parseInt(schoolId);
+        
+        // Remove old enrollments
+        await db.query('DELETE FROM user_courses WHERE user_id = ?', [userIdInt]);
+        
+        // Add new enrollment
+        await db.query(
+            'INSERT INTO user_courses (user_id, course_id, school_id, status) VALUES (?, ?, ?, ?)',
+            [userIdInt, courseIdInt, schoolIdInt, 'active']
+        );
+        
+        // Update user's primary school
+        await db.query('UPDATE notify_users SET school_id = ? WHERE id = ?', [schoolIdInt, userIdInt]);
+        
+        const [courseInfo] = await db.query(`
+            SELECT c.*, s.name as schoolName 
+            FROM courses c 
+            LEFT JOIN schools s ON c.school_id = s.id 
+            WHERE c.id = ?
+        `, [courseIdInt]);
+        
+        res.json({ 
+            message: 'Successfully enrolled',
+            course: courseInfo[0]
+        });
     } catch (error) {
-        console.error('Error deleting update:', error);
-        res.status(500).json({ error: 'Failed to delete update' });
+        console.error('Error enrolling:', error);
+        res.status(500).json({ error: 'Failed to enroll: ' + error.message });
     }
 });
 
-// ==================== STATS ====================
-app.get('/api/stats', async (req, res) => {
+app.post('/api/users/enroll-school', async (req, res) => {
     try {
-        const stats = await dataService.getUniversityStats();
-        res.json(stats);
+        const { userId, schoolId } = req.body;
+        console.log('Enroll school request:', { userId, schoolId });
+        
+        const userIdInt = parseInt(userId);
+        const schoolIdInt = parseInt(schoolId);
+        
+        const [currentUser] = await db.query('SELECT school_id FROM notify_users WHERE id = ?', [userIdInt]);
+        const oldSchoolId = currentUser[0]?.school_id;
+        
+        if (oldSchoolId && parseInt(oldSchoolId) !== schoolIdInt) {
+            await db.query(
+                'DELETE FROM user_courses WHERE user_id = ? AND school_id = ?',
+                [userIdInt, oldSchoolId]
+            );
+        }
+        
+        await db.query('UPDATE notify_users SET school_id = ? WHERE id = ?', [schoolIdInt, userIdInt]);
+        
+        const [schoolInfo] = await db.query('SELECT * FROM schools WHERE id = ?', [schoolIdInt]);
+        
+        res.json({ 
+            message: 'Successfully joined ' + schoolInfo[0]?.name,
+            school: schoolInfo[0]
+        });
     } catch (error) {
-        console.error('Error fetching stats:', error);
-        res.status(500).json({ error: 'Failed to fetch stats' });
+        console.error('Error enrolling in school:', error);
+        res.status(500).json({ error: 'Failed to enroll' });
     }
 });
 
-app.get('/api/popular-departments', async (req, res) => {
+app.get('/api/users/:userId/enrollment', async (req, res) => {
     try {
-        const limit = parseInt(req.query.limit) || 3;
-        const depts = await dataService.getPopularDepartments(limit);
-        res.json(depts);
+        const [enrollments] = await db.query(`
+            SELECT uc.*, c.name as courseName, c.school_id, s.name as schoolName
+            FROM user_courses uc
+            LEFT JOIN courses c ON uc.course_id = c.id
+            LEFT JOIN schools s ON c.school_id = s.id
+            WHERE uc.user_id = ? AND uc.status = 'active'
+        `, [req.params.userId]);
+        
+        res.json(enrollments);
     } catch (error) {
-        console.error('Error fetching popular departments:', error);
-        res.status(500).json({ error: 'Failed to fetch popular departments' });
+        console.error('Error fetching enrollment:', error);
+        res.status(500).json({ error: 'Failed to fetch enrollment' });
     }
 });
 
-// ==================== COUNTS ====================
+// =====================
+// COUNTS ENDPOINTS
+// =====================
+
 app.get('/api/counts', async (req, res) => {
     try {
-        const [[{ studentCount }]] = await db.query(
-            'SELECT COUNT(*) as studentCount FROM notify_users WHERE school_id IS NOT NULL'
-        );
+        const [[{ studentCount }]] = await db.query('SELECT COUNT(*) as studentCount FROM notify_users WHERE school_id IS NOT NULL');
         const [[{ noteCount }]] = await db.query('SELECT COUNT(*) as noteCount FROM notes');
         const [[{ schoolCount }]] = await db.query('SELECT COUNT(*) as schoolCount FROM schools');
         const [[{ courseCount }]] = await db.query('SELECT COUNT(*) as courseCount FROM courses');
@@ -878,6 +1048,7 @@ app.get('/api/schools/:schoolId/counts', async (req, res) => {
             'SELECT COUNT(*) as noteCount FROM notes WHERE school_id = ?',
             [schoolId]
         );
+        
         const [[{ courseCount }]] = await db.query(
             'SELECT COUNT(*) as courseCount FROM courses WHERE school_id = ?',
             [schoolId]
@@ -894,181 +1065,10 @@ app.get('/api/schools/:schoolId/counts', async (req, res) => {
     }
 });
 
-app.delete('/api/courses/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        await db.query('DELETE FROM courses WHERE id = ?', [parseInt(id)]);
-        res.json({ message: 'Course deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting course:', error);
-        res.status(500).json({ error: 'Failed to delete course' });
-    }
-});
+// =====================
+// ADMIN ENDPOINTS
+// =====================
 
-app.get('/api/courses/:courseId/counts', async (req, res) => {
-    try {
-        const { courseId } = req.params;
-        
-        const [[{ studentCount }]] = await db.query(
-            'SELECT COUNT(*) as studentCount FROM user_courses WHERE course_id = ? AND status = ?',
-            [courseId, 'active']
-        );
-        const [[{ noteCount }]] = await db.query(
-            'SELECT COUNT(*) as noteCount FROM notes WHERE dept_id = ?',
-            [courseId]
-        );
-        const [[{ unitCount }]] = await db.query(
-            'SELECT COUNT(*) as unitCount FROM units WHERE dept_id = ?',
-            [courseId]
-        );
-        
-        res.json({
-            students: studentCount || 0,
-            notes: noteCount || 0,
-            units: unitCount || 0
-        });
-    } catch (error) {
-        console.error('Error fetching course counts:', error);
-        res.status(500).json({ error: 'Failed to fetch counts' });
-    }
-});
-
-// ==================== USER ENROLLMENT ====================
-app.post('/api/users/enroll', async (req, res) => {
-    try {
-        const { userId, schoolId, courseId } = req.body;
-        console.log('enroll called:', userId, schoolId, courseId);
-        
-        const userIdInt = parseInt(userId);
-        const courseIdInt = parseInt(courseId);
-        const schoolIdInt = parseInt(schoolId);
-        
-        console.log('Parsed:', userIdInt, schoolIdInt, courseIdInt);
-        
-        // Remove old enrollments - student can only be in ONE department at a time
-        await db.query('DELETE FROM user_courses WHERE user_id = ?', [userIdInt]);
-        console.log('Deleted old enrollments');
-        
-        // Add new enrollment
-        await db.query(
-            'INSERT INTO user_courses (user_id, course_id, school_id, status) VALUES (?, ?, ?, ?)',
-            [userIdInt, courseIdInt, schoolIdInt, 'active']
-        );
-        console.log('Inserted new enrollment');
-        
-        // Update user's primary school
-        await db.query('UPDATE notify_users SET school_id = ? WHERE id = ?', [schoolIdInt, userIdInt]);
-        
-        const [courseInfo] = await db.query(`
-            SELECT c.*, s.name as schoolName 
-            FROM courses c 
-            LEFT JOIN schools s ON c.school_id = s.id 
-            WHERE c.id = ?
-        `, [courseIdInt]);
-        
-        res.json({ 
-            message: 'Successfully enrolled',
-            course: courseInfo[0]
-        });
-    } catch (error) {
-        console.error('Error enrolling:', error);
-        res.status(500).json({ error: 'Failed to enroll: ' + error.message });
-    }
-});
-
-app.post('/api/users/enroll-school', async (req, res) => {
-    try {
-        const { userId, schoolId } = req.body;
-        console.log('enroll-school:', userId, schoolId);
-        
-        const userIdInt = parseInt(userId);
-        const schoolIdInt = parseInt(schoolId);
-        
-        const [currentUser] = await db.query('SELECT school_id FROM notify_users WHERE id = ?', [userIdInt]);
-        const oldSchoolId = currentUser[0]?.school_id;
-        
-        if (oldSchoolId && parseInt(oldSchoolId) !== schoolIdInt) {
-            await db.query(
-                'DELETE FROM user_courses WHERE user_id = ? AND school_id = ?',
-                [userIdInt, oldSchoolId]
-            );
-            console.log('Removed from old school:', userIdInt, oldSchoolId);
-        }
-        
-        await db.query('UPDATE notify_users SET school_id = ? WHERE id = ?', [schoolIdInt, userIdInt]);
-        
-        const [schoolInfo] = await db.query('SELECT * FROM schools WHERE id = ?', [schoolIdInt]);
-        
-        res.json({ 
-            message: 'Joined ' + schoolInfo[0].name + '. Please select your department.',
-            school: schoolInfo[0]
-        });
-    } catch (error) {
-        console.error('Error enrolling:', error);
-        res.status(500).json({ error: 'Failed to enroll' });
-    }
-});
-
-app.get('/api/users/:userId/enrollment', async (req, res) => {
-    try {
-        const { userId } = req.params;
-        
-        const [enrollments] = await db.query(`
-            SELECT uc.*, c.name as courseName, c.school_id, s.name as schoolName
-            FROM user_courses uc
-            LEFT JOIN courses c ON uc.course_id = c.id
-            LEFT JOIN schools s ON c.school_id = s.id
-            WHERE uc.user_id = ? AND uc.status = 'active'
-        `, [userId]);
-        
-        res.json(enrollments);
-    } catch (error) {
-        console.error('Error fetching enrollment:', error);
-        res.status(500).json({ error: 'Failed to fetch enrollment' });
-    }
-});
-
-app.get('/api/courses/:courseId/similar', async (req, res) => {
-    try {
-        const { courseId } = req.params;
-        
-        const [course] = await db.query('SELECT school_id, name FROM courses WHERE id = ?', [courseId]);
-        if (!course[0]) return res.json([]);
-        
-        const [similar] = await db.query(`
-            SELECT id, name, code FROM courses 
-            WHERE school_id = ? AND id != ?
-            LIMIT 5
-        `, [course[0].school_id, courseId]);
-        
-        res.json(similar);
-    } catch (error) {
-        console.error('Error fetching similar courses:', error);
-        res.status(500).json({ error: 'Failed to fetch' });
-    }
-});
-
-app.get('/api/units/:unitId/similar', async (req, res) => {
-    try {
-        const { unitId } = req.params;
-        
-        const [unit] = await db.query('SELECT dept_id, name FROM units WHERE id = ?', [unitId]);
-        if (!unit[0]) return res.json([]);
-        
-        const [similar] = await db.query(`
-            SELECT id, name, code FROM units 
-            WHERE dept_id = ? AND id != ?
-            LIMIT 5
-        `, [unit[0].dept_id, unitId]);
-        
-        res.json(similar);
-    } catch (error) {
-        console.error('Error fetching similar units:', error);
-        res.status(500).json({ error: 'Failed to fetch' });
-    }
-});
-
-// ==================== ADMIN API ====================
 app.get('/api/admin/users', adminMiddleware, async (req, res) => {
     try {
         const [users] = await db.query(`
@@ -1085,136 +1085,22 @@ app.get('/api/admin/users', adminMiddleware, async (req, res) => {
     }
 });
 
-app.put('/api/admin/users/:id', adminMiddleware, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { name, role } = req.body;
-        
-        if (role) {
-            await db.query('UPDATE notify_users SET role = ? WHERE id = ?', [role, id]);
-        }
-        if (name) {
-            await db.query('UPDATE notify_users SET name = ? WHERE id = ?', [name, id]);
-        }
-        
-        res.json({ message: 'User updated successfully' });
-    } catch (error) {
-        console.error('Error updating user:', error);
-        res.status(500).json({ error: 'Failed to update user' });
-    }
-});
-
-app.delete('/api/admin/users/:id', adminMiddleware, async (req, res) => {
-    try {
-        const { id } = req.params;
-        await db.query('DELETE FROM notify_users WHERE id = ?', [id]);
-        res.json({ message: 'User deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting user:', error);
-        res.status(500).json({ error: 'Failed to delete user' });
-    }
-});
-
-app.post('/api/admin/users/:id/promote', adminMiddleware, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { role } = req.body;
-        
-        if (!['student', 'lecturer', 'admin'].includes(role)) {
-            return res.status(400).json({ error: 'Invalid role' });
-        }
-        
-        await db.query('UPDATE notify_users SET role = ? WHERE id = ?', [role, id]);
-        res.json({ message: `User promoted to ${role}` });
-    } catch (error) {
-        console.error('Error promoting user:', error);
-        res.status(500).json({ error: 'Failed to promote user' });
-    }
-});
-
-// Institutions management
-app.get('/api/admin/institutions', adminMiddleware, async (req, res) => {
-    try {
-        const [institutions] = await db.query('SELECT * FROM institutions ORDER BY name');
-        res.json(institutions);
-    } catch (error) {
-        console.error('Error fetching institutions:', error);
-        res.status(500).json({ error: 'Failed to fetch institutions' });
-    }
-});
-
-app.post('/api/admin/institutions', adminMiddleware, async (req, res) => {
-    try {
-        const { name, staff_domain, student_domain } = req.body;
-        const [result] = await db.query(
-            'INSERT INTO institutions (name, staff_domain, student_domain) VALUES (?, ?, ?)',
-            [name, staff_domain, student_domain]
-        );
-        res.json({ id: result.insertId, name, staff_domain, student_domain });
-    } catch (error) {
-        console.error('Error creating institution:', error);
-        res.status(500).json({ error: 'Failed to create institution' });
-    }
-});
-
-app.put('/api/admin/institutions/:id', adminMiddleware, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { name, staff_domain, student_domain } = req.body;
-        
-        await db.query(
-            'UPDATE institutions SET name = ?, staff_domain = ?, student_domain = ? WHERE id = ?',
-            [name, staff_domain, student_domain, id]
-        );
-        res.json({ message: 'Institution updated successfully' });
-    } catch (error) {
-        console.error('Error updating institution:', error);
-        res.status(500).json({ error: 'Failed to update institution' });
-    }
-});
-
-app.delete('/api/admin/institutions/:id', adminMiddleware, async (req, res) => {
-    try {
-        const { id } = req.params;
-        await db.query('DELETE FROM institutions WHERE id = ?', [id]);
-        res.json({ message: 'Institution deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting institution:', error);
-        res.status(500).json({ error: 'Failed to delete institution' });
-    }
-});
-
-// Schools management (admin)
 app.get('/api/admin/schools', adminMiddleware, async (req, res) => {
     try {
-        const [schools] = await db.query('SELECT * FROM schools ORDER BY name');
+        const [schools] = await db.query(`
+            SELECT s.*, 
+                   COUNT(DISTINCT u.id) as studentCount,
+                   COUNT(DISTINCT c.id) as courseCount,
+                   COUNT(DISTINCT n.id) as noteCount
+            FROM schools s
+            LEFT JOIN notify_users u ON u.school_id = s.id
+            LEFT JOIN courses c ON c.school_id = s.id
+            LEFT JOIN notes n ON n.school_id = s.id
+            GROUP BY s.id
+            ORDER BY s.name
+        `);
         
-        const schoolsWithCounts = await Promise.all(schools.map(async (school) => {
-            const schoolId = parseInt(school.id);
-            
-            const [[{ studentCount }]] = await db.query(
-                'SELECT COUNT(*) as studentCount FROM notify_users WHERE school_id = ?',
-                [schoolId]
-            );
-            
-            const [[{ courseCount }]] = await db.query(
-                'SELECT COUNT(*) as courseCount FROM courses WHERE school_id = ?',
-                [schoolId]
-            );
-            const [[{ noteCount }]] = await db.query(
-                'SELECT COUNT(*) as noteCount FROM notes WHERE school_id = ?',
-                [schoolId]
-            );
-            
-            return {
-                ...school,
-                studentCount: studentCount || 0,
-                courseCount: courseCount || 0,
-                noteCount: noteCount || 0
-            };
-        }));
-        
-        res.json(schoolsWithCounts);
+        res.json(schools);
     } catch (error) {
         console.error('Error fetching schools:', error);
         res.status(500).json({ error: 'Failed to fetch schools' });
@@ -1234,10 +1120,8 @@ app.post('/api/admin/schools', adminMiddleware, async (req, res) => {
 
 app.put('/api/admin/schools/:id', adminMiddleware, async (req, res) => {
     try {
-        const { id } = req.params;
         const { name } = req.body;
-        
-        await db.query('UPDATE schools SET name = ? WHERE id = ?', [name, id]);
+        await db.query('UPDATE schools SET name = ? WHERE id = ?', [name, req.params.id]);
         res.json({ message: 'School updated successfully' });
     } catch (error) {
         console.error('Error updating school:', error);
@@ -1247,8 +1131,7 @@ app.put('/api/admin/schools/:id', adminMiddleware, async (req, res) => {
 
 app.delete('/api/admin/schools/:id', adminMiddleware, async (req, res) => {
     try {
-        const { id } = req.params;
-        await db.query('DELETE FROM schools WHERE id = ?', [id]);
+        await db.query('DELETE FROM schools WHERE id = ?', [req.params.id]);
         res.json({ message: 'School deleted successfully' });
     } catch (error) {
         console.error('Error deleting school:', error);
@@ -1256,267 +1139,54 @@ app.delete('/api/admin/schools/:id', adminMiddleware, async (req, res) => {
     }
 });
 
-// Courses management (admin)
 app.get('/api/admin/courses', adminMiddleware, async (req, res) => {
     try {
         const [courses] = await db.query(`
-            SELECT c.*, s.name as schoolName
+            SELECT c.*, s.name as schoolName,
+                   COUNT(DISTINCT u.id) as unitCount,
+                   COUNT(DISTINCT uc.user_id) as studentCount
             FROM courses c
             LEFT JOIN schools s ON c.school_id = s.id
+            LEFT JOIN units u ON u.dept_id = c.id
+            LEFT JOIN user_courses uc ON uc.course_id = c.id
+            GROUP BY c.id, s.name
             ORDER BY c.name
         `);
-        
-        const coursesWithCounts = await Promise.all(courses.map(async (course) => {
-            const courseId = parseInt(course.id);
-            
-            const [[{ studentCount }]] = await db.query(
-                'SELECT COUNT(*) as studentCount FROM user_courses WHERE course_id = ?',
-                [courseId]
-            );
-            const [[{ unitCount }]] = await db.query(
-                'SELECT COUNT(*) as unitCount FROM units WHERE dept_id = ?',
-                [courseId]
-            );
-            const [[{ noteCount }]] = await db.query(
-                'SELECT COUNT(*) as noteCount FROM notes WHERE dept_id = ?',
-                [courseId]
-            );
-            
-            return {
-                ...course,
-                studentCount: studentCount || 0,
-                unitCount: unitCount || 0,
-                noteCount: noteCount || 0
-            };
-        }));
-        
-        res.json(coursesWithCounts);
+        res.json(courses);
     } catch (error) {
         console.error('Error fetching courses:', error);
         res.status(500).json({ error: 'Failed to fetch courses' });
     }
 });
 
-app.post('/api/admin/courses', adminMiddleware, async (req, res) => {
+app.get('/api/admin/stats', adminMiddleware, async (req, res) => {
     try {
-        const { name, code, school_id } = req.body;
-        const [result] = await db.query(
-            'INSERT INTO courses (name, code, school_id) VALUES (?, ?, ?)',
-            [name, code, school_id]
-        );
-        res.json({ id: result.insertId, name, code, school_id });
-    } catch (error) {
-        console.error('Error creating course:', error);
-        res.status(500).json({ error: 'Failed to create course' });
-    }
-});
-
-app.put('/api/admin/courses/:id', adminMiddleware, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { name, code, school_id } = req.body;
+        const [[{ totalUsers }]] = await db.query('SELECT COUNT(*) as totalUsers FROM notify_users');
+        const [[{ totalStudents }]] = await db.query('SELECT COUNT(*) as totalStudents FROM notify_users WHERE role = "student"');
+        const [[{ totalLecturers }]] = await db.query('SELECT COUNT(*) as totalLecturers FROM notify_users WHERE role = "lecturer"');
+        const [[{ totalAdmins }]] = await db.query('SELECT COUNT(*) as totalAdmins FROM notify_users WHERE role = "admin"');
+        const [[{ totalSchools }]] = await db.query('SELECT COUNT(*) as totalSchools FROM schools');
+        const [[{ totalCourses }]] = await db.query('SELECT COUNT(*) as totalCourses FROM courses');
+        const [[{ totalUnits }]] = await db.query('SELECT COUNT(*) as totalUnits FROM units');
+        const [[{ totalNotes }]] = await db.query('SELECT COUNT(*) as totalNotes FROM notes');
         
-        await db.query(
-            'UPDATE courses SET name = ?, code = ?, school_id = ? WHERE id = ?',
-            [name, code, school_id, id]
-        );
-        res.json({ message: 'Course updated successfully' });
+        res.json({
+            totalUsers: totalUsers || 0,
+            totalStudents: totalStudents || 0,
+            totalLecturers: totalLecturers || 0,
+            totalAdmins: totalAdmins || 0,
+            totalSchools: totalSchools || 0,
+            totalCourses: totalCourses || 0,
+            totalUnits: totalUnits || 0,
+            totalNotes: totalNotes || 0
+        });
     } catch (error) {
-        console.error('Error updating course:', error);
-        res.status(500).json({ error: 'Failed to update course' });
+        console.error('Error fetching admin stats:', error);
+        res.status(500).json({ error: 'Failed to fetch stats' });
     }
 });
 
-app.delete('/api/admin/courses/:id', adminMiddleware, async (req, res) => {
-    try {
-        const { id } = req.params;
-        await db.query('DELETE FROM courses WHERE id = ?', [id]);
-        res.json({ message: 'Course deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting course:', error);
-        res.status(500).json({ error: 'Failed to delete course' });
-    }
-});
-
-// Units management (admin)
-app.get('/api/admin/units', adminMiddleware, async (req, res) => {
-    try {
-        const [units] = await db.query(`
-            SELECT u.*, c.name as courseName, s.name as schoolName
-            FROM units u
-            LEFT JOIN courses c ON u.dept_id = c.id
-            LEFT JOIN schools s ON c.school_id = s.id
-            ORDER BY u.name
-        `);
-        
-        const unitsWithCounts = await Promise.all(units.map(async (unit) => {
-            const unitId = parseInt(unit.id);
-            
-            const [[{ noteCount }]] = await db.query(
-                'SELECT COUNT(*) as noteCount FROM notes WHERE unit_id = ?',
-                [unitId]
-            );
-            
-            return {
-                ...unit,
-                noteCount: noteCount || 0
-            };
-        }));
-        
-        res.json(unitsWithCounts);
-    } catch (error) {
-        console.error('Error fetching units:', error);
-        res.status(500).json({ error: 'Failed to fetch units' });
-    }
-});
-
-app.post('/api/admin/units', adminMiddleware, async (req, res) => {
-    try {
-        const { name, code, dept_id } = req.body;
-        const [result] = await db.query(
-            'INSERT INTO units (name, code, dept_id) VALUES (?, ?, ?)',
-            [name, code, dept_id]
-        );
-        res.json({ id: result.insertId, name, code, dept_id });
-    } catch (error) {
-        console.error('Error creating unit:', error);
-        res.status(500).json({ error: 'Failed to create unit' });
-    }
-});
-
-app.put('/api/admin/units/:id', adminMiddleware, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { name, code, dept_id } = req.body;
-        
-        await db.query(
-            'UPDATE units SET name = ?, code = ?, dept_id = ? WHERE id = ?',
-            [name, code, dept_id, id]
-        );
-        res.json({ message: 'Unit updated successfully' });
-    } catch (error) {
-        console.error('Error updating unit:', error);
-        res.status(500).json({ error: 'Failed to update unit' });
-    }
-});
-
-app.delete('/api/admin/units/:id', adminMiddleware, async (req, res) => {
-    try {
-        const { id } = req.params;
-        await db.query('DELETE FROM units WHERE id = ?', [id]);
-        res.json({ message: 'Unit deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting unit:', error);
-        res.status(500).json({ error: 'Failed to delete unit' });
-    }
-});
-
-// Notes management (admin)
-app.get('/api/admin/notes', adminMiddleware, async (req, res) => {
-    try {
-        const [notes] = await db.query(`
-            SELECT n.*, s.name as schoolName, c.name as courseName, 
-                   u.name as unitName, p.name as uploadedByName
-            FROM notes n
-            LEFT JOIN schools s ON n.school_id = s.id
-            LEFT JOIN courses c ON n.dept_id = c.id
-            LEFT JOIN units u ON n.unit_id = u.id
-            LEFT JOIN notify_users p ON n.user_id = p.id
-            ORDER BY n.created_at DESC
-        `);
-        res.json(notes);
-    } catch (error) {
-        console.error('Error fetching notes:', error);
-        res.status(500).json({ error: 'Failed to fetch notes' });
-    }
-});
-
-app.put('/api/admin/notes/:id', adminMiddleware, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { title, description } = req.body;
-        
-        await db.query(
-            'UPDATE notes SET title = ?, description = ? WHERE id = ?',
-            [title, description, id]
-        );
-        res.json({ message: 'Note updated successfully' });
-    } catch (error) {
-        console.error('Error updating note:', error);
-        res.status(500).json({ error: 'Failed to update note' });
-    }
-});
-
-app.delete('/api/admin/notes/:id', adminMiddleware, async (req, res) => {
-    try {
-        const { id } = req.params;
-        await db.query('DELETE FROM notes WHERE id = ?', [id]);
-        res.json({ message: 'Note deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting note:', error);
-        res.status(500).json({ error: 'Failed to delete note' });
-    }
-});
-
-// Updates management (admin)
-app.get('/api/admin/updates', adminMiddleware, async (req, res) => {
-    try {
-        const [updates] = await db.query(`
-            SELECT u.*, c.name as courseName, p.name as postedByName
-            FROM updates u
-            LEFT JOIN courses c ON u.course_id = c.id
-            LEFT JOIN notify_users p ON u.user_id = p.id
-            ORDER BY u.created_at DESC
-        `);
-        res.json(updates);
-    } catch (error) {
-        console.error('Error fetching updates:', error);
-        res.status(500).json({ error: 'Failed to fetch updates' });
-    }
-});
-
-app.post('/api/admin/updates', adminMiddleware, async (req, res) => {
-    try {
-        const { title, content, course_id, userId } = req.body;
-        const [result] = await db.query(
-            'INSERT INTO updates (title, content, course_id, user_id) VALUES (?, ?, ?, ?)',
-            [title, content, course_id || null, userId]
-        );
-        res.json({ id: result.insertId, title, content, course_id, user_id: userId });
-    } catch (error) {
-        console.error('Error creating update:', error);
-        res.status(500).json({ error: 'Failed to create update' });
-    }
-});
-
-app.put('/api/admin/updates/:id', adminMiddleware, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { title, content } = req.body;
-        
-        await db.query(
-            'UPDATE updates SET title = ?, content = ? WHERE id = ?',
-            [title, content, id]
-        );
-        res.json({ message: 'Update updated successfully' });
-    } catch (error) {
-        console.error('Error updating update:', error);
-        res.status(500).json({ error: 'Failed to update update' });
-    }
-});
-
-app.delete('/api/admin/updates/:id', adminMiddleware, async (req, res) => {
-    try {
-        const { id } = req.params;
-        await db.query('DELETE FROM updates WHERE id = ?', [id]);
-        res.json({ message: 'Update deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting update:', error);
-        res.status(500).json({ error: 'Failed to delete update' });
-    }
-});
-
-// ==================== PROFILE PICTURE ====================
+// Profile picture upload
 app.post('/api/user/pfp', async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
@@ -1540,12 +1210,10 @@ app.post('/api/user/pfp', async (req, res) => {
             
             try {
                 const pfpPath = '/uploads/pfps/' + req.file.filename;
-                
                 await db.query('UPDATE notify_users SET pfp = ? WHERE id = ?', [pfpPath, decoded.id]);
-                
                 res.json({ pfp: pfpPath });
             } catch (dbErr) {
-                console.error('Error updating profile picture in DB:', dbErr);
+                console.error('Error updating profile picture:', dbErr);
                 res.status(500).json({ error: 'Failed to save profile picture' });
             }
         });
@@ -1555,38 +1223,6 @@ app.post('/api/user/pfp', async (req, res) => {
         }
         console.error('Error uploading pfp:', err);
         res.status(500).json({ error: 'Failed to upload profile picture' });
-    }
-});
-
-// Admin stats
-app.get('/api/admin/stats', adminMiddleware, async (req, res) => {
-    try {
-        const [[{ totalUsers }]] = await db.query('SELECT COUNT(*) as totalUsers FROM notify_users');
-        const [[{ totalStudents }]] = await db.query('SELECT COUNT(*) as totalStudents FROM notify_users WHERE role = "student"');
-        const [[{ totalLecturers }]] = await db.query('SELECT COUNT(*) as totalLecturers FROM notify_users WHERE role = "lecturer"');
-        const [[{ totalAdmins }]] = await db.query('SELECT COUNT(*) as totalAdmins FROM notify_users WHERE role = "admin"');
-        const [[{ totalInstitutions }]] = await db.query('SELECT COUNT(*) as totalInstitutions FROM institutions');
-        const [[{ totalSchools }]] = await db.query('SELECT COUNT(*) as totalSchools FROM schools');
-        const [[{ totalCourses }]] = await db.query('SELECT COUNT(*) as totalCourses FROM courses');
-        const [[{ totalUnits }]] = await db.query('SELECT COUNT(*) as totalUnits FROM units');
-        const [[{ totalNotes }]] = await db.query('SELECT COUNT(*) as totalNotes FROM notes');
-        const [[{ totalUpdates }]] = await db.query('SELECT COUNT(*) as totalUpdates FROM updates');
-        
-        res.json({
-            totalUsers: totalUsers || 0,
-            totalStudents: totalStudents || 0,
-            totalLecturers: totalLecturers || 0,
-            totalAdmins: totalAdmins || 0,
-            totalInstitutions: totalInstitutions || 0,
-            totalSchools: totalSchools || 0,
-            totalCourses: totalCourses || 0,
-            totalUnits: totalUnits || 0,
-            totalNotes: totalNotes || 0,
-            totalUpdates: totalUpdates || 0
-        });
-    } catch (error) {
-        console.error('Error fetching admin stats:', error);
-        res.status(500).json({ error: 'Failed to fetch stats' });
     }
 });
 
@@ -1620,6 +1256,8 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`📍 Environment: ${NODE_ENV}`);
     console.log(`🔗 API URL: http://localhost:${PORT}`);
     console.log(`✅ Health check: http://localhost:${PORT}/health`);
+    console.log(`🔍 Debug counts: http://localhost:${PORT}/api/debug/counts`);
+    console.log(`🔍 Debug dataService: http://localhost:${PORT}/api/debug/dataService`);
 });
 
 // Graceful shutdown

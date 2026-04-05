@@ -1,1272 +1,508 @@
-// server.js - Production Ready for Render/Vercel Deployment
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const fs = require('fs');
-const multer = require('multer');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
 
-const db = require('./db');
-const dataService = require('./Data_fetcher/data_service');
-const authRoutes = require('./user_auth/routes');
 
-// =====================
-// Configuration
-// =====================
-const PORT = process.env.PORT || 3000;
-const SECRET = process.env.JWT_SECRET || 'notify_fallback_dev_key_change_in_production';
-const NODE_ENV = process.env.NODE_ENV || 'development';
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3001';
-
-const app = express();
-
-// =====================
-// Ensure upload directories exist
-// =====================
-const uploadsDir = path.join(__dirname, 'uploads');
-const notesDir = path.join(__dirname, 'uploads/notes');
-const pfpsDir = path.join(__dirname, 'uploads/pfps');
-
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-}
-if (!fs.existsSync(notesDir)) {
-    fs.mkdirSync(notesDir, { recursive: true });
-}
-if (!fs.existsSync(pfpsDir)) {
-    fs.mkdirSync(pfpsDir, { recursive: true });
+async function getSchools() {
+    try{
+        const response=await fetch(`${window.API_URL}/schools`);
+        if (!response.ok) throw new Error("Failed to fetch schools");
+        return await response.json();
+    }
+    catch (err) {
+        console.error("Error fetching schools:", err);
+        return [];
+    }
 }
 
-// =====================
-// Multer Configuration
-// =====================
-const pfpStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, pfpsDir);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
-});
-
-const uploadPfp = multer({ 
-    storage: pfpStorage, 
-    limits: { fileSize: 2 * 1024 * 1024 } // 2MB limit
-});
-
-const noteStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, notesDir);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
-});
-
-const upload = multer({ 
-    storage: noteStorage,
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit for notes
-});
-
-// =====================
-// CORS Configuration
-// =====================
-const allowedOrigins = [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://127.0.0.1:5500',
-    FRONTEND_URL,
-    process.env.RENDER_EXTERNAL_URL,
-    'https://*.vercel.app',
-    'https://*.onrender.com'
-];
-
-app.use(cors({
-    origin: function(origin, callback) {
-        if (!origin) return callback(null, true);
-        
-        if (allowedOrigins.some(allowed => {
-            if (allowed.includes('*')) {
-                const pattern = allowed.replace('*', '.*');
-                return new RegExp(pattern).test(origin);
-            }
-            return allowed === origin;
-        })) {
-            callback(null, true);
-        } else {
-            console.log('CORS blocked origin:', origin);
-            callback(null, true);
-        }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
-}));
-
-// =====================
-// Body Parsing Middleware
-// =====================
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static(uploadsDir));
-
-// Request logging middleware
-app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-    next();
-});
-
-// =====================
-// Admin Middleware
-// =====================
-const adminMiddleware = (req, res, next) => {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-        return res.status(401).json({ message: 'Unauthorized - No token provided' });
-    }
-    
+async function updateUserEnrollment(userId, schoolId) {
     try {
-        const decoded = jwt.verify(token, SECRET);
-        if (decoded.role !== 'admin') {
-            return res.status(403).json({ message: 'Admin access required' });
-        }
-        req.user = decoded;
-        next();
+        await fetch(`${API_URL}/users/enroll-school`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, schoolId })
+        });
     } catch (err) {
-        if (err.name === 'JsonWebTokenError') {
-            return res.status(401).json({ message: 'Invalid token' });
-        }
-        if (err.name === 'TokenExpiredError') {
-            return res.status(401).json({ message: 'Token expired' });
-        }
-        return res.status(401).json({ message: 'Authentication failed' });
+        console.error('Error updating enrollment:', err);
     }
+}
+
+
+
+
+const schoolIcons = {
+    'computing': { icon: 'fa-laptop-code', bg: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', color: '#fff' },
+    'natural': { icon: 'fa-leaf', bg: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)', color: '#fff' },
+    'social': { icon: 'fa-users', bg: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)', color: '#fff' },
+    'science': { icon: 'fa-flask', bg: 'linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)', color: '#fff' },
+    'business': { icon: 'fa-briefcase', bg: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', color: '#fff' },
+    'medicine': { icon: 'fa-heartbeat', bg: 'linear-gradient(135deg, #ef4444 0%, #f87171 100%)', color: '#fff' },
+    'law': { icon: 'fa-gavel', bg: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)', color: '#fff' },
+    'engineering': { icon: 'fa-cogs', bg: 'linear-gradient(135deg, #f97316 0%, #fb923c 100%)', color: '#fff' },
+    'education': { icon: 'fa-graduation-cap', bg: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)', color: '#fff' },
+    'arts': { icon: 'fa-palette', bg: 'linear-gradient(135deg, #ec4899 0%, #f472b6 100%)', color: '#fff' },
+    'default': { icon: 'fa-university', bg: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', color: '#fff' }
 };
 
-// =====================
-// Routes
-// =====================
-app.use('/api/user_auth', authRoutes);
+const defaultSchoolImage = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&q=80';
 
-// Health check endpoint
-app.get('/', (req, res) => {
-    res.json({ 
-        status: 'OK', 
-        message: 'API is running 🚀',
-        environment: NODE_ENV,
-        timestamp: new Date().toISOString()
-    });
-});
+const schoolImages = {
+    // Old URLs commented out
+    // computing: 'url(https://i.pinimg.com/736x/1d/ff/81/1dff8198d3e2749c9907ab44060800bc.jpg)',
+    // natural: 'url(https://i.pinimg.com/1200x/80/27/e1/8027e1d703307621a026dac15a69e1c4.jpg)',
+    // social: 'url(https://i.pinimg.com/736x/61/6f/00/616f00a16b770266f9d9652dc1bbd638.jpg)',
+    // science: 'url(https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=400&q=80)',
+    // business: 'url(https://i.pinimg.com/1200x/c3/39/b2/c339b24fd0171d949492276a673422f6.jpg)',
+    // medicine: 'url(https://i.pinimg.com/1200x/af/0e/ce/af0eced4407e9ade0813a2e71702b0d9.jpg)',
+    // law: 'url(https://i.pinimg.com/1200x/e3/72/59/e37259713d2f9d7d2a22ad8b7dafca9d.jpg)',
+    // engineering: 'url(https://i.pinimg.com/1200x/7b/2f/b0/7b2fb031b7f31708544ae7cb58d6c08a.jpg)',
+    // education: 'url(https://i.pinimg.com/736x/e7/88/1f/e7881f718bf221f875401e9c4910335b.jpg)',
+    // arts: 'url(https://i.pinimg.com/736x/61/6f/00/616f00a16b770266f9d9652dc1bbd638.jpg)',
+    // default: 'url(https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&q=80)'
+    
+    // New Unsplash images - each tailored to the school type
+    computing: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80',
+    natural: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80',
+    social: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=80',
+    science: 'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=800&q=80',
+    business: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80',
+    medicine: 'https://i.pinimg.com/736x/7e/46/2d/7e462debaf2b30815f413f98561e2e76.jpg',
+    law: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&q=80',
+    engineering: 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=800&q=80',
+    education: 'https://i.pinimg.com/736x/da/06/b2/da06b231abe068f97e8d1d37d21fec49.jpg',
+    arts: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=800&q=80',
+    default: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&q=80'
+};
+const defaultDescriptions = {
+    'Science': 'Computer Science, Information Technology, Data Science, Software Engineering',
+    'Engineering': 'Civil, Mechanical, Electrical, Electronics Engineering',
+    'Business': 'Finance, Marketing, Accounting, Human Resources',
+    'Health': 'Medicine, Nursing, Pharmacy, Public Health',
+    'Arts': 'Literature, History, Philosophy, Languages',
+    'Law': 'Constitutional Law, Criminal Law, Civil Law, International Law'
+};
 
-app.get('/health', (req, res) => {
-    res.status(200).json({ 
-        status: 'healthy',
-        uptime: process.uptime(),
-        timestamp: new Date().toISOString()
-    });
-});
-
-app.get('/api/test', (req, res) => {
-    res.json({ message: 'API is working!', timestamp: new Date().toISOString() });
-});
-
-// =====================
-// DEBUG ENDPOINTS
-// =====================
-
-// Check database tables
-app.get('/api/check-tables', async (req, res) => {
+async function displaySchools() {
     try {
-        const [tables] = await db.query(`
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public'
-            ORDER BY table_name
-        `);
+        const grid = document.getElementById('schoolsGrid');
+        if (!grid) return;
         
-        res.json({
-            status: 'ok',
-            tables: tables.map(t => t.table_name),
-            count: tables.length
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Debug counts - check what's in the database
-app.get('/api/debug/counts', async (req, res) => {
-    try {
-        // Get all schools
-        const [schools] = await db.query('SELECT id, name FROM schools');
+        grid.innerHTML = `<div class="loader-container" id="lottieLoader">
+            <div class="loader-ring"></div>
+            <div class="loader-ring"></div>
+            <div class="loader-ring"></div>
+            <p>Loading Faculties...</p>
+        </div>`;
         
-        // Get users with school_id
-        const [usersWithSchool] = await db.query('SELECT id, name, email, school_id FROM notify_users WHERE school_id IS NOT NULL');
+        const schools = await getSchools();
+          console.log('First school from API:', schools[0]);
+    console.log('Available properties:', Object.keys(schools[0] || {}));
+    console.log('courseCount:', schools[0]?.courseCount);
+    console.log('studentCount:', schools[0]?.studentCount);
         
-        // Get courses with school_id
-        const [coursesWithSchool] = await db.query('SELECT id, name, school_id FROM courses WHERE school_id IS NOT NULL');
+        if (!grid) return;
         
-        // Get all counts
-        const [[{ totalUsers }]] = await db.query('SELECT COUNT(*) as total FROM notify_users');
-        const [[{ totalCourses }]] = await db.query('SELECT COUNT(*) as total FROM courses');
-        const [[{ totalUnits }]] = await db.query('SELECT COUNT(*) as total FROM units');
-        
-        // Get counts per school
-        const schoolStats = await Promise.all(schools.map(async (school) => {
-            const [[{ userCount }]] = await db.query('SELECT COUNT(*) as count FROM notify_users WHERE school_id = ?', [school.id]);
-            const [[{ courseCount }]] = await db.query('SELECT COUNT(*) as count FROM courses WHERE school_id = ?', [school.id]);
-            return {
-                schoolId: school.id,
-                schoolName: school.name,
-                userCount: userCount || 0,
-                courseCount: courseCount || 0
-            };
-        }));
-        
-        res.json({
-            schools: schools,
-            usersWithSchool: usersWithSchool,
-            usersWithSchoolCount: usersWithSchool.length,
-            totalUsers: totalUsers || 0,
-            coursesWithSchool: coursesWithSchool,
-            coursesWithSchoolCount: coursesWithSchool.length,
-            totalCourses: totalCourses || 0,
-            totalUnits: totalUnits || 0,
-            schoolStats: schoolStats
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Debug dataService response
-app.get('/api/debug/dataService', async (req, res) => {
-    try {
-        const schools = await dataService.getSchools();
-        res.json({
-            schoolsCount: schools.length,
-            firstSchool: schools[0] || null,
-            firstSchoolDepartments: schools[0]?.departments || [],
-            firstSchoolDepartmentsCount: schools[0]?.departments?.length || 0,
-            sampleDepartment: schools[0]?.departments?.[0] || null
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// =====================
-// DATABASE SETUP ENDPOINT
-// =====================
-app.get('/api/setup', async (req, res) => {
-    try {
-        console.log('🔧 Running database setup...');
-        
-        // Create tables
-        await db.query(`
-            CREATE TABLE IF NOT EXISTS schools (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-        
-        await db.query(`
-            CREATE TABLE IF NOT EXISTS courses (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                code VARCHAR(50),
-                school_id INTEGER REFERENCES schools(id) ON DELETE CASCADE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-        
-        await db.query(`
-            CREATE TABLE IF NOT EXISTS units (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                code VARCHAR(50),
-                dept_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
-                is_common BOOLEAN DEFAULT FALSE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-        
-        await db.query(`
-            CREATE TABLE IF NOT EXISTS notify_users (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(255),
-                email VARCHAR(255) UNIQUE NOT NULL,
-                password VARCHAR(255) NOT NULL,
-                role VARCHAR(50) DEFAULT 'student',
-                school_id INTEGER REFERENCES schools(id),
-                pfp VARCHAR(500),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-        
-        await db.query(`
-            CREATE TABLE IF NOT EXISTS notes (
-                id SERIAL PRIMARY KEY,
-                title VARCHAR(255) NOT NULL,
-                description TEXT,
-                file_path VARCHAR(500),
-                downloads INTEGER DEFAULT 0,
-                school_id INTEGER REFERENCES schools(id),
-                dept_id INTEGER REFERENCES courses(id),
-                unit_id INTEGER REFERENCES units(id),
-                user_id INTEGER REFERENCES notify_users(id),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-        
-        await db.query(`
-            CREATE TABLE IF NOT EXISTS updates (
-                id SERIAL PRIMARY KEY,
-                title VARCHAR(255) NOT NULL,
-                content TEXT,
-                course_id INTEGER REFERENCES courses(id),
-                user_id INTEGER REFERENCES notify_users(id),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-        
-        await db.query(`
-            CREATE TABLE IF NOT EXISTS user_courses (
-                id SERIAL PRIMARY KEY,
-                user_id INTEGER REFERENCES notify_users(id) ON DELETE CASCADE,
-                course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
-                school_id INTEGER REFERENCES schools(id),
-                status VARCHAR(20) DEFAULT 'active',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-        
-        await db.query(`
-            CREATE TABLE IF NOT EXISTS institutions (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                staff_domain VARCHAR(255),
-                student_domain VARCHAR(255),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-        
-        // Create indexes
-        await db.query(`CREATE INDEX IF NOT EXISTS idx_notes_school ON notes(school_id)`);
-        await db.query(`CREATE INDEX IF NOT EXISTS idx_notes_dept ON notes(dept_id)`);
-        await db.query(`CREATE INDEX IF NOT EXISTS idx_notes_unit ON notes(unit_id)`);
-        await db.query(`CREATE INDEX IF NOT EXISTS idx_updates_course ON updates(course_id)`);
-        await db.query(`CREATE INDEX IF NOT EXISTS idx_users_school ON notify_users(school_id)`);
-        await db.query(`CREATE INDEX IF NOT EXISTS idx_courses_school ON courses(school_id)`);
-        
-        // Insert sample data if tables are empty
-        const [[{ schoolCount }]] = await db.query('SELECT COUNT(*) as count FROM schools');
-        if (schoolCount === 0) {
-            await db.query(`INSERT INTO schools (name) VALUES 
-                ('School of Computing'),
-                ('School of Business'),
-                ('School of Engineering'),
-                ('School of Medicine')
-            `);
-            console.log('✅ Sample schools added');
+        if (schools.length === 0) {
+            grid.innerHTML = `<div class="no-schools">No schools found</div>`;
+            return;
         }
         
-        const [[{ userCount }]] = await db.query('SELECT COUNT(*) as count FROM notify_users');
-        if (userCount === 0) {
-            const hashedPassword = await bcrypt.hash('password123', 10);
-            await db.query(`
-                INSERT INTO notify_users (name, email, password, role, school_id) 
-                VALUES ('Test Student', 'student@test.com', $1, 'student', 1)
-            `, [hashedPassword]);
-            console.log('✅ Sample user added');
-        }
+        let html = '';
         
-        res.json({ 
-            success: true, 
-            message: 'Database setup complete!',
-            sampleCredentials: {
-                email: 'student@test.com',
-                password: 'password123'
+        const currentSchoolId = localStorage.getItem('selected_school');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        
+        schools.forEach((school, index) => {
+            const deptCount = school.departments?.length || 0;
+            const isEnrolled = currentSchoolId == school.id;
+
+       
+
+            const courseCount = school.courseCount || 0;
+            const studentCount = school.studentCount || 0;
+            
+           
+
+
+            // Find matching icon based on school name
+            let iconData = schoolIcons['default'];
+            const schoolNameLower = school.name?.toLowerCase() || '';
+            for (const [key, value] of Object.entries(schoolIcons)) {
+                if (schoolNameLower.includes(key)) {
+                    iconData = value;
+                    break;
+                }
             }
-        });
-        
-    } catch (error) {
-        console.error('Setup error:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// =====================
-// MAIN API ENDPOINTS
-// =====================
-
-// SCHOOLS - FIXED VERSION with proper counts
-app.get('/api/schools', async (req, res) => {
-    try {
-        // Direct SQL query to get schools with counts - more reliable than dataService
-        const [schoolsData] = await db.query(`
-            SELECT 
-                s.id,
-                s.name,
-                s.created_at,
-                COUNT(DISTINCT u.id) as studentCount,
-                COUNT(DISTINCT c.id) as courseCount,
-                COUNT(DISTINCT n.id) as noteCount
-            FROM schools s
-            LEFT JOIN notify_users u ON u.school_id = s.id
-            LEFT JOIN courses c ON c.school_id = s.id
-            LEFT JOIN notes n ON n.school_id = s.id
-            GROUP BY s.id, s.name, s.created_at
-            ORDER BY s.name
-        `);
-        
-        // Get departments for each school
-        const schoolsWithDepartments = await Promise.all(schoolsData.map(async (school) => {
-            const [departments] = await db.query(`
-                SELECT 
-                    c.id,
-                    c.name,
-                    c.code,
-                    COUNT(DISTINCT u.id) as unitCount,
-                    COUNT(DISTINCT n.id) as noteCount
-                FROM courses c
-                LEFT JOIN units u ON u.dept_id = c.id
-                LEFT JOIN notes n ON n.dept_id = c.id
-                WHERE c.school_id = ?
-                GROUP BY c.id, c.name, c.code
-                ORDER BY c.name
-            `, [school.id]);
             
-            // Get units for each department
-            const departmentsWithUnits = await Promise.all(departments.map(async (dept) => {
-                const [units] = await db.query(`
-                    SELECT 
-                        u.id,
-                        u.name,
-                        u.code,
-                        COUNT(DISTINCT n.id) as noteCount
-                    FROM units u
-                    LEFT JOIN notes n ON n.unit_id = u.id
-                    WHERE u.dept_id = ?
-                    GROUP BY u.id, u.name, u.code
-                    ORDER BY u.name
-                `, [dept.id]);
-                
-                return {
-                    ...dept,
-                    units: units
-                };
-            }));
+            // Find matching bg image based on school name
+            let bgImage = schoolImages['default'];
+            const searchText = (schoolNameLower + ' ' + (school.description || '')).toLowerCase();
+            for (const [key, value] of Object.entries(schoolImages)) {
+                if (searchText.includes(key)) {
+                    bgImage = value;
+                    break;
+                }
+            }
             
-            return {
-                id: school.id,
-                name: school.name,
-                created_at: school.created_at,
-                studentCount: parseInt(school.studentCount) || 0,
-                courseCount: parseInt(school.courseCount) || 0,
-                noteCount: parseInt(school.noteCount) || 0,
-                departments: departmentsWithUnits
+            // Also check for partial matches
+            const keywordMap = {
+                'computer': 'computing',
+                'tech': 'computing',
+                'it': 'computing',
+                'information': 'computing',
+                'software': 'computing',
+                'biology': 'natural',
+                'agriculture': 'natural',
+                'environment': 'natural',
+                'physics': 'science',
+                'chemistry': 'science',
+                'math': 'science',
+                'health': 'medicine',
+                'medical': 'medicine',
+                'nursing': 'medicine',
+                'pharmacy': 'medicine',
+                'law': 'law',
+                'legal': 'law',
+                'civil': 'engineering',
+                'mechanical': 'engineering',
+                'electrical': 'engineering',
+                'architect': 'engineering',
+                'management': 'business',
+                'finance': 'business',
+                'marketing': 'business',
+                'accounting': 'business',
+                'economics': 'business',
+                'teacher': 'education',
+                'teaching': 'education',
+                'art': 'arts',
+                'design': 'arts',
+                'media': 'arts',
+                'humanities': 'social',
+                'social': 'social',
+                'psychology': 'social'
             };
-        }));
-        
-        console.log(`✅ Fetched ${schoolsWithDepartments.length} schools with counts`);
-        res.json(schoolsWithDepartments);
-        
-    } catch (error) {
-        console.error('Error fetching schools:', error);
-        res.status(500).json({ error: 'Failed to fetch schools: ' + error.message });
-    }
-});
-
-// Get single school with details
-app.get('/api/schools/:schoolId', async (req, res) => {
-    try {
-        const schoolId = parseInt(req.params.schoolId);
-        
-        const [schools] = await db.query(`
-            SELECT s.*, 
-                   COUNT(DISTINCT u.id) as studentCount,
-                   COUNT(DISTINCT c.id) as courseCount
-            FROM schools s
-            LEFT JOIN notify_users u ON u.school_id = s.id
-            LEFT JOIN courses c ON c.school_id = s.id
-            WHERE s.id = ?
-            GROUP BY s.id
-        `, [schoolId]);
-        
-        if (!schools[0]) {
-            return res.status(404).json({ message: "School not found" });
-        }
-        
-        const [departments] = await db.query(`
-            SELECT c.*, COUNT(DISTINCT u.id) as unitCount
-            FROM courses c
-            LEFT JOIN units u ON u.dept_id = c.id
-            WHERE c.school_id = ?
-            GROUP BY c.id
-            ORDER BY c.name
-        `, [schoolId]);
-        
-        for (const dept of departments) {
-            const [units] = await db.query(`
-                SELECT u.*, COUNT(DISTINCT n.id) as noteCount
-                FROM units u
-                LEFT JOIN notes n ON n.unit_id = u.id
-                WHERE u.dept_id = ?
-                GROUP BY u.id
-                ORDER BY u.name
-            `, [dept.id]);
-            dept.units = units;
-        }
-        
-        const school = {
-            ...schools[0],
-            departments: departments,
-            studentCount: parseInt(schools[0].studentCount) || 0,
-            courseCount: parseInt(schools[0].courseCount) || 0
-        };
-        
-        res.json(school);
-    } catch (error) {
-        console.error('Error fetching school:', error);
-        res.status(500).json({ error: 'Failed to fetch school' });
-    }
-});
-
-// Get schools from dataService (backup)
-app.get('/api/schools-legacy', async (req, res) => {
-    try {
-        const schools = await dataService.getSchools();
-        res.json(schools);
-    } catch (error) {
-        console.error('Error fetching schools from dataService:', error);
-        res.status(500).json({ error: 'Failed to fetch schools' });
-    }
-});
-
-// Create new school
-app.post('/api/schools', async (req, res) => {
-    try {
-        const { name } = req.body;
-        if (!name) {
-            return res.status(400).json({ error: 'School name is required' });
-        }
-        const [result] = await db.query('INSERT INTO schools (name) VALUES (?)', [name]);
-        res.json({ id: result.insertId, name });
-    } catch (error) {
-        console.error('Error creating school:', error);
-        res.status(500).json({ error: 'Failed to create school' });
-    }
-});
-
-// Get all departments
-app.get('/api/departments', async (req, res) => {
-    try {
-        const [departments] = await db.query(`
-            SELECT c.*, s.name as schoolName
-            FROM courses c
-            LEFT JOIN schools s ON c.school_id = s.id
-            ORDER BY c.name
-        `);
-        res.json(departments);
-    } catch (error) {
-        console.error('Error fetching departments:', error);
-        res.status(500).json({ error: 'Failed to load departments' });
-    }
-});
-
-// Get departments by school
-app.get('/api/schools/:schoolId/departments', async (req, res) => {
-    try {
-        const schoolId = parseInt(req.params.schoolId);
-        
-        const [departments] = await db.query(`
-            SELECT 
-                c.*,
-                COUNT(DISTINCT u.id) as unitCount,
-                COUNT(DISTINCT uc.user_id) as studentCount,
-                COUNT(DISTINCT n.id) as noteCount
-            FROM courses c
-            LEFT JOIN units u ON u.dept_id = c.id
-            LEFT JOIN user_courses uc ON uc.course_id = c.id
-            LEFT JOIN notes n ON n.dept_id = c.id
-            WHERE c.school_id = ?
-            GROUP BY c.id
-            ORDER BY c.name
-        `, [schoolId]);
-        
-        res.json(departments);
-    } catch (error) {
-        console.error('Error fetching departments:', error);
-        res.status(500).json({ error: 'Failed to fetch departments' });
-    }
-});
-
-// Get single department
-app.get('/api/schools/:schoolId/departments/:deptId', async (req, res) => {
-    try {
-        const [departments] = await db.query(`
-            SELECT c.*, s.name as schoolName
-            FROM courses c
-            LEFT JOIN schools s ON c.school_id = s.id
-            WHERE c.id = ? AND c.school_id = ?
-        `, [req.params.deptId, req.params.schoolId]);
-        
-        if (!departments[0]) {
-            return res.status(404).json({ message: "Department not found" });
-        }
-        
-        res.json(departments[0]);
-    } catch (error) {
-        console.error('Error fetching department:', error);
-        res.status(500).json({ error: 'Failed to fetch department' });
-    }
-});
-
-// Create department
-app.post('/api/departments', async (req, res) => {
-    try {
-        const { name, code, school_id } = req.body;
-        if (!name || !school_id) {
-            return res.status(400).json({ error: 'Name and school_id are required' });
-        }
-        const [result] = await db.query(
-            'INSERT INTO courses (name, code, school_id) VALUES (?, ?, ?)',
-            [name, code, school_id]
-        );
-        res.json({ id: result.insertId, name, code, school_id });
-    } catch (error) {
-        console.error('Error creating department:', error);
-        res.status(500).json({ error: 'Failed to create department' });
-    }
-});
-
-// Get units by department
-app.get('/api/schools/:schoolId/departments/:deptId/units', async (req, res) => {
-    try {
-        const [units] = await db.query(`
-            SELECT u.*, COUNT(DISTINCT n.id) as noteCount
-            FROM units u
-            LEFT JOIN notes n ON n.unit_id = u.id
-            WHERE u.dept_id = ?
-            GROUP BY u.id
-            ORDER BY u.name
-        `, [req.params.deptId]);
-        
-        res.json(units);
-    } catch (error) {
-        console.error('Error fetching units:', error);
-        res.status(500).json({ error: 'Failed to fetch units' });
-    }
-});
-
-// Get single unit
-app.get('/api/schools/:schoolId/departments/:deptId/units/:unitId', async (req, res) => {
-    try {
-        const [units] = await db.query(`
-            SELECT u.*, c.name as courseName, s.name as schoolName
-            FROM units u
-            LEFT JOIN courses c ON u.dept_id = c.id
-            LEFT JOIN schools s ON c.school_id = s.id
-            WHERE u.id = ?
-        `, [req.params.unitId]);
-        
-        if (!units[0]) {
-            return res.status(404).json({ message: "Unit not found" });
-        }
-        
-        res.json(units[0]);
-    } catch (error) {
-        console.error('Error fetching unit:', error);
-        res.status(500).json({ error: 'Failed to fetch unit' });
-    }
-});
-
-// Create unit
-app.post('/api/units', async (req, res) => {
-    try {
-        const { name, code, school_id, dept_id } = req.body;
-        if (!name || !school_id || !dept_id) {
-            return res.status(400).json({ error: 'Name, school_id, and dept_id are required' });
-        }
-        const [result] = await db.query(
-            'INSERT INTO units (name, code, dept_id) VALUES (?, ?, ?)',
-            [name, code, dept_id]
-        );
-        res.json({ id: result.insertId, name, code, dept_id });
-    } catch (error) {
-        console.error('Error creating unit:', error);
-        res.status(500).json({ error: 'Failed to create unit' });
-    }
-});
-
-// Delete unit
-app.delete('/api/units/:id', async (req, res) => {
-    try {
-        await db.query('DELETE FROM units WHERE id = ?', [parseInt(req.params.id)]);
-        res.json({ message: 'Unit deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting unit:', error);
-        res.status(500).json({ error: 'Failed to delete unit' });
-    }
-});
-
-// =====================
-// NOTES ENDPOINTS
-// =====================
-
-app.get('/api/schools/:schoolId/departments/:deptId/units/:unitId/notes', async (req, res) => {
-    try {
-        const [notes] = await db.query(`
-            SELECT n.*, u.name as uploadedByName
-            FROM notes n
-            LEFT JOIN notify_users u ON n.user_id = u.id
-            WHERE n.unit_id = ?
-            ORDER BY n.created_at DESC
-        `, [req.params.unitId]);
-        
-        res.json(notes);
-    } catch (error) {
-        console.error("Error fetching notes:", error);
-        res.status(500).json({ error: 'Failed to fetch notes' });
-    }
-});
-
-app.get('/api/notes', async (req, res) => {
-    try {
-        const schoolId = req.query.schoolId;
-        let query = `
-            SELECT n.*, s.name as schoolName, c.name as deptName, u.name as unitName,
-                   s.id as schoolId, c.id as deptId, u.id as unitId,
-                   p.name as uploadedByName
-            FROM notes n
-            LEFT JOIN schools s ON n.school_id = s.id
-            LEFT JOIN courses c ON n.dept_id = c.id
-            LEFT JOIN units u ON n.unit_id = u.id
-            LEFT JOIN notify_users p ON n.user_id = p.id
-        `;
-        
-        const params = [];
-        if (schoolId && !isNaN(parseInt(schoolId))) {
-            query += ` WHERE n.school_id = ?`;
-            params.push(parseInt(schoolId));
-        }
-        
-        query += ` ORDER BY n.created_at DESC`;
-        
-        const [notes] = await db.query(query, params);
-        res.json(notes);
-    } catch (error) {
-        console.error('Error fetching notes:', error);
-        res.status(500).json({ error: 'Failed to fetch notes' });
-    }
-});
-
-app.get('/api/notes/my-notes', async (req, res) => {
-    try {
-        const userId = req.query.userId;
-        if (!userId) return res.status(400).json({ error: 'User ID required' });
-        
-        const [notes] = await db.query(`
-            SELECT n.*, s.name as schoolName, c.name as courseName, u.name as unitName,
-                   u.id as unitId, u.code as unitCode,
-                   p.name as uploadedByName
-            FROM notes n
-            LEFT JOIN schools s ON n.school_id = s.id
-            LEFT JOIN courses c ON n.dept_id = c.id
-            LEFT JOIN units u ON n.unit_id = u.id
-            LEFT JOIN notify_users p ON n.user_id = p.id
-            WHERE n.user_id = ?
-            ORDER BY n.created_at DESC
-        `, [userId]);
-        res.json(notes);
-    } catch (error) {
-        console.error('Error fetching my notes:', error);
-        res.status(500).json({ error: 'Failed to fetch notes' });
-    }
-});
-
-app.post('/api/notes', upload.single('file'), async (req, res) => {
-    try {
-        const { title, description, school_id, dept_id, unit_id, userId } = req.body;
-        
-        if (!title || !school_id || !dept_id || !unit_id) {
-            return res.status(400).json({ error: 'Missing required fields' });
-        }
-        
-        const filePath = req.file ? '/uploads/notes/' + req.file.filename : null;
-        
-        const [result] = await db.query(`
-            INSERT INTO notes (title, description, file_path, school_id, dept_id, unit_id, user_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        `, [title, description, filePath, school_id, dept_id, unit_id, userId || null]);
-        
-        res.json({ id: result.insertId, title, description, file_path: filePath });
-    } catch (error) {
-        console.error('Error creating note:', error);
-        res.status(500).json({ error: 'Failed to create note' });
-    }
-});
-
-app.delete('/api/notes/:id', async (req, res) => {
-    try {
-        await db.query('DELETE FROM notes WHERE id = ?', [parseInt(req.params.id)]);
-        res.json({ message: 'Note deleted' });
-    } catch (error) {
-        console.error('Error deleting note:', error);
-        res.status(500).json({ error: 'Failed to delete note' });
-    }
-});
-
-app.get('/api/notes/:id', async (req, res) => {
-    try {
-        const [notes] = await db.query(`
-            SELECT n.*, s.name as schoolName, c.name as courseName, u.name as unitName,
-                   u.id as unitId, u.code as unitCode,
-                   p.name as uploadedByName
-            FROM notes n
-            LEFT JOIN schools s ON n.school_id = s.id
-            LEFT JOIN courses c ON n.dept_id = c.id
-            LEFT JOIN units u ON n.unit_id = u.id
-            LEFT JOIN notify_users p ON n.user_id = p.id
-            WHERE n.id = ?
-        `, [parseInt(req.params.id)]);
-        
-        if (!notes[0]) return res.status(404).json({ error: 'Note not found' });
-        res.json(notes[0]);
-    } catch (error) {
-        console.error('Error fetching note:', error);
-        res.status(500).json({ error: 'Failed to fetch note' });
-    }
-});
-
-app.get('/api/notes/:id/download', async (req, res) => {
-    try {
-        const [notes] = await db.query('SELECT * FROM notes WHERE id = ?', [parseInt(req.params.id)]);
-        if (!notes[0]) return res.status(404).json({ error: 'Note not found' });
-        
-        const note = notes[0];
-        
-        if (!note.file_path) {
-            return res.status(404).json({ error: 'No file attached to this note' });
-        }
-        
-        await db.query('UPDATE notes SET downloads = COALESCE(downloads, 0) + 1 WHERE id = ?', [req.params.id]);
-        
-        const fileName = note.file_path.split('/').pop();
-        const filePath = path.join(__dirname, 'uploads', 'notes', fileName);
-        
-        if (!fs.existsSync(filePath)) {
-            return res.status(404).json({ error: 'File not found on server' });
-        }
-        
-        res.download(filePath);
-    } catch (error) {
-        console.error('Error downloading note:', error);
-        res.status(500).json({ error: 'Failed to download note' });
-    }
-});
-
-// =====================
-// UPDATES ENDPOINTS
-// =====================
-
-app.get('/api/updates', async (req, res) => {
-    try {
-        const schoolId = req.query.schoolId;
-        let query = `
-            SELECT u.*, c.name as courseName, c.school_id, p.name as postedByName
-            FROM updates u 
-            LEFT JOIN courses c ON u.course_id = c.id 
-            LEFT JOIN notify_users p ON u.user_id = p.id
-        `;
-        
-        const params = [];
-        if (schoolId && !isNaN(parseInt(schoolId)) && parseInt(schoolId) > 0) {
-            query += ` WHERE (c.school_id = ? OR u.course_id IS NULL OR u.course_id = 0)`;
-            params.push(parseInt(schoolId));
-        }
-        
-        query += ` ORDER BY u.created_at DESC`;
-        
-        const [updates] = await db.query(query, params);
-        res.json(updates);
-    } catch (error) {
-        console.error('Updates error:', error);
-        res.status(500).json({ error: 'Failed to load updates' });
-    }
-});
-
-app.post('/api/updates', async (req, res) => {
-    try {
-        const { title, content, course_id, userId } = req.body;
-        
-        if (!title || !content) {
-            return res.status(400).json({ error: 'Title and content are required' });
-        }
-        
-        const [result] = await db.query(
-            'INSERT INTO updates (title, content, course_id, user_id) VALUES (?, ?, ?, ?)',
-            [title, content, course_id || null, userId || null]
-        );
-        res.json({ id: result.insertId, title, content });
-    } catch (error) {
-        console.error('Error creating update:', error);
-        res.status(500).json({ error: 'Failed to create update' });
-    }
-});
-
-// =====================
-// USER ENROLLMENT
-// =====================
-
-app.post('/api/users/enroll', async (req, res) => {
-    try {
-        const { userId, schoolId, courseId } = req.body;
-        console.log('Enroll request:', { userId, schoolId, courseId });
-        
-        const userIdInt = parseInt(userId);
-        const courseIdInt = parseInt(courseId);
-        const schoolIdInt = parseInt(schoolId);
-        
-        // Remove old enrollments
-        await db.query('DELETE FROM user_courses WHERE user_id = ?', [userIdInt]);
-        
-        // Add new enrollment
-        await db.query(
-            'INSERT INTO user_courses (user_id, course_id, school_id, status) VALUES (?, ?, ?, ?)',
-            [userIdInt, courseIdInt, schoolIdInt, 'active']
-        );
-        
-        // Update user's primary school
-        await db.query('UPDATE notify_users SET school_id = ? WHERE id = ?', [schoolIdInt, userIdInt]);
-        
-        const [courseInfo] = await db.query(`
-            SELECT c.*, s.name as schoolName 
-            FROM courses c 
-            LEFT JOIN schools s ON c.school_id = s.id 
-            WHERE c.id = ?
-        `, [courseIdInt]);
-        
-        res.json({ 
-            message: 'Successfully enrolled',
-            course: courseInfo[0]
+            
+            for (const [keyword, imageKey] of Object.entries(keywordMap)) {
+                if (searchText.includes(keyword)) {
+                    bgImage = schoolImages[imageKey];
+                    break;
+                }
+            }
+            
+            const departments = school.departments || [];
+            const deptNames = departments.slice(0, 4).map(d => d.name).join(', ');
+            const description = school.description || deptNames || 'Various courses and programs';
+            
+            const fallbackImage = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&q=80';
+            
+            html += `
+                <div class="school-card" data-school-id="${school.id}" data-school-name="${school.name}" style="animation-delay: ${index * 0.1}s;">
+                    <div class="school-card-image" data-bg="${bgImage}" style="background-image: url('${bgImage}')" onerror="this.style.backgroundImage='url(${fallbackImage})'"></div>
+                    <div class="school-card-content" data-school-id="${school.id}" data-school-name="${school.name}">
+                        ${isEnrolled ? '<div class="enrolled-badge"><i class="fas fa-check-circle"></i> Enrolled</div>' : ''}
+                        <div class="school-info">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                                <div class="school-icon" style="background: ${iconData.bg};">
+                                    <i class="fas ${iconData.icon}" style="color: ${iconData.color};"></i>
+                                </div>
+                                <div>
+                                    <p class="school-hash">ID: ${school.id ? school.id.toString().slice(-8) : 'N/A'}</p>
+                                    <h3>${school.name}</h3>
+                                </div>
+                            </div>
+                            <p class="school-description">${description}</p>
+                        </div>
+                        <div class="school-meta">
+                            <span><i class="fas fa-book-open"></i> ${courseCount} Courses</span>
+                            <span><i class="fas fa-user-graduate"></i> ${studentCount} Students</span>
+                        </div>
+                        <button class="select-school-btn">
+                            ${isEnrolled ? '<i class="fas fa-eye"></i> View Courses' : '<i class="fas fa-arrow-right"></i> Browse Courses'}
+                        </button>
+                    </div>
+                </div>
+              `;
         });
+        
+        grid.innerHTML = html;
+
+        attachSchoolCardEvents();
+        initScrollAnimations();
+        updateSchoolInsights(schools);
+        
     } catch (error) {
-        console.error('Error enrolling:', error);
-        res.status(500).json({ error: 'Failed to enroll: ' + error.message });
+        console.error('Error displaying schools:', error);
+        showSchoolError();
     }
-});
+}
 
-app.post('/api/users/enroll-school', async (req, res) => {
-    try {
-        const { userId, schoolId } = req.body;
-        console.log('Enroll school request:', { userId, schoolId });
-        
-        const userIdInt = parseInt(userId);
-        const schoolIdInt = parseInt(schoolId);
-        
-        const [currentUser] = await db.query('SELECT school_id FROM notify_users WHERE id = ?', [userIdInt]);
-        const oldSchoolId = currentUser[0]?.school_id;
-        
-        if (oldSchoolId && parseInt(oldSchoolId) !== schoolIdInt) {
-            await db.query(
-                'DELETE FROM user_courses WHERE user_id = ? AND school_id = ?',
-                [userIdInt, oldSchoolId]
-            );
-        }
-        
-        await db.query('UPDATE notify_users SET school_id = ? WHERE id = ?', [schoolIdInt, userIdInt]);
-        
-        const [schoolInfo] = await db.query('SELECT * FROM schools WHERE id = ?', [schoolIdInt]);
-        
-        res.json({ 
-            message: 'Successfully joined ' + schoolInfo[0]?.name,
-            school: schoolInfo[0]
-        });
-    } catch (error) {
-        console.error('Error enrolling in school:', error);
-        res.status(500).json({ error: 'Failed to enroll' });
-    }
-});
-
-app.get('/api/users/:userId/enrollment', async (req, res) => {
-    try {
-        const [enrollments] = await db.query(`
-            SELECT uc.*, c.name as courseName, c.school_id, s.name as schoolName
-            FROM user_courses uc
-            LEFT JOIN courses c ON uc.course_id = c.id
-            LEFT JOIN schools s ON c.school_id = s.id
-            WHERE uc.user_id = ? AND uc.status = 'active'
-        `, [req.params.userId]);
-        
-        res.json(enrollments);
-    } catch (error) {
-        console.error('Error fetching enrollment:', error);
-        res.status(500).json({ error: 'Failed to fetch enrollment' });
-    }
-});
-
-// =====================
-// COUNTS ENDPOINTS
-// =====================
-
-app.get('/api/counts', async (req, res) => {
-    try {
-        const [[{ studentCount }]] = await db.query('SELECT COUNT(*) as studentCount FROM notify_users WHERE school_id IS NOT NULL');
-        const [[{ noteCount }]] = await db.query('SELECT COUNT(*) as noteCount FROM notes');
-        const [[{ schoolCount }]] = await db.query('SELECT COUNT(*) as schoolCount FROM schools');
-        const [[{ courseCount }]] = await db.query('SELECT COUNT(*) as courseCount FROM courses');
-        
-        res.json({
-            students: studentCount || 0,
-            notes: noteCount || 0,
-            schools: schoolCount || 0,
-            courses: courseCount || 0
-        });
-    } catch (error) {
-        console.error('Error fetching counts:', error);
-        res.status(500).json({ error: 'Failed to fetch counts' });
-    }
-});
-
-app.get('/api/schools/:schoolId/counts', async (req, res) => {
-    try {
-        const schoolId = parseInt(req.params.schoolId);
-        
-        const [[{ studentCount }]] = await db.query(
-            'SELECT COUNT(*) as studentCount FROM notify_users WHERE school_id = ?',
-            [schoolId]
-        );
-        
-        const [[{ noteCount }]] = await db.query(
-            'SELECT COUNT(*) as noteCount FROM notes WHERE school_id = ?',
-            [schoolId]
-        );
-        
-        const [[{ courseCount }]] = await db.query(
-            'SELECT COUNT(*) as courseCount FROM courses WHERE school_id = ?',
-            [schoolId]
-        );
-        
-        res.json({
-            students: studentCount || 0,
-            notes: noteCount || 0,
-            courses: courseCount || 0
-        });
-    } catch (error) {
-        console.error('Error fetching school counts:', error);
-        res.status(500).json({ error: 'Failed to fetch counts' });
-    }
-});
-
-// =====================
-// ADMIN ENDPOINTS
-// =====================
-
-app.get('/api/admin/users', adminMiddleware, async (req, res) => {
-    try {
-        const [users] = await db.query(`
-            SELECT nu.*, i.name as institutionName, s.name as schoolName
-            FROM notify_users nu
-            LEFT JOIN institutions i ON nu.institution_id = i.id
-            LEFT JOIN schools s ON nu.school_id = s.id
-            ORDER BY nu.created_at DESC
-        `);
-        res.json(users);
-    } catch (error) {
-        console.error('Error fetching users:', error);
-        res.status(500).json({ error: 'Failed to fetch users' });
-    }
-});
-
-app.get('/api/admin/schools', adminMiddleware, async (req, res) => {
-    try {
-        const [schools] = await db.query(`
-            SELECT s.*, 
-                   COUNT(DISTINCT u.id) as studentCount,
-                   COUNT(DISTINCT c.id) as courseCount,
-                   COUNT(DISTINCT n.id) as noteCount
-            FROM schools s
-            LEFT JOIN notify_users u ON u.school_id = s.id
-            LEFT JOIN courses c ON c.school_id = s.id
-            LEFT JOIN notes n ON n.school_id = s.id
-            GROUP BY s.id
-            ORDER BY s.name
-        `);
-        
-        res.json(schools);
-    } catch (error) {
-        console.error('Error fetching schools:', error);
-        res.status(500).json({ error: 'Failed to fetch schools' });
-    }
-});
-
-app.post('/api/admin/schools', adminMiddleware, async (req, res) => {
-    try {
-        const { name } = req.body;
-        const [result] = await db.query('INSERT INTO schools (name) VALUES (?)', [name]);
-        res.json({ id: result.insertId, name });
-    } catch (error) {
-        console.error('Error creating school:', error);
-        res.status(500).json({ error: 'Failed to create school' });
-    }
-});
-
-app.put('/api/admin/schools/:id', adminMiddleware, async (req, res) => {
-    try {
-        const { name } = req.body;
-        await db.query('UPDATE schools SET name = ? WHERE id = ?', [name, req.params.id]);
-        res.json({ message: 'School updated successfully' });
-    } catch (error) {
-        console.error('Error updating school:', error);
-        res.status(500).json({ error: 'Failed to update school' });
-    }
-});
-
-app.delete('/api/admin/schools/:id', adminMiddleware, async (req, res) => {
-    try {
-        await db.query('DELETE FROM schools WHERE id = ?', [req.params.id]);
-        res.json({ message: 'School deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting school:', error);
-        res.status(500).json({ error: 'Failed to delete school' });
-    }
-});
-
-app.get('/api/admin/courses', adminMiddleware, async (req, res) => {
-    try {
-        const [courses] = await db.query(`
-            SELECT c.*, s.name as schoolName,
-                   COUNT(DISTINCT u.id) as unitCount,
-                   COUNT(DISTINCT uc.user_id) as studentCount
-            FROM courses c
-            LEFT JOIN schools s ON c.school_id = s.id
-            LEFT JOIN units u ON u.dept_id = c.id
-            LEFT JOIN user_courses uc ON uc.course_id = c.id
-            GROUP BY c.id, s.name
-            ORDER BY c.name
-        `);
-        res.json(courses);
-    } catch (error) {
-        console.error('Error fetching courses:', error);
-        res.status(500).json({ error: 'Failed to fetch courses' });
-    }
-});
-
-app.get('/api/admin/stats', adminMiddleware, async (req, res) => {
-    try {
-        const [[{ totalUsers }]] = await db.query('SELECT COUNT(*) as totalUsers FROM notify_users');
-        const [[{ totalStudents }]] = await db.query('SELECT COUNT(*) as totalStudents FROM notify_users WHERE role = "student"');
-        const [[{ totalLecturers }]] = await db.query('SELECT COUNT(*) as totalLecturers FROM notify_users WHERE role = "lecturer"');
-        const [[{ totalAdmins }]] = await db.query('SELECT COUNT(*) as totalAdmins FROM notify_users WHERE role = "admin"');
-        const [[{ totalSchools }]] = await db.query('SELECT COUNT(*) as totalSchools FROM schools');
-        const [[{ totalCourses }]] = await db.query('SELECT COUNT(*) as totalCourses FROM courses');
-        const [[{ totalUnits }]] = await db.query('SELECT COUNT(*) as totalUnits FROM units');
-        const [[{ totalNotes }]] = await db.query('SELECT COUNT(*) as totalNotes FROM notes');
-        
-        res.json({
-            totalUsers: totalUsers || 0,
-            totalStudents: totalStudents || 0,
-            totalLecturers: totalLecturers || 0,
-            totalAdmins: totalAdmins || 0,
-            totalSchools: totalSchools || 0,
-            totalCourses: totalCourses || 0,
-            totalUnits: totalUnits || 0,
-            totalNotes: totalNotes || 0
-        });
-    } catch (error) {
-        console.error('Error fetching admin stats:', error);
-        res.status(500).json({ error: 'Failed to fetch stats' });
-    }
-});
-
-// Profile picture upload
-app.post('/api/user/pfp', async (req, res) => {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-        return res.status(401).json({ message: 'Unauthorized' });
-    }
+// UPDATE INSIGHTS
+async function updateSchoolInsights(schools) {
+    const insightsGrid = document.getElementById('insightsGrid');
+    if (!insightsGrid) return;
     
     try {
-        const decoded = jwt.verify(token, SECRET);
+        const countsRes = await fetch(`${API_URL}/counts`);
+        const counts = await countsRes.json();
         
-        uploadPfp.single('pfp')(req, res, async (err) => {
-            if (err) {
-                if (err.code === 'LIMIT_FILE_SIZE') {
-                    return res.status(400).json({ message: 'File too large. Max 2MB' });
-                }
-                return res.status(400).json({ message: 'File upload error' });
-            }
+        insightsGrid.innerHTML = `
+            <div class="insight-card">
+                <div class="insight-icon" style="background: #e3f2fd;">
+                    <i class="fas fa-university" style="color: #1976d2;"></i>
+                </div>
+                <div class="insight-content">
+                    <h4>Total Faculties</h4>
+                    <p class="insight-value">${counts.schools || 0}</p>
+                </div>
+            </div>
+            <div class="insight-card">
+                <div class="insight-icon" style="background: #f3e5f5;">
+                    <i class="fas fa-building" style="color: #7b1fa2;"></i>
+                </div>
+                <div class="insight-content">
+                    <h4>Total Courses</h4>
+                    <p class="insight-value">${counts.courses || 0}</p>
+                </div>
+            </div>
+            <div class="insight-card">
+                <div class="insight-icon" style="background: #e8f5e9;">
+                    <i class="fas fa-users" style="color: #388e3c;"></i>
+                </div>
+                <div class="insight-content">
+                    <h4>Total Students</h4>
+                    <p class="insight-value">${counts.students || 0}</p>
+                </div>
+            </div>
+            <div class="insight-card">
+                <div class="insight-icon" style="background: #fff3e0;">
+                    <i class="fas fa-file-pdf" style="color: #f57c00;"></i>
+                </div>
+                <div class="insight-content">
+                    <h4>Total Notes</h4>
+                    <p class="insight-value">${counts.notes || 0}</p>
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Error fetching counts:', error);
+    }
+}
+
+function showEnrollNotification(message, type = 'success') {
+    const existing = document.querySelector('.enroll-notification');
+    if (existing) existing.remove();
+    
+    const notification = document.createElement('div');
+    notification.className = `enroll-notification notification-${type}`;
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+        ${message}
+    `;
+    notification.style.cssText = `
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: ${type === 'success' ? '#10b981' : '#3b82f6'};
+        color: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 10000;
+        animation: slideInRight 0.3s ease;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// SCHOOL SELECTION
+async function selectSchool(schoolId, schoolName) {
+    const userSchool = localStorage.getItem('selected_school');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    if (userSchool && userSchool != schoolId) {
+        if (!await friendlyConfirm({ title: 'Switch Faculty?', message: `You are currently joined to a different faculty. Do you want to switch to ${schoolName}? Your current enrollment will be replaced.`, confirmText: 'Switch' })) {
+            return;
+        }
+    } else if (userSchool == schoolId) {
+        window.location.href = `../html/courses.html?school=${schoolId}`;
+        return;
+    }
+    
+    if (!await friendlyConfirm({ title: 'Join Faculty?', message: `Do you want to join ${schoolName}? You'll be able to view their courses and notes.`, confirmText: 'Join' })) {
+        return;
+    }
+    
+    const wasEnrolled = userSchool && userSchool != schoolId;
+    
+    if (user.id) {
+        await updateUserEnrollment(user.id, schoolId);
+    }
+    
+    // Clear old department/course selection when switching schools
+    localStorage.removeItem('selected_department');
+    localStorage.removeItem('selected_department_name');
+    localStorage.removeItem('selected_course');
+    localStorage.removeItem('selected_course_name');
+    
+    localStorage.setItem('chosen_faculty', 'true');
+    localStorage.setItem('selected_school', schoolId);
+    localStorage.setItem('selected_school_name', schoolName);
+
+    // Show success notification
+    showEnrollNotification(`Successfully enrolled in ${schoolName}!`);
+
+    // Show loading briefly to let notification appear
+    const contentArea = document.querySelector('.page-content');
+    if (contentArea) {
+        contentArea.innerHTML = `
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">Loading departments for ${schoolName}...</p>
+            </div>
+        `;
+    }
+    
+    // Redirect after showing notification
+    setTimeout(() => {
+        window.location.href = `../html/courses.html?school=${schoolId}`;
+    }, 1500);
+}
+
+// ATTACH EVENTS
+function attachSchoolCardEvents() {
+    // Image card click
+    const schoolCards = document.querySelectorAll('.school-card');
+    
+    schoolCards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            const schoolId = this.getAttribute('data-school-id');
+            const schoolName = this.getAttribute('data-school-name');
+            if (schoolId) selectSchool(schoolId, schoolName);
+        });
+    });
+    
+    // Content card click
+    const contentCards = document.querySelectorAll('.school-card-content');
+    
+    contentCards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (e.target.closest('.select-school-btn')) return;
             
-            if (!req.file) {
-                return res.status(400).json({ message: 'No file uploaded' });
-            }
-            
-            try {
-                const pfpPath = '/uploads/pfps/' + req.file.filename;
-                await db.query('UPDATE notify_users SET pfp = ? WHERE id = ?', [pfpPath, decoded.id]);
-                res.json({ pfp: pfpPath });
-            } catch (dbErr) {
-                console.error('Error updating profile picture:', dbErr);
-                res.status(500).json({ error: 'Failed to save profile picture' });
+            const schoolId = this.getAttribute('data-school-id');
+            const schoolName = this.getAttribute('data-school-name');
+            if (schoolId) selectSchool(schoolId, schoolName);
+        });
+        
+        const button = card.querySelector('.select-school-btn');
+        if (button) {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const schoolId = card.getAttribute('data-school-id');
+                const schoolName = card.getAttribute('data-school-name');
+                if (schoolId) selectSchool(schoolId, schoolName);
+            });
+        }
+    });
+}
+
+// SHOW ERROR
+function showSchoolError() {
+    const grid = document.getElementById('schoolsGrid');
+    if (!grid) return;
+    
+    grid.innerHTML = `
+        <div class="error-message">
+            <img src="../images/dashboardImages/Gemini_Generated_Image_gsaupdgsaupdgsau.png" alt="Error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>Failed to load schools. Please try again.</p>
+            <button onclick="displaySchools()" class="btn-primary btn-sm">
+                <i class="fas fa-redo"></i> Retry
+            </button>
+        </div>
+    `;
+}
+
+// FILTER SCHOOLS
+function filterSchools(searchTerm) {
+    const cards = document.querySelectorAll('.school-card');
+    let visibleCount = 0;
+    
+    cards.forEach(card => {
+        const title = card.querySelector('h3')?.textContent.toLowerCase() || '';
+        const desc = card.querySelector('.school-description')?.textContent.toLowerCase() || '';
+        
+        if (title.includes(searchTerm) || desc.includes(searchTerm)) {
+            card.style.display = 'flex';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+    
+    const grid = document.getElementById('schoolsGrid');
+    const noResults = grid.querySelector('.no-results');
+    
+    if (visibleCount === 0 && !noResults) {
+        const noResultsMsg = document.createElement('div');
+        noResultsMsg.className = 'no-results';
+        noResultsMsg.innerHTML = `
+            <i class="fas fa-search"></i>
+            <p>No schools matching "${searchTerm}"</p>
+        `;
+        grid.appendChild(noResultsMsg);
+    } else if (noResults) {
+        noResults.remove();
+    }
+}
+
+function initScrollAnimations() {
+    const cards = document.querySelectorAll('.school-card');
+    if (!('IntersectionObserver' in window)) {
+        cards.forEach(card => card.classList.add('visible'));
+        return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
             }
         });
-    } catch (err) {
-        if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
-            return res.status(401).json({ message: 'Invalid or expired token' });
-        }
-        console.error('Error uploading pfp:', err);
-        res.status(500).json({ error: 'Failed to upload profile picture' });
+    }, {
+        threshold: 0.2
+    });
+
+    cards.forEach(card => observer.observe(card));
+}
+
+// INITIALIZE
+document.addEventListener('DOMContentLoaded', async function() {
+    if (typeof getSchools !== 'function') {
+        console.error('data-loader.js not loaded!');
+        return;
+    }
+    
+    await displaySchools();
+    
+    // Theme switcher
+    const themeSelect = document.getElementById('theme-select');
+    if (themeSelect) {
+        themeSelect.addEventListener('change', function(e) {
+            document.body.setAttribute('data-theme', e.target.value === 'dark' ? 'dark' : 'light');
+        });
+    }
+    
+    // Search
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            filterSchools(e.target.value.toLowerCase());
+        });
     }
 });
-
-// =====================
-// 404 Handler
-// =====================
-app.use((req, res) => {
-    res.status(404).json({ 
-        error: 'Route not found',
-        path: req.path,
-        method: req.method
-    });
-});
-
-// =====================
-// Global Error Handler
-// =====================
-app.use((err, req, res, next) => {
-    console.error('Global error:', err.stack);
-    res.status(500).json({ 
-        error: 'Internal Server Error',
-        message: NODE_ENV === 'development' ? err.message : 'Something went wrong'
-    });
-});
-
-// =====================
-// Start Server
-// =====================
-const server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📍 Environment: ${NODE_ENV}`);
-    console.log(`🔗 API URL: http://localhost:${PORT}`);
-    console.log(`✅ Health check: http://localhost:${PORT}/health`);
-    console.log(`🔍 Debug counts: http://localhost:${PORT}/api/debug/counts`);
-    console.log(`🔍 Debug dataService: http://localhost:${PORT}/api/debug/dataService`);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-    console.log('SIGTERM signal received: closing HTTP server');
-    server.close(() => {
-        console.log('HTTP server closed');
-        process.exit(0);
-    });
-});
-
-module.exports = app;
