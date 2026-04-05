@@ -7,6 +7,25 @@ const API_URL = window.API_URL;
 
 console.log('Login.js - API_URL:', API_URL);
 
+// Popup notification function
+function showNotification(message, type = 'info') {
+    let container = document.getElementById('notification-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'notification-container';
+        document.body.appendChild(container);
+    }
+    
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `<span>${message}</span>`;
+    container.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3500);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
     const message = document.getElementById('loginMessage');
@@ -23,15 +42,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = loginForm.password?.value;
 
         if (!email || !password) {
-            if (message) {
-                message.style.color = 'red';
-                message.textContent = 'Please enter email and password';
-            }
+            showNotification('Please enter email and password', 'error');
             return;
         }
 
         const loginUrl = `${API_URL}/user_auth/login`;
         console.log('📡 Attempting login to:', loginUrl);
+
+        // Show loading state
+        const submitBtn = loginForm.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
+
+        showNotification('Signing in...', 'info');
 
         try {
             const res = await fetch(loginUrl, {
@@ -57,13 +81,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     role: userData.role || 'student',
                     pfp: userData.pfp || null
                 }));
-                // Set flag for login success notification
                 localStorage.setItem('justLoggedIn', 'true');
 
-                if (message) {
-                    message.style.color = 'green';
-                    message.textContent = 'Login successful! Redirecting...';
-                }
+                showNotification('Login successful! Redirecting...', 'success');
 
                 setTimeout(() => {
                     if (userData.role === 'admin') {
@@ -75,20 +95,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }, 1500);
             } else {
-                // Store login error for notification
                 localStorage.setItem('loginError', userData.message || 'Invalid email or password');
-                
-                if (message) {
-                    message.style.color = 'red';
-                    message.textContent = userData.message || 'Invalid email or password';
-                }
+                showNotification(userData.message || 'Invalid email or password', 'error');
             }
         } catch (err) {
             console.error(' Login fetch error:', err);
-            if (message) {
-                message.style.color = 'red';
-                message.textContent = 'Failed to connect to server. Please try again later.';
-            }
+            showNotification('Failed to connect to server. Please try again later.', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
         }
     });
 });

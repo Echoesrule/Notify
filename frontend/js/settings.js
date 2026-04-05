@@ -84,7 +84,7 @@ function loadUserSettings() {
  */
 async function loadSchools() {
     try {
-        const res = await fetch('http://localhost:3000/api/schools');
+        const res = await fetch(`${window.API_URL}/schools`);
         if (res.ok) {
             const schools = await res.json();
             const schoolSelect = document.getElementById('school');
@@ -118,7 +118,7 @@ async function handleSchoolChange() {
         deptSelect.innerHTML = '<option value="">Select Department</option>';
         if (schoolId) {
             try {
-                const res = await fetch(`http://localhost:3000/api/schools/${schoolId}/departments`);
+                const res = await fetch(`${window.API_URL}/schools/${schoolId}/departments`);
                 if (res.ok) {
                     const departments = await res.json();
                     departments.forEach(dept => {
@@ -143,8 +143,8 @@ async function loadUserEnrollment(userId) {
         const res = await fetch(`${window.API_URL}/users/${userId}/enrollments`);
         if (res.ok) {
             const enrollments = await res.json();
-            if (enrollments.length > 0) {
-                const enrollment = enrollments[0]; // Assuming one active enrollment
+            if (enrollments && enrollments.length > 0) {
+                const enrollment = enrollments[0];
                 // Wait for schools to load, then set selected
                 setTimeout(() => {
                     const schoolSelect = document.getElementById('school');

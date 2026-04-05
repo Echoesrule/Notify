@@ -51,7 +51,10 @@ const API = {
 
     getAllNotes: () => fetch(`${API_URL}/notes`).then(r => r.json()),
     
-    getMyNotes: (userId) => fetch(`${API_URL}/notes/my-notes?userId=${userId}`).then(r => r.json()),
+    getMyNotes: (userId) => {
+        console.log('Fetching my notes for userId:', userId);
+        return fetch(`${API_URL}/notes/my-notes?userId=${userId}`).then(r => r.json());
+    },
 
     getUpdates: () => fetch(`${API_URL}/updates`).then(r => r.json()),
     
@@ -82,16 +85,20 @@ const API = {
         formData.append('school_id', data.school_id);
         formData.append('dept_id', data.dept_id);
         formData.append('unit_id', data.unit_id);
-        formData.append('userId', data.userId || 1);
+        formData.append('userId', data.userId || data.user_id || 1);
         if (data.file) {
             formData.append('file', data.file);
         }
+        
+        console.log('Creating note with data:', data);
         
         const response = await fetch(`${API_URL}/notes`, {
             method: 'POST',
             body: formData
         });
-        return response.json();
+        const result = await response.json();
+        console.log('Note created response:', result);
+        return result;
     },
 
     createUpdate: (data) => fetch(`${API_URL}/updates`, {
@@ -1335,7 +1342,9 @@ async function confirmCommonUnit() {
                 content: pendingNoteData.content,
                 description: pendingNoteData.description,
                 uploadedBy: user.name || 'Unknown',
-                userId: user.id || 1,
+                uploadedByName: user.name || 'Unknown',
+                userId: user.id,
+                user_id: user.id,
                 file: pendingNoteData.file,
                 school_id: parseInt(schoolId),
                 dept_id: parseInt(deptId),
@@ -2021,7 +2030,9 @@ document.getElementById('noteForm').addEventListener('submit', async function(e)
         content: document.getElementById('noteContent').value,
         description: document.getElementById('noteContent').value,
         uploadedBy: user.name || 'Unknown',
-        userId: user.id || 1,
+        uploadedByName: user.name || 'Unknown',
+        user_id: user.id,
+        userId: user.id,
         file: fileInput.files[0] || null,
         school_id: parseInt(schoolId),
         dept_id: parseInt(deptId),
@@ -2077,8 +2088,10 @@ document.getElementById('updateForm').addEventListener('submit', async function(
         title: document.getElementById('updateTitle').value,
         content: document.getElementById('updateContent').value,
         course_id: document.getElementById('updateCourse').value ? parseInt(document.getElementById('updateCourse').value) : null,
-        userId: user.id || 1,
-        postedBy: user.name || 'Unknown'
+        userId: user.id,
+        user_id: user.id,
+        postedBy: user.name || 'Unknown',
+        postedByName: user.name || 'Unknown'
     };
 
     try {
@@ -2116,35 +2129,148 @@ async function deleteUpdate(id) {
 function handleSearch(query) {
     if (!query) {
         renderNotes();
+        renderUpdatesList(updates);
+        renderCourses();
         return;
     }
-    const filtered = notes.filter(n => 
-        n.title.toLowerCase().includes(query.toLowerCase())
+    
+    query = query.toLowerCase();
+    
+    // Search notes
+    const filteredNotes = notes.filter(n => 
+        n.title?.toLowerCase().includes(query) || 
+        n.description?.toLowerCase().includes(query) ||
+        n.content?.toLowerCase().includes(query)
     );
-    const container = document.getElementById('notesContainer');
-    container.innerHTML = filtered.map(note => {
-        const course = departments.find(c => c.id == (note.deptId || note.dept_id));
-        const unit = units.find(u => u.id == (note.unitId || note.unit_id));
-        return `
-        <div class="note-card">
-            <div class="note-icon"><i class="fas fa-file-pdf"></i></div>
-            <div class="note-details">
-                <h4>${note.title}</h4>
-                <div class="note-meta">
-                    <span><i class="fas fa-book"></i> ${course?.name || 'N/A'} - ${unit?.name || 'N/A'}</span>
-                    <span><i class="fas fa-calendar"></i> ${note.date || new Date().toLocaleDateString()}</span>
+    
+    // Search updates
+    const filteredUpdates = updates.filter(u => 
+        u.title?.toLowerCase().includes(query) || 
+        u.content?.toLowerCase().includes(query)
+    );
+    
+    // Get current section
+    const currentSection = document.querySelector('.section[style*="block"]')?.id || 'home';
+    
+    if (currentSection === 'notes' || document.getElementById('notes').style.display === 'block') {
+        const container = document.getElementById('notesContainer');
+        if (!container) return;
+        
+        if (filteredNotes.length === 0) {
+            container.innerHTML = `<div class="empty-state-notes">
+                <img src="../images/dashboardImages/v3321_105.png" alt="No notes">
+                <p>No notes found for "${query}"</p>
+            </div>`;
+            return;
+        }
+        
+        container.innerHTML = filteredNotes.map(note => {
+            const course = departments.find(c => c.id == (note.deptId || note.dept_id));
+            const unit = units.find(u => u.id == (note.unitId || note.unit_id));
+            return `
+            <div class="note-card">
+                <div class="note-icon"><i class="fas fa-file-pdf"></i></div>
+                <div class="note-details">
+                    <h4>${note.title}</h4>
+                    <div class="note-meta">
+                        <span><i class="fas fa-book"></i> ${course?.name || 'N/A'} - ${unit?.name || 'N/A'}</span>
+                        <span><i class="fas fa-calendar"></i> ${note.date || new Date().toLocaleDateString()}</span>
+                    </div>
+                    <p class="note-description">${note.description || 'No description'}</p>
                 </div>
-                <p class="note-description">${note.description || 'No description'}</p>
-            </div>
-            <div class="note-footer">
-                <div class="note-actions">
-                    <button onclick="viewNote('${note.id}')" title="View"><i class="fas fa-eye"></i> View</button>
-                    <button onclick="editNote('${note.id}')" title="Edit"><i class="fas fa-edit"></i> Edit</button>
-                    <button onclick="deleteNote('${note.id}', '${note.schoolId || note.school_id}', '${note.deptId || note.dept_id}', '${note.unitId || note.unit_id}')" title="Delete" class="delete-btn"><i class="fas fa-trash"></i> Delete</button>
+                <div class="note-footer">
+                    <div class="note-actions">
+                        <button onclick="viewNote('${note.id}')" title="View"><i class="fas fa-eye"></i> View</button>
+                        <button onclick="editNote('${note.id}')" title="Edit"><i class="fas fa-edit"></i> Edit</button>
+                        <button onclick="deleteNote('${note.id}', '${note.schoolId || note.school_id}', '${note.deptId || note.dept_id}', '${note.unitId || note.unit_id}')" title="Delete" class="delete-btn"><i class="fas fa-trash"></i> Delete</button>
+                    </div>
                 </div>
             </div>
-        </div>
-    `}).join('');
+        `}).join('');
+    }
+    
+    if (currentSection === 'updates' || document.getElementById('updates').style.display === 'block') {
+        const updatesContainer = document.getElementById('updatesContainer');
+        if (!updatesContainer) return;
+        
+        if (filteredUpdates.length === 0) {
+            updatesContainer.innerHTML = `<div class="empty-state" style="text-align:center;">
+                <img src="../images/dashboardImages/no notes.jpg" alt="No updates" style="width:90px;height:auto;opacity:0.7;">
+                <p>No updates found for "${query}"</p>
+            </div>`;
+            return;
+        }
+        
+        updatesContainer.innerHTML = filteredUpdates.map(update => `
+            <div class="update-card">
+                <div class="update-header">
+                    <h4>${update.title}</h4>
+                    <span class="update-date">${update.created_at ? new Date(update.created_at).toLocaleDateString() : 'N/A'}</span>
+                </div>
+                <p>${update.content}</p>
+                <div class="update-meta">
+                    <span><i class="fas fa-user"></i> ${update.postedByName || 'Unknown'}</span>
+                    <span><i class="fas fa-book"></i> ${update.courseName || 'All Courses'}</span>
+                </div>
+                ${update.user_id == user.id ? `
+                <div class="update-actions">
+                    <button onclick="deleteUpdate(${update.id})" class="btn-sm"><i class="fas fa-trash"></i> Delete</button>
+                </div>
+                ` : ''}
+            </div>
+        `).join('');
+    }
+    
+    if (currentSection === 'courses' || document.getElementById('courses').style.display === 'block') {
+        const coursesContainer = document.getElementById('coursesContainer');
+        if (!coursesContainer) return;
+        
+        const filteredDepartments = departments.filter(c => 
+            c.name?.toLowerCase().includes(query) || 
+            c.code?.toLowerCase().includes(query)
+        );
+        
+        if (filteredDepartments.length === 0) {
+            coursesContainer.innerHTML = `<div class="empty-state-courses">
+                <img src="../images/dashboardImages/Gemini_Generated_Image_r15vymr15vymr15v-removebg-preview.png" alt="No departments">
+                <p>No courses found for "${query}"</p>
+            </div>`;
+            return;
+        }
+        
+        coursesContainer.innerHTML = filteredDepartments.map(course => {
+            const courseUnits = units.filter(u => u.deptId == course.id);
+            const school = schools.find(s => s.id == course.schoolId);
+            return `
+                <div class="course-item">
+                    <div class="course-header" onclick="toggleCourseUnits('${course.id}')">
+                        <div class="course-info">
+                            <h3>${course.name}</h3>
+                            <span>${course.code || ''} - ${school?.name || 'Unknown School'}</span>
+                        </div>
+                        <div class="course-actions" onclick="event.stopPropagation()">
+                            <button onclick="addUnitToCourse('${course.id}')"><i class="fas fa-plus"></i> Add Unit</button>
+                            <button onclick="editCourse('${course.id}')"><i class="fas fa-edit"></i> Edit</button>
+                            <button onclick="deleteCourse('${course.id}')"><i class="fas fa-trash"></i> Delete</button>
+                        </div>
+                    </div>
+                    <div class="course-units" id="courseUnits${course.id}">
+                        ${courseUnits.length === 0 ? '<p style="padding:10px;color:var(--text-secondary)">No units yet</p>' : 
+                            courseUnits.map(unit => `
+                                <div class="unit-item">
+                                    <span>${unit.name} (${unit.code || ''})</span>
+                                    <div>
+                                        ${unit.isCommon ? '<span class="common-badge">Common</span>' : ''}
+                                        <button onclick="deleteUnit('${unit.id}')" style="margin-left:10px;padding:5px 10px;border:1px solid var(--border);border-radius:4px;background:var(--bg-tertiary);cursor:pointer;"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            `).join('')
+                        }
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
 }
 
 function openProfileModal() {

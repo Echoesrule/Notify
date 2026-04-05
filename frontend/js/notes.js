@@ -43,11 +43,15 @@ function showContent() {
 
 async function fetchNotesByUnit(schoolId, deptId, unitId) {
     try {
-        const res = await fetch(`${window.API_URL}/schools/${schoolId}/departments/${deptId}/units/${unitId}/notes`);
+        const res = await fetch(`${window.API_URL}/schools/${schoolId}/departments/${deptId}/units/${unitId}/notes?_t=${Date.now()}`, {
+            cache: 'no-store'
+        });
         if (!res.ok) {
             throw new Error(`Failed to fetch notes: ${res.status} ${res.statusText}`);
         }
-        return await res.json();
+        const data = await res.json();
+        console.log('Fetched notes for unit:', unitId, data);
+        return Array.isArray(data) ? data : [];
     } catch (err) {
         console.error("Error in getNotesByUnit:", err); 
         return [];
@@ -74,9 +78,9 @@ async function displayNotes() {
             
             try {
                 const [schoolRes, deptRes, unitRes] = await Promise.all([
-                    schoolId ? fetch(`http://localhost:3000/api/schools/${schoolId}`).then(r => r.json()) : Promise.resolve(null),
-                    deptId ? fetch(`http://localhost:3000/api/schools/${schoolId}/departments/${deptId}`).then(r => r.json()) : Promise.resolve(null),
-                    unitId ? fetch(`http://localhost:3000/api/schools/${schoolId}/departments/${deptId}/units/${unitId}`).then(r => r.json()) : Promise.resolve(null)
+                    schoolId ? fetch(`${window.API_URL}/schools/${schoolId}`).then(r => r.json()) : Promise.resolve(null),
+                    deptId ? fetch(`${window.API_URL}/schools/${schoolId}/departments/${deptId}`).then(r => r.json()) : Promise.resolve(null),
+                    unitId ? fetch(`${window.API_URL}/schools/${schoolId}/departments/${deptId}/units/${unitId}`).then(r => r.json()) : Promise.resolve(null)
                 ]);
                 schoolName = schoolRes?.name || 'School';
                 deptName = deptRes?.name || 'Department';
@@ -154,50 +158,28 @@ const currentSubject= document.getElementById('currentSubject')
                 <p>No notes found for this subject</p>
             </div>`;
         } else {
-            let html = '';
-            notes.forEach(note => {
-              
-                const downloads = note.downloads || 0;
-                
-                html += `
-                    <div class="note-card ${note.popular ? 'popular' : ''}">
-                        <div class="note-icon">
-                            <i class="fas fa-file-pdf"></i>
-                        </div>
-                        <h3>${note.title}</h3>
-                        <p class="note-description">${note.description ? (note.description.length > 100 ? note.description.substring(0, 100) + '...' : note.description) : 'No description available'}</p>
-                        <div class="note-meta">
-                            <span><i class="fas fa-user"></i> ${note.uploadedByName || 'Unknown'}</span>
-                            <span><i class="fas fa-calendar"></i> ${note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Not dated'}</span>
-                            <span><i class="fas fa-file"></i> ${note.pages || '?'} pages</span>
-                        </div>
-                        <div class="note-footer">
-                            <div class="note-meta">
-                                <span><i class="fas fa-download"></i> ${downloads} downloads</span>
-                            </div>
-                            <div class="note-actions">
-                                <button class="btn-bookmark" onclick="bookmarkNote('${note.id}')" title="Bookmark">
-                                    <i class="fas fa-bookmark"></i>
-                                </button>
-                                <button class="btn-preview" onclick="previewNote('${note.id}')">
-                                    <i class="fas fa-eye"></i> Preview
-                                </button>
-                                <button class="btn-download" onclick="downloadNote('${note.id}')">
-                                    <i class="fas fa-download"></i> Download
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
+            // Store original notes for sorting
+            window.originalNotes = notes;
             
-            grid.innerHTML = html;
-            updateStats(notes);
+            let sortedNotes = [...notes];
+            
+            window.sortRecent = function() {
+                sortedNotes.sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
+                renderSortedNotes(sortedNotes);
+            };
+            
+            window.sortPopular = function() {
+                sortedNotes.sort((a, b) => (b.popular ? 1 : 0) - (a.popular ? 1 : 0));
+                renderSortedNotes(sortedNotes);
+            };
+            
+            window.sortDownloads = function() {
+                sortedNotes.sort((a, b) => (b.downloads || 0) - (a.downloads || 0));
+                renderSortedNotes(sortedNotes);
+            };
+            
+            renderSortedNotes(notes);
         }
-        
-        console.log("Showing content");
-        showContent();
-
     } catch (error) {
         console.error(' Error loading notes:', error);
         
@@ -217,13 +199,64 @@ const currentSubject= document.getElementById('currentSubject')
     }
 }
 
+function renderSortedNotes(sortedNotes) {
+    const grid = document.getElementById('notesGrid');
+    if (!grid) return;
+    
+    let html = '';
+    sortedNotes.forEach(note => {
+       
+        const downloads = note.downloads || 0;
+        const uploadedBy = note.uploadedByName || note.uploadedBy || note.postedBy || note.name || 'Unknown';
+        const createdDate = note.created_at || note.date;
+        const pages = note.pages || note.page_count || '?';
+        
+        html += `
+            <div class="note-card ${note.popular ? 'popular' : ''}">
+                <div class="note-icon">
+                    <i class="fas fa-file-pdf"></i>
+                </div>
+                <h3>${note.title}</h3>
+                <p class="note-description">${note.description ? (note.description.length > 100 ? note.description.substring(0, 100) + '...' : note.description) : 'No description available'}</p>
+                <div class="note-meta">
+                    <span><i class="fas fa-user"></i> ${uploadedBy}</span>
+                    <span><i class="fas fa-calendar"></i> ${createdDate ? new Date(createdDate).toLocaleDateString() : 'Not dated'}</span>
+                    <span><i class="fas fa-file"></i> ${pages} pages</span>
+                </div>
+                <div class="note-footer">
+                    <div class="note-meta">
+                        <span><i class="fas fa-download"></i> ${downloads} downloads</span>
+                    </div>
+                    <div class="note-actions">
+                        <button class="btn-bookmark" onclick="bookmarkNote('${note.id}')" title="Bookmark">
+                            <i class="fas fa-bookmark"></i>
+                        </button>
+                        <button class="btn-preview" onclick="previewNote('${note.id}')">
+                            <i class="fas fa-eye"></i> Preview
+                        </button>
+                        <button class="btn-download" onclick="downloadNote('${note.id}')">
+                            <i class="fas fa-download"></i> Download
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    grid.innerHTML = html;
+}
+
 function updateStats(notes) {
     const totalNotes = notes.length;
     const totalDownloads = notes.reduce((sum, note) => sum + (note.downloads || 0), 0);
     
-    // Find most recent note
-    const dates = notes.map(n => n.date).filter(d => d);
-    const latestDate = dates.length > 0 ? dates.sort().reverse()[0] : '-';
+    // Find most recent note - check multiple date fields
+    const dates = notes.map(n => n.created_at || n.date || n.updated_at).filter(d => d);
+    let latestDate = '-';
+    if (dates.length > 0) {
+        const sortedDates = dates.sort((a, b) => new Date(b) - new Date(a));
+        latestDate = sortedDates[0] ? new Date(sortedDates[0]).toLocaleDateString() : '-';
+    }
     
     document.getElementById('totalNotes').textContent = totalNotes;
     document.getElementById('totalDownloads').textContent = totalDownloads.toLocaleString();
@@ -234,14 +267,15 @@ function updateStats(notes) {
 function previewNote(noteId) {
     console.log('Preview note:', noteId);
     
-    fetch(`http://localhost:3000/api/notes/${noteId}`)
+    fetch(`${window.API_URL}/notes/${noteId}`)
         .then(res => res.json())
         .then(note => {
-            if (!note.file_path) {
+            console.log('Note data:', note);
+            if (!note.file_path && !note.file) {
                 alert('No file attached to this note');
                 return;
             }
-            window.open(`http://localhost:3000/api/notes/${noteId}/preview`, '_blank');
+            window.open(`${window.API_URL}/notes/${noteId}/preview`, '_blank');
         })
         .catch(err => {
             console.error('Error fetching note:', err);
@@ -253,14 +287,14 @@ function previewNote(noteId) {
 function downloadNote(noteId) {
     console.log('Download note:', noteId);
     
-    fetch(`http://localhost:3000/api/notes/${noteId}`)
+    fetch(`${window.API_URL}/notes/${noteId}`)
         .then(res => res.json())
         .then(note => {
-            if (!note.file_path) {
+            if (!note.file_path && !note.file) {
                 alert('No file attached to this note');
                 return;
             }
-            window.location.href = `http://localhost:3000/api/notes/${noteId}/download`;
+            window.location.href = `${window.API_URL}/notes/${noteId}/download`;
         })
         .catch(err => {
             console.error('Error fetching note:', err);
@@ -271,17 +305,29 @@ function downloadNote(noteId) {
 
 function sortRecent() {
     console.log('Sorting by recent');
- 
+    if (window.originalNotes) {
+        const sorted = [...window.originalNotes].sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
+        renderSortedNotes(sorted);
+        updateStats(sorted);
+    }
 }
 
 function sortPopular() {
     console.log('Sorting by popular');
-  
+    if (window.originalNotes) {
+        const sorted = [...window.originalNotes].sort((a, b) => (b.popular ? 1 : 0) - (a.popular ? 1 : 0));
+        renderSortedNotes(sorted);
+        updateStats(sorted);
+    }
 }
 
 function sortDownloads() {
     console.log('Sorting by downloads');
-    
+    if (window.originalNotes) {
+        const sorted = [...window.originalNotes].sort((a, b) => (b.downloads || 0) - (a.downloads || 0));
+        renderSortedNotes(sorted);
+        updateStats(sorted);
+    }
 }
 
 function getBookmarkFolders() {
@@ -301,7 +347,7 @@ function saveBookmarks(bookmarks) {
 }
 
 function bookmarkNote(noteId) {
-    fetch(`http://localhost:3000/api/notes/${noteId}`)
+    fetch(`${window.API_URL}/notes/${noteId}`)
         .then(res => res.json())
         .then(note => {
             showBookmarkModal(note);
@@ -398,7 +444,7 @@ function saveBookmark(noteId) {
         folderIndex = folders.length - 1;
     }
     
-    fetch(`http://localhost:3000/api/notes/${noteId}`)
+    fetch(`${window.API_URL}/notes/${noteId}`)
         .then(res => res.json())
         .then(note => {
             const bookmarks = getBookmarks();
@@ -407,8 +453,8 @@ function saveBookmark(noteId) {
                 noteId: note.id,
                 title: note.title,
                 description: note.description,
-                uploadedByName: note.uploadedByName,
-                pages: note.pages,
+                uploadedByName: note.uploadedByName || note.uploadedBy,
+                pages: note.pages || note.page_count,
                 folderIndex: folderIndex,
                 date: new Date().toISOString()
             });

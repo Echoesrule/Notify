@@ -24,8 +24,42 @@ window.showLogoutModal = function() {
 
 window.logout = function(clearData = false) {
     console.log('logout called with clearData:', clearData);
-    localStorage.clear();
-    sessionStorage.clear();
+    
+    if (clearData) {
+        // Clear everything
+        localStorage.clear();
+        sessionStorage.clear();
+    } else {
+        // Keep user data but clear session-specific items
+        const userData = {
+            user: localStorage.getItem('user'),
+            user_name: localStorage.getItem('user_name'),
+            user_email: localStorage.getItem('user_email'),
+            user_pfp: localStorage.getItem('user_pfp'),
+            notify_token: localStorage.getItem('notify_token'),
+            notify_role: localStorage.getItem('notify_role'),
+            selected_school: localStorage.getItem('selected_school'),
+            selected_school_name: localStorage.getItem('selected_school_name'),
+            selected_department: localStorage.getItem('selected_department'),
+            selected_department_name: localStorage.getItem('selected_department_name'),
+            chosen_faculty: localStorage.getItem('chosen_faculty'),
+            notifyBookmarkFolders: localStorage.getItem('notifyBookmarkFolders'),
+            notifyBookmarks: localStorage.getItem('notifyBookmarks'),
+            api_url: localStorage.getItem('api_url'),
+            theme: localStorage.getItem('theme')
+        };
+        
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Restore user data
+        Object.keys(userData).forEach(key => {
+            if (userData[key]) {
+                localStorage.setItem(key, userData[key]);
+            }
+        });
+    }
+    
     window.location.href = '../user_auth/index.html';
 };
 

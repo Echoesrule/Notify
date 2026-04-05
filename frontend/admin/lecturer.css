@@ -896,7 +896,9 @@
     background: rgba(0,0,0,0.5);
     z-index: 1000;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    padding: 20px;
+    overflow-y: auto;
 }
 
 .modal-content {
@@ -904,7 +906,9 @@
     border-radius: 12px;
     width: 90%;
     max-width: 500px;
-    overflow: hidden;
+    max-height: 90vh;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .modal-header {

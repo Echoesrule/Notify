@@ -160,7 +160,8 @@ async function displayDepartments() {
             
             departments.forEach(dept => {
                 console.log('Rendering dept:', dept.name, 'studentCount:', dept.studentCount, 'unitCount:', dept.unitCount);
-                const unitCount = dept.unitCount || 0;
+                const unitCount = dept.unitCount || dept.units?.length || 0;
+                const studentCount = dept.studentCount || dept.enrolled || 0;
                 const isEnrolled = currentDept == dept.id;
                 
                 // Find matching icon based on department name
@@ -178,15 +179,15 @@ async function displayDepartments() {
                          onclick="selectDepartments('${dept.id}', '${dept.name}')">
                         ${dept.popular ? '<span class="popular-badge">Popular</span>' : ''}
                         ${isEnrolled ? '<span class="enrolled-badge"><i class="fas fa-check-circle"></i> Enrolled</span>' : ''}
-                        <div class="dept-icon" style="background: ${iconData.bg};">
-                            <i class="fas ${iconData.icon}" style="color: ${iconData.color};"></i>
+                        <div class="course-icon" style="background: ${dept.iconBg || '#e3f2fd'};">
+                            <i class="fas ${dept.icon || 'fa-book'}" style="color: ${dept.iconColor || '#1976d2'};"></i>
                         </div>
-                        <span class="dept-code">${dept.code}</span>
                         <h3>${dept.name}</h3>
-                        <p class="dept-desc">${dept.description}</p>
-                        <div class="dept-meta">
-                            <span><i class="fas fa-book"></i> ${unitCount} Units</span>
-                            <span><i class="fas fa-users"></i> ${dept.studentCount || 0} Students Enrolled</span>
+                        <p class="course-code">${dept.code || ''}</p>
+                        <p class="course-description">${dept.description || 'No description'}</p>
+                        <div class="course-meta">
+                            <span><i class="fas fa-book"></i> ${dept.unitCount || dept.units?.length || 0} Units</span>
+                            <span><i class="fas fa-users"></i> ${dept.studentCount || dept.enrolled || 0} Students Enrolled</span>
                         </div>
                         <button class="btn-primary btn-sm">
                             <i class="fas fa-arrow-right"></i> ${isEnrolled ? 'View' : 'Enroll'}
@@ -310,9 +311,14 @@ async function selectDepartments(deptId, deptName) {
 function updateStats(departments) {
    
     const totalDepts = departments.length;
-    // use the counts returned by the API route
-    const totalCourses = departments.reduce((sum, d) => sum + (d.unitCount || (d.units?.length || 0)), 0);
-    const totalStudents = departments.reduce((sum, d) => sum + (d.studentCount || 0), 0);
+    // Count units from each department
+    const totalCourses = departments.reduce((sum, d) => {
+        return sum + (d.unitCount || (d.units?.length || 0));
+    }, 0);
+    
+    const totalStudents = departments.reduce((sum, d) => {
+        return sum + (d.studentCount || (d.enrolled || 0));
+    }, 0);
     
     const totalDeptsEl = document.getElementById('totalDepts');
     const totalCoursesEl = document.getElementById('totalCourses');

@@ -144,8 +144,8 @@ ${subject.code ? `<span class="subject-code">${subject.code}</span>` : ''}
                         <h3>${subject.name}</h3>
                         <p class="subject-desc">${subject.description || 'No description available'}</p>
                         <div class="subject-meta">
-                            <span><i class="fas fa-file-pdf"></i> ${notesCount} Notes</span>
-                            <span><i class="fas fa-users"></i> ${subject.enrolled || 0} Enrolled</span>
+                            <span><i class="fas fa-file-pdf"></i> ${subject.noteCount || subject.notes?.length || 0} Notes</span>
+                            <span><i class="fas fa-users"></i> ${subject.enrolled || subject.studentCount || 0} Enrolled</span>
                         </div>
                         <div class="subject-footer">
                             <span class="lecturer"><i class="fas fa-chalkboard-teacher"></i> ${subject.lecturer || 'Not assigned'}</span>
@@ -166,7 +166,13 @@ ${subject.code ? `<span class="subject-code">${subject.code}</span>` : ''}
 
         if (insightsGrid) {
             console.log("getting Inights grid...");
-            const totalNotes = subjects.reduce((sum, s) => sum + (s.noteCount || 0), 0);
+            const totalNotes = subjects.reduce((sum, s) => {
+                return sum + (s.noteCount || (s.notes?.length || 0));
+            }, 0);
+            
+            const totalStudents = subjects.reduce((sum, s) => {
+                return sum + (s.studentCount || (s.enrolled || 0));
+            }, 0);
 
             insightsGrid.innerHTML=`
              <div class="insight-card">
@@ -193,7 +199,7 @@ ${subject.code ? `<span class="subject-code">${subject.code}</span>` : ''}
                         </div>
                         <div class="insight-content">
                             <h4>Total Students</h4>
-                            <p class="insight-value">0</p>
+                            <p class="insight-value">${totalStudents}</p>
                         </div>
                     </div>
             `;
@@ -246,8 +252,13 @@ function selectSubject(subjectId,subjectName) {
 
 function updateStats(subjects) {
     const totalSubjects = subjects.length;
-    const totalNotes = subjects.reduce((sum, s) => sum + (s.noteCount || (s.notes?.length || 0)), 0);
-    const totalStudents = subjects.reduce((sum, s) => sum + (s.studentCount || 0), 0);
+    
+    // Count notes from each subject's notes array or noteCount
+    const totalNotes = subjects.reduce((sum, s) => {
+        return sum + (s.noteCount || (s.notes?.length || 0));
+    }, 0);
+    
+    const totalStudents = subjects.reduce((sum, s) => sum + (s.studentCount || (s.enrolled || 0)), 0);
     
     const totalSubjectsEl = document.getElementById('totalSubjects');
     const totalNotesEl = document.getElementById('totalNotes');

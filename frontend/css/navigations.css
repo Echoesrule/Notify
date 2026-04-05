@@ -650,6 +650,15 @@ body {
         transform: translateX(0);
     }
     
+    .sidebar.active .sidebar-nav a {
+        justify-content: flex-start;
+        padding: 12px 16px;
+    }
+    
+    .sidebar.active .sidebar-nav a span {
+        display: inline;
+    }
+    
     .sidebar-overlay.active {
         display: block;
     }

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lecturer Dashboard - Notify</title>
+    <link href="../css/navigations.css" rel="stylesheet" />
     <link href="../css/dashboard.css" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <link href="lecturer.css" rel="stylesheet" />
@@ -15,6 +16,7 @@
     <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div class="dashboard-cont">
         <div class="sidebar" id="sidebar">
+            <button id="sidebarToggleBtn" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
             <div class="sidebar-nav">
                 <a href="#" onclick="showSection('home')"><i class="fas fa-home"></i> <span>Home</span></a>
                 <a href="#" onclick="showSection('browse')"><i class="fas fa-folder-open"></i> <span>Browse</span></a>
@@ -27,33 +29,39 @@
         </div>
 
         <div class="main-content">
-            <div id="notification-container"></div>
             <div class="topbar">
-                <button class="mobile-menu-btn" title="Open Menu"><i class="fas fa-bars"></i></button>
-                <div class="topbar-logo"><i class="fas fa-graduation-cap"></i> NOTIFY</div>
-                <div class="search">
-                    <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Search notes..." id="globalSearch" onkeyup="handleSearch(this.value)">
-                </div>
-                <div class="topbar-right">
-                    <div class="notif">
-                        <i class="fas fa-bell"></i>
-                        <span class="notif-badge" id="notifCount">0</span>
-                    </div>
-                    <div class="theme-toggle"  id="themeToggle">
-                        <i class="fas fa-sun"></i>
-                        <i class="fas fa-moon"></i>
-                    </div>
-                    <div class="profile">
-                        <img src="../images/dashboardImages/v3321_68.png" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
-                        <div class="profile-info">
-                            <span class="profile-name" id="userName"></span>
-                            <span class="profile-role">Lecturer</span>
+                <div class="topbar-row-1">
+                    <button class="mobile-menu-btn" title="Open Menu"><i class="fas fa-bars"></i></button>
+                    <div class="topbar-logo"><i class="fas fa-graduation-cap"></i> NOTIFY</div>
+                    <div class="topbar-right">
+                        <div class="notif">
+                            <i class="fas fa-bell"></i>
+                            <span class="notif-badge" id="notifCount">0</span>
                         </div>
-                        <i class="fas fa-chevron-down"></i>
+                        <div class="theme-toggle"  id="themeToggle">
+                            <i class="fas fa-sun"></i>
+                            <i class="fas fa-moon"></i>
+                        </div>
+                        <div class="profile">
+                            <img src="../images/dashboardImages/v3321_68.png" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                            <div class="profile-info">
+                                <span class="profile-name" id="userName"></span>
+                                <span class="profile-role">Lecturer</span>
+                            </div>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="topbar-row-2">
+                    <div class="search">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search notes..." id="globalSearch" onkeyup="handleSearch(this.value)">
                     </div>
                 </div>
             </div>
+            
+            <!-- Notification container -->
+            <div id="notification-container"></div>
 
             <div class="breadcrumbs">
                 <a href="#"><i class="fas fa-home"></i></a>

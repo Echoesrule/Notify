@@ -112,9 +112,9 @@ async function loadDashboardStats(headers) {
     try {
         const [usersRes, instRes, notesRes, updatesRes] = await Promise.all([
             fetch(`${API_BASE}/api/admin/users`, { headers }),
-            fetch('API_BASE/api/admin/institutions', { headers }),
-            fetch('API_BASE/api/admin/notes', { headers }),
-            fetch('API_BASE/api/admin/updates', { headers })
+            fetch(`${API_BASE}/api/admin/institutions`, { headers }),
+            fetch(`${API_BASE}/api/admin/notes`, { headers }),
+            fetch(`${API_BASE}/api/admin/updates`, { headers })
         ]);
         const users = await usersRes.json();
         const institutions = await instRes.json();
@@ -134,7 +134,7 @@ async function loadDashboardStats(headers) {
 
 async function loadUsers(headers) {
     try {
-        const res = await fetch('API_BASE/api/admin/users', { headers });
+        const res = await fetch(${API_BASE}/api/admin/users', { headers });
         const users = await res.json();
         const tbody = document.getElementById('userList');
         if (tbody) {
@@ -175,7 +175,7 @@ function filterUsers() {
 
 async function loadInstitutions(headers) {
     try {
-        const res = await fetch('API_BASE/api/admin/institutions', { headers });
+        const res = await fetch(${API_BASE}/api/admin/institutions', { headers });
         const institutions = await res.json();
         const container = document.getElementById('institutionList');
         if (container) {
@@ -196,7 +196,7 @@ async function loadInstitutions(headers) {
 
 async function loadSchools(headers) {
     try {
-        const res = await fetch('API_BASE/api/admin/schools', { headers });
+        const res = await fetch(${API_BASE}/api/admin/schools', { headers });
         const schools = await res.json();
         const container = document.getElementById('schoolList');
         
@@ -218,7 +218,7 @@ async function loadSchools(headers) {
 
 async function loadCourses(headers) {
     try {
-        const res = await fetch('API_BASE/api/admin/courses', { headers });
+        const res = await fetch(${API_BASE}/api/admin/courses', { headers });
         const courses = await res.json();
         const container = document.getElementById('courseList');
         if (container) {
@@ -242,7 +242,7 @@ async function loadCourses(headers) {
 
 async function loadSchoolsForSelect(headers) {
     try {
-        const res = await fetch('API_BASE/api/admin/schools', { headers });
+        const res = await fetch(${API_BASE}/api/admin/schools', { headers });
         const schools = await res.json();
         
         const select = document.getElementById('courseSchoolSelect');
@@ -257,7 +257,7 @@ async function loadSchoolsForSelect(headers) {
 
 async function loadUnits(headers) {
     try {
-        const res = await fetch('API_BASE/api/admin/units', { headers });
+        const res = await fetch(${API_BASE}/api/admin/units', { headers });
         const units = await res.json();
         const container = document.getElementById('unitList');
         if (container) {
@@ -279,7 +279,7 @@ async function loadUnits(headers) {
 
 async function loadNotes(headers) {
     try {
-        const res = await fetch('API_BASE/api/admin/notes', { headers });
+        const res = await fetch(${API_BASE}/api/admin/notes', { headers });
         const notes = await res.json();
         const container = document.getElementById('notesList');
         if (container) {
@@ -305,7 +305,7 @@ async function loadNotes(headers) {
 
 async function loadUpdates(headers) {
     try {
-        const res = await fetch('API_BASE/api/admin/updates', { headers });
+        const res = await fetch(${API_BASE}/api/admin/updates', { headers });
         const updates = await res.json();
         const container = document.getElementById('updatesList');
         if (container) {
@@ -804,7 +804,7 @@ async function handleAdminPasswordChange() {
     
     const token = localStorage.getItem('notify_token');
     try {
-        const res = await fetch('API_BASE/user_auth/change-password', {
+        const res = await fetch(${API_BASE}/user_auth/change-password', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -834,7 +834,7 @@ async function saveAdminSettings() {
     const email = document.getElementById('email')?.value;
     
     try {
-        const res = await fetch('API_BASE/user_auth/update-profile', {
+        const res = await fetch(${API_BASE}/user_auth/update-profile', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -886,7 +886,7 @@ function loadAdminPfp() {
     const topPfp = document.getElementById('profileImg');
     if (topPfp) {
         if (savedPfp) {
-            topPfp.src = 'API_BASE' + savedPfp;
+            topPfp.src = ${API_BASE}' + savedPfp;
         } else {
             topPfp.src = '../images/dashboardImages/v3321_68.png';
         }
@@ -908,7 +908,7 @@ function loadAdminPfp() {
                     formData.append('pfp', file);
                     
                     try {
-                        const res = await fetch('API_BASE/api/user/pfp', {
+                        const res = await fetch(${API_BASE}/api/user/pfp', {
                             method: 'POST',
                             headers: { 'Authorization': `Bearer ${token}` },
                             body: formData
@@ -919,10 +919,10 @@ function loadAdminPfp() {
                             localStorage.setItem('user_pfp', data.pfp);
                             
                             const pfpImg = document.getElementById('profileImage');
-                            if (pfpImg) pfpImg.src = 'API_BASE' + data.pfp;
+                            if (pfpImg) pfpImg.src = ${API_BASE}' + data.pfp;
                             
                             const topPfpEl = document.getElementById('profileImg');
-                            if (topPfpEl) topPfpEl.src = 'API_BASE' + data.pfp;
+                            if (topPfpEl) topPfpEl.src = ${API_BASE}' + data.pfp;
                             
                             alert('Profile picture updated!');
                         } else {
@@ -961,7 +961,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData(institutionForm);
             
             try {
-                const res = await fetch('API_BASE/api/admin/institutions', {
+                const res = await fetch(${API_BASE}/api/admin/institutions', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -995,7 +995,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData(schoolForm);
             
             try {
-                const res = await fetch('API_BASE/api/admin/schools', {
+                const res = await fetch(${API_BASE}/api/admin/schools', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1027,7 +1027,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData(courseForm);
             
             try {
-                const res = await fetch('API_BASE/api/admin/courses', {
+                const res = await fetch(${API_BASE}/api/admin/courses', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1061,7 +1061,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData(unitForm);
             
             try {
-                const res = await fetch('API_BASE/api/admin/units', {
+                const res = await fetch(${API_BASE}/api/admin/units', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1098,7 +1098,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
                 
                 try {
-                    const res = await fetch('API_BASE/api/admin/updates', {
+                    const res = await fetch(${API_BASE}/api/admin/updates', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

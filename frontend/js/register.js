@@ -6,36 +6,45 @@ if (typeof window.API_URL === 'undefined') {
 
 console.log('Register.js using API_URL:', window.API_URL);
 
+// Popup notification function
+function showNotification(message, type = 'info') {
+    let container = document.getElementById('notification-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'notification-container';
+        document.body.appendChild(container);
+    }
+    
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `<span>${message}</span>`;
+    container.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3500);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const registerForm = document.getElementById('registerForm');
-    const message = document.getElementById('registerMessage');
 
     if (!registerForm) return;
 
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        // Get form values
         const name = registerForm.name?.value;
         const email = registerForm.email.value;
         const password = registerForm.password.value;
         const confirmPassword = registerForm.Confirmpassword?.value;
 
-        // Validate password match
         if (password !== confirmPassword) {
-            if (message) {
-                message.style.color = 'red';
-                message.textContent = 'Passwords do not match';
-            }
+            showNotification('Passwords do not match', 'error');
             return;
         }
 
-        // Validate password length
         if (password.length < 6) {
-            if (message) {
-                message.style.color = 'red';
-                message.textContent = 'Password must be at least 6 characters';
-            }
+            showNotification('Password must be at least 6 characters', 'error');
             return;
         }
 
@@ -43,8 +52,15 @@ document.addEventListener('DOMContentLoaded', () => {
             name: name,
             email: email,
             password: password,
-            role: 'student' // Default role
+            role: 'student'
         };
+
+        const submitBtn = registerForm.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...';
+
+        showNotification('Creating account...', 'info');
 
         try {
             const res = await fetch(`${window.API_URL}/user_auth/register`, {
@@ -56,25 +72,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
 
             if (res.ok) {
-                if (message) {
-                    message.style.color = 'green';
-                    message.textContent = 'Registration successful! Redirecting to login...';
-                }
+                showNotification('Registration successful! Redirecting to login...', 'success');
                 setTimeout(() => {
                     window.location.href = 'index.html';
                 }, 2000);
             } else {
-                if (message) {
-                    message.style.color = 'red';
-                    message.textContent = data.message || 'Registration failed';
-                }
+                showNotification(data.message || 'Registration failed', 'error');
             }
         } catch (err) {
             console.error('Register error:', err);
-            if (message) {
-                message.style.color = 'red';
-                message.textContent = 'Failed to connect to server';
-            }
+            showNotification('Failed to connect to server. Please try again later.', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
         }
     });
 });
