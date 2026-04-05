@@ -1,4 +1,5 @@
-const API_URL = 'http://localhost:3000/api';
+const API_URL = window.API_URL || 'API_BASE/api';
+const API_BASE = window.API_URL ? window.API_URL.replace('/api', '') : 'API_BASE';
 
 // Global function assignments
 window.logout = function(clearData = false) {
@@ -414,12 +415,12 @@ async function confirmCommonUnitInline() {
     const unitCode = document.getElementById('commonUnitCode').value.trim();
     
     if (!schoolId || !deptId) {
-        alert('Please select a school and department');
+        showNotification('Please select a school and department', 'error');
         return;
     }
     
     if (!unitName) {
-        alert('Please enter a unit name');
+        showNotification('Please enter a unit name', 'error');
         return;
     }
     
@@ -453,9 +454,11 @@ async function confirmCommonUnitInline() {
         document.getElementById('confirmCommonUnitBtn').disabled = true;
         document.getElementById('confirmCommonUnitBtn').innerHTML = '<i class="fas fa-check"></i> Confirmed';
         
+        showNotification('Common unit created successfully!', 'success');
+        
     } catch (err) {
         console.error('Error creating common unit:', err);
-        alert('Failed to create common unit');
+        showNotification('Failed to create common unit', 'error');
     }
 }
 
@@ -1578,6 +1581,7 @@ async function deleteNote(noteId, schoolId, deptId, unitId) {
     }
     notes = notes.filter(n => n.id != noteId);
     renderNotes();
+    showNotification('Note deleted successfully!', 'info');
 }
 
 document.getElementById('courseForm').addEventListener('submit', async function(e) {
@@ -2056,6 +2060,7 @@ document.getElementById('noteForm').addEventListener('submit', async function(e)
     renderNotes();
     updateStats();
     renderRecentNotes();
+    showNotification('Note uploaded successfully!', 'success');
 });
 
 function openUpdateModal() {
@@ -2092,6 +2097,7 @@ document.getElementById('updateForm').addEventListener('submit', async function(
     document.getElementById('updateForm').reset();
     renderUpdates();
     updateStats();
+    showNotification('Update posted successfully!', 'success');
 });
 
 async function deleteUpdate(id) {
@@ -2104,6 +2110,7 @@ async function deleteUpdate(id) {
     }
     renderUpdates();
     updateStats();
+    showNotification('Update deleted successfully!', 'info');
 }
 
 function handleSearch(query) {
@@ -2146,7 +2153,7 @@ function openProfileModal() {
     const userEmail = localStorage.getItem('user_email') || '';
     const userPfp = localStorage.getItem('user_pfp') || '';
     
-    const pfpSrc = userPfp ? 'http://localhost:3000' + userPfp : '../images/dashboardImages/v3321_68.png';
+    const pfpSrc = userPfp ? API_BASE + userPfp : '../images/dashboardImages/v3321_68.png';
     
     const modal = document.createElement('div');
     modal.id = 'profileEditModal';
@@ -2197,7 +2204,7 @@ async function uploadLecturerPfp(input) {
     formData.append('pfp', file);
     
     try {
-        const res = await fetch('http://localhost:3000/api/user/pfp', {
+        const res = await fetch('API_BASE/api/user/pfp', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData
@@ -2207,10 +2214,10 @@ async function uploadLecturerPfp(input) {
             const data = await res.json();
             localStorage.setItem('user_pfp', data.pfp);
             
-            document.getElementById('lecturerPfpPreview').src = 'http://localhost:3000' + data.pfp;
+            document.getElementById('lecturerPfpPreview').src = 'API_BASE' + data.pfp;
             
             const topPfp = document.getElementById('profileImg');
-            if (topPfp) topPfp.src = 'http://localhost:3000' + data.pfp;
+            if (topPfp) topPfp.src = 'API_BASE' + data.pfp;
         } else {
             alert('Failed to upload image');
         }
@@ -2233,7 +2240,7 @@ async function saveProfileChanges() {
     }
     
     try {
-        const loginRes = await fetch('http://localhost:3000/user_auth/login', {
+        const loginRes = await fetch('API_BASE/user_auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: localStorage.getItem('user_email'), password })
@@ -2245,7 +2252,7 @@ async function saveProfileChanges() {
             return;
         }
         
-        const res = await fetch('http://localhost:3000/user_auth/update-profile', {
+        const res = await fetch('API_BASE/user_auth/update-profile', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -2285,84 +2292,22 @@ function toggleTheme() {
     document.body.toggleAttribute('data-theme');
 }
 
-function openChangePasswordModal() {
-    const modal = document.createElement('div');
-    modal.id = 'passwordModal';
-    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:10000;';
-    modal.innerHTML = `
-        <div style="background:var(--bg-secondary,#fff);padding:30px;border-radius:12px;max-width:400px;width:90%;">
-            <h3 style="margin-top:0;">Change Password</h3>
-            <div style="margin-bottom:15px;">
-                <label style="display:block;margin-bottom:5px;">Current Password</label>
-                <input type="password" id="currentPwd" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;">
-            </div>
-            <div style="margin-bottom:15px;">
-                <label style="display:block;margin-bottom:5px;">New Password</label>
-                <input type="password" id="newPwd" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;">
-            </div>
-            <div style="margin-bottom:15px;">
-                <label style="display:block;margin-bottom:5px;">Confirm New Password</label>
-                <input type="password" id="confirmPwd" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;">
-            </div>
-            <div style="display:flex;gap:10px;">
-                <button onclick="changePassword()" style="flex:1;padding:10px;background:#2563eb;color:white;border:none;border-radius:6px;cursor:pointer;">Change Password</button>
-                <button onclick="this.closest('[id*=modal]').remove()" style="padding:10px;background:#666;color:white;border:none;border-radius:6px;cursor:pointer;">Cancel</button>
-            </div>
-            <p id="pwdChangeMsg" style="margin-top:10px;text-align:center;"></p>
-        </div>
-    `;
-    document.body.appendChild(modal);
-}
-
-async function changePassword() {
-    const token = localStorage.getItem('notify_token');
-    const current = document.getElementById('currentPwd').value;
-    const newPwd = document.getElementById('newPwd').value;
-    const confirm = document.getElementById('confirmPwd').value;
-    const msgEl = document.getElementById('pwdChangeMsg');
-    
-    if (!current || !newPwd || !confirm) {
-        msgEl.textContent = 'Please fill all fields';
-        msgEl.style.color = 'red';
-        return;
+function showNotification(message, type = 'info') {
+    let container = document.getElementById('notification-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'notification-container';
+        document.body.appendChild(container);
     }
     
-    if (newPwd !== confirm) {
-        msgEl.textContent = 'New passwords do not match';
-        msgEl.style.color = 'red';
-        return;
-    }
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `<span>${message}</span>`;
+    container.appendChild(notification);
     
-    if (newPwd.length < 8) {
-        msgEl.textContent = 'Password must be at least 8 characters';
-        msgEl.style.color = 'red';
-        return;
-    }
-    
-    try {
-        const res = await fetch('http://localhost:3000/user_auth/change-password', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ currentPassword: current, newPassword: newPwd })
-        });
-        
-        const data = await res.json();
-        
-        if (res.ok) {
-            msgEl.textContent = 'Password changed successfully!';
-            msgEl.style.color = 'green';
-            setTimeout(() => document.getElementById('passwordModal')?.remove(), 1500);
-        } else {
-            msgEl.textContent = data.message || 'Failed to change password';
-            msgEl.style.color = 'red';
-        }
-    } catch (err) {
-        msgEl.textContent = 'Error connecting to server';
-        msgEl.style.color = 'red';
-    }
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
 }
 
 function updateDate() {

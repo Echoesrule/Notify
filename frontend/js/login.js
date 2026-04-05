@@ -57,6 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     role: userData.role || 'student',
                     pfp: userData.pfp || null
                 }));
+                // Set flag for login success notification
+                localStorage.setItem('justLoggedIn', 'true');
 
                 if (message) {
                     message.style.color = 'green';
@@ -73,6 +75,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }, 1500);
             } else {
+                // Store login error for notification
+                localStorage.setItem('loginError', userData.message || 'Invalid email or password');
+                
                 if (message) {
                     message.style.color = 'red';
                     message.textContent = userData.message || 'Invalid email or password';

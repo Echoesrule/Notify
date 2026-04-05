@@ -1,4 +1,4 @@
-
+ 
 .loading-course {
     position: absolute;
     top: 0;
@@ -11,6 +11,42 @@
     align-items: center;
     background: #ffffff;
     z-index: 100;
+}
+
+/* Notification Styles for Admin */
+.notification {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: slideIn 0.3s ease;
+}
+
+.notification.success {
+    background: #10b981;
+    color: white;
+}
+
+.notification.error {
+    background: #ef4444;
+    color: white;
+}
+
+.notification.info {
+    background: #3b82f6;
+    color: white;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
 .breadcrumbs {
@@ -1509,6 +1545,229 @@
 }
 
 @import url('../css/responsive.css');
+
+/* Additional Mobile Responsive Styles for Admin */
+@media (max-width: 768px) {
+    /* Topbar mobile */
+    .topbar {
+        flex-direction: column;
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    .topbar > div {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .topbar-logo {
+        font-size: 1rem;
+        padding: 5px;
+    }
+    
+    .topbar-right {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .search {
+        display: none;
+    }
+    
+    .mobile-menu-btn {
+        display: block;
+    }
+    
+    .sidebar {
+        width: 280px;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        position: fixed;
+        z-index: 1000;
+    }
+    
+    .sidebar.active {
+        transform: translateX(0);
+    }
+    
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
+    }
+    
+    .sidebar-overlay.active {
+        display: block;
+    }
+    
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding-top: 70px;
+    }
+    
+    .page-content {
+        padding: 10px;
+    }
+    
+    /* Stats cards - single column */
+    .stats-cards {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        padding: 10px;
+    }
+    
+    .stats-cards .stat-card {
+        padding: 15px;
+    }
+    
+    .welcome-section {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .admin-img {
+        grid-column: 1;
+        margin-top: 15px;
+    }
+    
+    .admin-img img {
+        max-width: 80%;
+    }
+    
+    /* Tables */
+    .admin-table {
+        display: block;
+        overflow-x: auto;
+    }
+    
+    .admin-table th,
+    .admin-table td {
+        padding: 10px 8px;
+        font-size: 13px;
+    }
+    
+    /* Forms */
+    .content-section {
+        padding: 15px;
+        margin: 10px;
+    }
+    
+    .content-section input,
+    .content-section select,
+    .content-section textarea {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Settings */
+    .settings-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .notes-admin-controls {
+        flex-direction: column;
+    }
+    
+    .notes-admin-controls select {
+        width: 100%;
+    }
+    
+    /* Welcome banner */
+    .welcome-banner {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .welcome-text h2 {
+        font-size: 1.2rem;
+    }
+    
+    .welcome-text h1 {
+        font-size: 1.5rem;
+    }
+    
+    .quick-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    /* Profile dropdown */
+    .profile-info,
+    .profile-name,
+    .profile-role {
+        display: none;
+    }
+    
+    .profile-menu-header {
+        display: flex !important;
+    }
+    
+    /* Modal */
+    .modal-content {
+        width: 95%;
+        margin: 10px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .form-row {
+        flex-direction: column;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn-primary,
+    .btn-outline {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    html { font-size: 13px; }
+    
+    h1 { font-size: 1.3rem; }
+    h2 { font-size: 1.1rem; }
+    
+    .stats-cards .stat-number {
+        font-size: 18px;
+    }
+    
+    .stat-card {
+        padding: 12px;
+    }
+    
+    .btn-primary {
+        padding: 10px 15px;
+        font-size: 13px;
+    }
+    
+    .notes-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .update-cards {
+        grid-template-columns: 1fr;
+    }
+}
 
 .modal-wide {
     max-width: 800px;

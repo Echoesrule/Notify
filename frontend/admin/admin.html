@@ -11,6 +11,7 @@
     <link href="admin.css" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Fredoka|Inter&display=swap" rel="stylesheet" />
+    <script src="../js/config.js"></script>
 </head>
 <body>
     <div class="dashboard-cont">
@@ -68,6 +69,7 @@
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
         <div class="main-content">
+            <div id="notification-container"></div>
             <div class="topbar">
                 <button class="mobile-menu-btn" title="Open Menu"><i class="fas fa-bars"></i></button>
                 <div class="topbar-logo"><i class="fas fa-graduation-cap"></i> NOTIFY</div>
@@ -659,6 +661,24 @@
         document.addEventListener('DOMContentLoaded', function() {
             const settingsLinks = document.querySelectorAll('#settings #sectionLinks h2');
             const settingsSections = document.querySelectorAll('#settings section');
+
+            // Show login success notification
+            const justLoggedIn = localStorage.getItem('justLoggedIn');
+            if (justLoggedIn === 'true') {
+                localStorage.removeItem('justLoggedIn');
+                setTimeout(() => {
+                    showNotification('Login successful! Welcome back.', 'success');
+                }, 500);
+            }
+
+            // Show login error notification
+            const loginError = localStorage.getItem('loginError');
+            if (loginError) {
+                localStorage.removeItem('loginError');
+                setTimeout(() => {
+                    showNotification(loginError, 'error');
+                }, 500);
+            }
 
             if (settingsLinks.length > 0) {
                 settingsLinks.forEach(link => {

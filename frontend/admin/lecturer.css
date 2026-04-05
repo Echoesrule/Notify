@@ -4,6 +4,42 @@
     contain: layout;
 }
 
+/* Notification Styles for Lecturer */
+.notification {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: slideIn 0.3s ease;
+}
+
+.notification.success {
+    background: #10b981;
+    color: white;
+}
+
+.notification.error {
+    background: #ef4444;
+    color: white;
+}
+
+.notification.info {
+    background: #3b82f6;
+    color: white;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
 .section {
     display: block;
     width: 100%;
@@ -1281,6 +1317,266 @@
     
     .btn-primary,
     .btn-outline {
+        width: 100%;
+    }
+}
+
+/* Additional Mobile Responsive Styles for Lecturer */
+@media (max-width: 768px) {
+    .topbar {
+        flex-direction: column;
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    .topbar > div {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .topbar-logo {
+        font-size: 1rem;
+        padding: 5px;
+    }
+    
+    .topbar-right {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .search {
+        display: none;
+    }
+    
+    .mobile-menu-btn {
+        display: block;
+    }
+    
+    .sidebar {
+        width: 280px;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        position: fixed;
+        z-index: 1000;
+    }
+    
+    .sidebar.active {
+        transform: translateX(0);
+    }
+    
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
+    }
+    
+    .sidebar-overlay.active {
+        display: block;
+    }
+    
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding-top: 70px;
+    }
+    
+    .page-content {
+        padding: 10px;
+    }
+    
+    .welcome-banner {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .welcome-text h2 {
+        font-size: 1.2rem;
+    }
+    
+    .welcome-text h1 {
+        font-size: 1.5rem;
+    }
+    
+    .welcome-img {
+        padding-left: 0;
+        margin-top: 15px;
+    }
+    
+    .welcome-img img {
+        max-width: 80%;
+    }
+    
+    .stats-row {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .stat-box {
+        padding: 15px;
+    }
+    
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .panel {
+        margin-bottom: 15px;
+    }
+    
+    .notes-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    
+    .tabs {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .tab-btn {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    
+    .notes-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 10px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .form-row {
+        flex-direction: column;
+    }
+    
+    .form-group {
+        padding: 10px 15px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        padding: 15px;
+    }
+    
+    .btn-primary,
+    .btn-outline,
+    .action-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .browse-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .browse-container {
+        padding: 15px;
+    }
+    
+    .courses-list {
+        padding: 10px;
+    }
+    
+    .course-item {
+        margin: 10px;
+        padding: 0 10px;
+    }
+    
+    .course-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .course-actions {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .settings-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .action-btn.primary {
+        width: 100%;
+    }
+    
+    .date-badge {
+        margin: 15px 0;
+    }
+    
+    .profile-info,
+    .profile-name,
+    .profile-role {
+        display: none;
+    }
+    
+    .updates-list {
+        padding: 10px;
+    }
+    
+    .update-card {
+        padding: 15px;
+    }
+    
+    .select-with-btn {
+        flex-direction: column;
+    }
+    
+    .btn-plus {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    html { font-size: 13px; }
+    
+    h1 { font-size: 1.3rem; }
+    h2 { font-size: 1.1rem; }
+    
+    .welcome-text h1 {
+        font-size: 1.4rem;
+    }
+    
+    .stat-number {
+        font-size: 18px;
+    }
+    
+    .stat-box {
+        padding: 12px;
+    }
+    
+    .btn-primary {
+        padding: 10px 15px;
+        font-size: 13px;
+    }
+    
+    .note-card {
+        padding: 12px;
+    }
+    
+    .note-actions {
+        flex-direction: column;
+    }
+    
+    .note-actions button {
         width: 100%;
     }
 }
