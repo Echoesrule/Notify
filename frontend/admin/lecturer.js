@@ -233,6 +233,21 @@ function initApp() {
 function initCommonUnitFeatures() {
     setupCommonUnitHandlers();
     setupCommonUnitCheckbox();
+    
+    // Also add the listener to commonUnitSchool dropdown
+    const commonSchoolSelect = document.getElementById('commonUnitSchool');
+    if (commonSchoolSelect) {
+        commonSchoolSelect.addEventListener('change', function() {
+            const school = schools.find(s => s.id == this.value);
+            const depts = school?.departments || [];
+            const commonDeptSelect = document.getElementById('commonUnitDept');
+            if (commonDeptSelect) {
+                commonDeptSelect.innerHTML = '<option value="">Select Department</option>' + 
+                    depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+                commonDeptSelect.disabled = !this.value;
+            }
+        });
+    }
 }
 
 function setupCommonUnitHandlers() {
