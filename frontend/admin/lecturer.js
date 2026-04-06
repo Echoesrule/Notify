@@ -1260,12 +1260,22 @@ function openCommonUnitModal() {
     modal.style.display = 'flex';
     
     schoolSelect.onchange = function() {
-        const school = schools.find(s => s.id == this.value);
-        const depts = school?.departments || [];
+        const schoolId = this.value;
         
-        deptSelect.innerHTML = '<option value="">Select Department</option>' + 
-            depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
-        deptSelect.disabled = !this.value;
+        // FIX: Get departments from the global departments array, filtered by schoolId
+        const filteredDepts = departments.filter(d => d.schoolId == schoolId);
+        
+        console.log('Selected schoolId:', schoolId);
+        console.log('Filtered departments:', filteredDepts);
+        
+        if (filteredDepts.length === 0) {
+            deptSelect.innerHTML = '<option value="">No departments available for this school</option>';
+            deptSelect.disabled = true;
+        } else {
+            deptSelect.innerHTML = '<option value="">Select Department</option>' + 
+                filteredDepts.map(d => `<option value="${d.id}">${d.name} ${d.code ? '(' + d.code + ')' : ''}</option>`).join('');
+            deptSelect.disabled = false;
+        }
     };
 }
 
@@ -1276,7 +1286,6 @@ function closeCommonUnitModal() {
 }
 
 let pendingNoteData = null;
-
 function openCommonUnitModalFromCheckbox() {
     pendingNoteData = {
         title: document.getElementById('noteTitle').value,
@@ -1302,12 +1311,19 @@ function openCommonUnitModalFromCheckbox() {
     modal.style.display = 'flex';
     
     schoolSelect.onchange = function() {
-        const school = schools.find(s => s.id == this.value);
-        const depts = school?.departments || [];
+        const schoolId = this.value;
         
-        deptSelect.innerHTML = '<option value="">Select Department</option>' + 
-            depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
-        deptSelect.disabled = !this.value;
+        // FIX: Get departments from global departments array
+        const filteredDepts = departments.filter(d => d.schoolId == schoolId);
+        
+        if (filteredDepts.length === 0) {
+            deptSelect.innerHTML = '<option value="">No departments available</option>';
+            deptSelect.disabled = true;
+        } else {
+            deptSelect.innerHTML = '<option value="">Select Department</option>' + 
+                filteredDepts.map(d => `<option value="${d.id}">${d.name} ${d.code ? '(' + d.code + ')' : ''}</option>`).join('');
+            deptSelect.disabled = false;
+        }
     };
 }
 
@@ -1315,95 +1331,193 @@ async function confirmCommonUnit() {
     const schoolId = document.getElementById('commonUnitSchoolSelect').value;
     const deptId = document.getElementById('commonUnitDeptSelect').value;
     
+    // Validation
     if (!schoolId || !deptId) {
-        alert('Please select both school and department');
+        showNotification('Please select both school and department', 'error');
         return;
     }
     
+    // Find school and department from global arrays
     const school = schools.find(s => s.id == schoolId);
-    const dept = school?.departments?.find(d => d.id == deptId);
+    const dept = departments.find(d => d.id == deptId);
     
+    if (!school) {
+        showNotification('Selected school not found', 'error');
+        return;
+    }
+    
+    if (!dept) {
+        showNotification('Selected department not found', 'error');
+        return;
+    }
+    
+    // Get unit details from user
     const unitName = prompt('Enter the name of the common unit you want to share:');
-    if (!unitName) return;
+    if (!unitName || unitName.trim() === '') {
+        showNotification('Unit name is required', 'error');
+        return;
+    }
     
     const unitCode = prompt('Enter unit code (optional):');
     
+    // Show loading state
+    const confirmBtn = document.querySelector('#commonUnitModal button[onclick="confirmCommonUnit()"]');
+    const originalBtnText = confirmBtn?.innerHTML || 'Confirm';
+    if (confirmBtn) {
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+        confirmBtn.disabled = true;
+    }
+    
     try {
-        const newUnit = await API.createUnit(unitName, unitCode || '', schoolId, deptId);
+        // Create the common unit
+        const newUnit = await API.createUnit(unitName.trim(), unitCode?.trim() || '', schoolId, deptId);
         
+        // Enhance unit object with additional properties
         newUnit.courseId = parseInt(deptId);
         newUnit.schoolId = parseInt(schoolId);
+        newUnit.isCommon = true;
         
-        if (!units.find(u => u.id == newUnit.id)) {
+        // Add to global units array if not exists
+        const existingUnit = units.find(u => u.id == newUnit.id);
+        if (!existingUnit) {
             units.push(newUnit);
         }
         
+        // Add unit to department's units array
         if (dept) {
             if (!dept.units) dept.units = [];
-            if (!dept.units.find(u => u.id == newUnit.id)) {
+            const unitExists = dept.units.find(u => u.id == newUnit.id);
+            if (!unitExists) {
                 dept.units.push(newUnit);
             }
         }
         
+        // Also update the school's department reference if needed
+        if (school && school.departments) {
+            const schoolDept = school.departments.find(d => d.id == deptId);
+            if (schoolDept) {
+                if (!schoolDept.units) schoolDept.units = [];
+                const unitExistsInSchool = schoolDept.units.find(u => u.id == newUnit.id);
+                if (!unitExistsInSchool) {
+                    schoolDept.units.push(newUnit);
+                }
+            }
+        }
+        
+        // Close the common unit modal
         closeCommonUnitModal();
         
+        // Handle pending note upload if exists
         if (pendingNoteData) {
-            const data = {
-                title: pendingNoteData.title,
-                content: pendingNoteData.content,
-                description: pendingNoteData.description,
-                uploadedBy: user.name || 'Unknown',
-                uploadedByName: user.name || 'Unknown',
-                userId: user.id,
-                user_id: user.id,
-                file: pendingNoteData.file,
-                school_id: parseInt(schoolId),
-                dept_id: parseInt(deptId),
-                unit_id: newUnit.id
-            };
-            
-            try {
-                const newNote = await API.createNote(data);
-                notes.unshift(newNote);
-            } catch (err) {
-                console.error('Error saving note:', err);
-                data.id = Date.now();
-                data.school_id = parseInt(schoolId);
-                data.dept_id = parseInt(deptId);
-                data.unit_id = newUnit.id;
-                data.created_at = new Date().toISOString();
-                notes.unshift(data);
-            }
-            
-            document.getElementById('isCommonUnit').checked = false;
-            pendingNoteData = null;
-            
-            closeNoteModal();
-            renderNotes();
-            updateStats();
-            renderRecentNotes();
-            
-            alert(`Note uploaded to common unit "${newUnit.name}" successfully!`);
+            await handlePendingNoteUpload(newUnit, schoolId, deptId);
         } else {
-            document.getElementById('schoolSelect').value = schoolId;
-            document.getElementById('schoolSelect').dispatchEvent(new Event('change'));
-            
-            setTimeout(() => {
-                document.getElementById('courseSelect').value = deptId;
-                document.getElementById('courseSelect').dispatchEvent(new Event('change'));
-                setTimeout(() => {
-                    const unitSelect = document.getElementById('unitSelect');
-                    unitSelect.innerHTML += `<option value="${newUnit.id}" selected>${newUnit.name} (${newUnit.code || ''})</option>`;
-                    unitSelect.value = newUnit.id;
-                }, 150);
-            }, 150);
-            
-            alert(`Common unit "${newUnit.name}" created and selected!`);
+            await handleUnitSelectionOnly(newUnit, schoolId, deptId);
         }
+        
+        // Show success message
+        showNotification(`Common unit "${newUnit.name}" created successfully!`, 'success');
+        
     } catch (err) {
         console.error('Error creating common unit:', err);
-        alert('Failed to create common unit');
+        let errorMessage = 'Failed to create common unit';
+        
+        if (err.message) {
+            errorMessage += `: ${err.message}`;
+        } else if (err.error) {
+            errorMessage += `: ${err.error}`;
+        }
+        
+        showNotification(errorMessage, 'error');
+    } finally {
+        // Restore button state
+        if (confirmBtn) {
+            confirmBtn.innerHTML = originalBtnText;
+            confirmBtn.disabled = false;
+        }
     }
+}
+
+// Helper function to handle pending note upload
+async function handlePendingNoteUpload(newUnit, schoolId, deptId) {
+    const data = {
+        title: pendingNoteData.title,
+        content: pendingNoteData.content,
+        description: pendingNoteData.description,
+        uploadedBy: user.name || 'Unknown',
+        uploadedByName: user.name || 'Unknown',
+        userId: user.id,
+        user_id: user.id,
+        file: pendingNoteData.file,
+        school_id: parseInt(schoolId),
+        dept_id: parseInt(deptId),
+        unit_id: newUnit.id
+    };
+    
+    try {
+        const newNote = await API.createNote(data);
+        if (!notes.find(n => n.id == newNote.id)) {
+            notes.unshift(newNote);
+        }
+        showNotification('Note uploaded successfully!', 'success');
+    } catch (err) {
+        console.error('Error saving note:', err);
+        // Fallback to local storage
+        data.id = Date.now();
+        data.school_id = parseInt(schoolId);
+        data.dept_id = parseInt(deptId);
+        data.unit_id = newUnit.id;
+        data.created_at = new Date().toISOString();
+        notes.unshift(data);
+        showNotification('Note saved locally (server error)', 'warning');
+    }
+    
+    // Clean up
+    document.getElementById('isCommonUnit').checked = false;
+    pendingNoteData = null;
+    closeNoteModal();
+    renderNotes();
+    updateStats();
+    renderRecentNotes();
+}
+
+// Helper function to handle unit selection only (no pending note)
+async function handleUnitSelectionOnly(newUnit, schoolId, deptId) {
+    const schoolSelect = document.getElementById('schoolSelect');
+    const courseSelect = document.getElementById('courseSelect');
+    const unitSelect = document.getElementById('unitSelect');
+    
+    if (schoolSelect) {
+        schoolSelect.value = schoolId;
+        schoolSelect.dispatchEvent(new Event('change'));
+        
+        // Wait for school change to populate courses
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        if (courseSelect) {
+            courseSelect.value = deptId;
+            courseSelect.dispatchEvent(new Event('change'));
+            
+            // Wait for course change to populate units
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            if (unitSelect) {
+                // Check if unit already exists in dropdown
+                let unitOption = Array.from(unitSelect.options).find(opt => opt.value == newUnit.id);
+                
+                if (!unitOption) {
+                    // Add new unit option
+                    const option = document.createElement('option');
+                    option.value = newUnit.id;
+                    option.textContent = `${newUnit.name} ${newUnit.code ? '(' + newUnit.code + ')' : ''} ✓ (Common)`;
+                    unitSelect.appendChild(option);
+                }
+                
+                unitSelect.value = newUnit.id;
+            }
+        }
+    }
+    
+    showNotification(`Common unit "${newUnit.name}" created and selected!`, 'success');
 }
 
 function closeCourseModal() {
