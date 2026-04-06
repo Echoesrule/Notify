@@ -384,6 +384,11 @@ function handleCommonUnitCheckbox() {
                     }, 100);
                 }
                 return;
+            } else {
+                // Unit selected but not found in this course - show message
+                showNotification('This unit does not exist in the selected course. Please select an existing unit first or create one.', 'error');
+                this.checked = false;
+                return;
             }
         }
         
