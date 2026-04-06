@@ -766,6 +766,18 @@ document.getElementById('schoolSelect').addEventListener('change', function() {
     unitSelect.nextElementSibling.disabled = true;
 });
 
+// Common Unit School Change Handler
+document.getElementById('commonUnitSchool')?.addEventListener('change', function() {
+    const commonDeptSelect = document.getElementById('commonUnitDept');
+    const school = schools.find(s => s.id == this.value);
+    const filtered = school?.departments || [];
+    
+    if (commonDeptSelect) {
+        commonDeptSelect.innerHTML = '<option value="">Select Department</option>' + 
+            filtered.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+    }
+});
+
 // Course Select Change Handler
 document.getElementById('courseSelect').addEventListener('change', function() {
     document.getElementById('commonUnitConfirmed').style.display = 'none';

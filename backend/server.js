@@ -844,6 +844,26 @@ app.get('/api/updates', async (req, res) => {
     }
 });
 
+app.get('/api/updates/my-updates', async (req, res) => {
+    try {
+        const userId = req.query.userId;
+        if (!userId) return res.status(400).json({ error: 'User ID is required' });
+        
+        const [updates] = await db.query(`
+            SELECT u.*, c.name as "courseName", c.school_id, p.name as "postedByName"
+            FROM updates u
+            LEFT JOIN courses c ON u.course_id = c.id
+            LEFT JOIN notify_users p ON u.user_id = p.id
+            WHERE u.user_id = $1
+            ORDER BY u.created_at DESC
+        `, [parseInt(userId)]);
+        res.json(updates);
+    } catch (error) {
+        console.error('My updates error:', error);
+        res.status(500).json({ error: 'Failed to load my updates' });
+    }
+});
+
 app.post('/api/updates', async (req, res) => {
     try {
         const { title, content, course_id, userId } = req.body;
