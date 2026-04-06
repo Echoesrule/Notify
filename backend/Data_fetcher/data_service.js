@@ -7,7 +7,12 @@ async function getSchools() {
             const [depts] = await db.query('SELECT * FROM courses WHERE school_id = ? ORDER BY name', [school.id]);
             school.departments = depts;
             for (const dept of depts) {
-                const [units] = await db.query('SELECT * FROM units WHERE dept_id = ? ORDER BY name', [dept.id]);
+                const [units] = await db.query(`
+                    SELECT u.* FROM units u
+                    JOIN course_units cu ON cu.unit_id = u.id
+                    WHERE cu.course_id = ?
+                    ORDER BY u.name
+                `, [dept.id]);
                 dept.units = units;
                 for (const unit of units) {
                     const [notes] = await db.query('SELECT * FROM notes WHERE unit_id = ? ORDER BY created_at DESC', [unit.id]);
@@ -54,7 +59,12 @@ async function getDepartmentById(schoolId, deptId) {
 
 async function getUnitsByDepartment(schoolId, deptId) {
     try {
-        const [rows] = await db.query('SELECT * FROM units WHERE dept_id = ? ORDER BY name', [parseInt(deptId)]);
+        const [rows] = await db.query(`
+            SELECT u.* FROM units u
+            JOIN course_units cu ON cu.unit_id = u.id
+            WHERE cu.course_id = ?
+            ORDER BY u.name
+        `, [parseInt(deptId)]);
         return rows;
     } catch (error) {
         console.error('Error fetching units:', error);
@@ -64,7 +74,11 @@ async function getUnitsByDepartment(schoolId, deptId) {
 
 async function getUnitById(schoolId, deptId, unitId) {
     try {
-        const [rows] = await db.query('SELECT * FROM units WHERE id = ? AND dept_id = ?', [parseInt(unitId), parseInt(deptId)]);
+        const [rows] = await db.query(`
+            SELECT u.* FROM units u
+            JOIN course_units cu ON cu.unit_id = u.id
+            WHERE u.id = ? AND cu.course_id = ?
+        `, [parseInt(unitId), parseInt(deptId)]);
         return rows[0] || null;
     } catch (error) {
         console.error('Error fetching unit:', error);
@@ -161,14 +175,24 @@ async function addDepartment(schoolId, name, code) {
 async function addUnit(schoolId, deptId, name, code) {
     try {
         const [existing] = await db.query(
-            'SELECT * FROM units WHERE (name = ? OR code = ?) AND dept_id = ?',
-            [name, code, deptId]
+            'SELECT * FROM units WHERE name = ? OR code = ?',
+            [name, code]
         );
         if (existing.length > 0) {
-            return { id: existing[0].id, dept_id: deptId, name, code, exists: true };
+            const unitId = existing[0].id;
+            const [linkCheck] = await db.query(
+                'SELECT * FROM course_units WHERE course_id = ? AND unit_id = ?',
+                [deptId, unitId]
+            );
+            if (linkCheck.length === 0) {
+                await db.query('INSERT INTO course_units (course_id, unit_id) VALUES (?, ?)', [deptId, unitId]);
+            }
+            return { id: unitId, name, code, course_id: deptId, exists: true };
         }
-        const [result] = await db.query('INSERT INTO units (dept_id, name, code) VALUES (?, ?, ?)', [deptId, name, code]);
-        return { id: result.insertId, dept_id: deptId, name, code };
+        const [result] = await db.query('INSERT INTO units (name, code) VALUES (?, ?)', [name, code]);
+        const unitId = result.insertId || result[0]?.id;
+        await db.query('INSERT INTO course_units (course_id, unit_id) VALUES (?, ?)', [deptId, unitId]);
+        return { id: unitId, name, code, course_id: deptId };
     } catch (error) {
         console.error('Error adding unit:', error);
         return null;

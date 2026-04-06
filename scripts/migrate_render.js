@@ -48,9 +48,14 @@ const createTables = async () => {
             id SERIAL PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
             code VARCHAR(50),
-            dept_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
-            is_common BOOLEAN DEFAULT FALSE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        
+        // Course-Units junction table (many-to-many)
+        `CREATE TABLE IF NOT EXISTS course_units (
+            course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
+            unit_id INTEGER REFERENCES units(id) ON DELETE CASCADE,
+            PRIMARY KEY (course_id, unit_id)
         )`,
         
         // Users table
@@ -127,8 +132,9 @@ const createTables = async () => {
         `CREATE INDEX IF NOT EXISTS idx_updates_course ON updates(course_id)`,
         `CREATE INDEX IF NOT EXISTS idx_user_courses_user ON user_courses(user_id)`,
         `CREATE INDEX IF NOT EXISTS idx_user_courses_course ON user_courses(course_id)`,
-        `CREATE INDEX IF NOT EXISTS idx_units_dept ON units(dept_id)`,
-        `CREATE INDEX IF NOT EXISTS idx_courses_school ON courses(school_id)`
+        `CREATE INDEX IF NOT EXISTS idx_courses_school ON courses(school_id)`,
+        `CREATE INDEX IF NOT EXISTS idx_course_units_course ON course_units(course_id)`,
+        `CREATE INDEX IF NOT EXISTS idx_course_units_unit ON course_units(unit_id)`
     ];
     
     console.log('\n📊 Creating indexes...');

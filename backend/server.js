@@ -386,7 +386,8 @@ app.get('/api/schools', async (req, res) => {
                     COUNT(DISTINCT u.id)::int  AS "unitCount",
                     COUNT(DISTINCT uc.user_id)::int AS "studentCount"
                 FROM courses c
-                LEFT JOIN units u ON u.dept_id = c.id
+                LEFT JOIN course_units cu ON cu.course_id = c.id
+                LEFT JOIN units u ON u.id = cu.unit_id
                 LEFT JOIN user_courses uc ON uc.course_id = c.id
                 WHERE c.school_id = $1
                 GROUP BY c.id, c.name, c.code
@@ -399,12 +400,12 @@ app.get('/api/schools', async (req, res) => {
                         u.id,
                         u.name,
                         u.code,
-                        u.is_common,
                         COUNT(DISTINCT n.id)::int AS "noteCount"
                     FROM units u
+                    LEFT JOIN course_units cu ON cu.unit_id = u.id
                     LEFT JOIN notes n ON n.unit_id = u.id
-                    WHERE u.dept_id = $1
-                    GROUP BY u.id, u.name, u.code, u.is_common
+                    WHERE cu.course_id = $1
+                    GROUP BY u.id, u.name, u.code
                     ORDER BY u.name
                 `, [dept.id]);
 
@@ -474,9 +475,9 @@ app.get('/api/schools/:schoolId', async (req, res) => {
         if (!schools[0]) return res.status(404).json({ message: 'School not found' });
 
         const [departments] = await db.query(`
-            SELECT c.*, COUNT(DISTINCT u.id)::int AS "unitCount"
+            SELECT c.*, COUNT(DISTINCT cu.unit_id)::int AS "unitCount"
             FROM courses c
-            LEFT JOIN units u ON u.dept_id = c.id
+            LEFT JOIN course_units cu ON cu.course_id = c.id
             WHERE c.school_id = $1
             GROUP BY c.id
             ORDER BY c.name
@@ -486,8 +487,9 @@ app.get('/api/schools/:schoolId', async (req, res) => {
             const [units] = await db.query(`
                 SELECT u.*, COUNT(DISTINCT n.id)::int AS "noteCount"
                 FROM units u
+                LEFT JOIN course_units cu ON cu.unit_id = u.id
                 LEFT JOIN notes n ON n.unit_id = u.id
-                WHERE u.dept_id = $1
+                WHERE cu.course_id = $1
                 GROUP BY u.id
                 ORDER BY u.name
             `, [dept.id]);
@@ -636,13 +638,23 @@ app.get('/api/schools/:schoolId/departments/:deptId/units/:unitId', async (req, 
 
 app.post('/api/units', async (req, res) => {
     try {
-        const { name, code, school_id, dept_id } = req.body;
-        if (!name || !school_id || !dept_id) return res.status(400).json({ error: 'Name, school_id, and dept_id are required' });
+        const { name, code, school_id, course_id } = req.body;
+        if (!name || !school_id) return res.status(400).json({ error: 'Name and school_id are required' });
+        
         const [rows] = await db.query(
-            'INSERT INTO units (name, code, dept_id) VALUES ($1, $2, $3) RETURNING id',
-            [name, code, dept_id]
+            'INSERT INTO units (name, code) VALUES ($1, $2) RETURNING id',
+            [name, code]
         );
-        res.json({ id: rows[0].id, name, code, dept_id });
+        const unitId = rows[0].id;
+        
+        if (course_id) {
+            await db.query(
+                'INSERT INTO course_units (course_id, unit_id) VALUES ($1, $2)',
+                [course_id, unitId]
+            );
+        }
+        
+        res.json({ id: unitId, name, code, course_id });
     } catch (error) {
         console.error('Error creating unit:', error);
         res.status(500).json({ error: 'Failed to create unit' });
@@ -1042,11 +1054,11 @@ app.get('/api/admin/courses', adminMiddleware, async (req, res) => {
     try {
         const [courses] = await db.query(`
             SELECT c.*, s.name as "schoolName",
-                   COUNT(DISTINCT u.id)::int        AS "unitCount",
-                   COUNT(DISTINCT uc.user_id)::int  AS "studentCount"
+                   COUNT(DISTINCT cu.unit_id)::int AS "unitCount",
+                   COUNT(DISTINCT uc.user_id)::int AS "studentCount"
             FROM courses c
             LEFT JOIN schools s ON c.school_id = s.id
-            LEFT JOIN units u ON u.dept_id = c.id
+            LEFT JOIN course_units cu ON cu.course_id = c.id
             LEFT JOIN user_courses uc ON uc.course_id = c.id
             GROUP BY c.id, s.name
             ORDER BY c.name
@@ -1189,34 +1201,42 @@ app.post('/api/admin/distribute-units', adminMiddleware, async (req, res) => {
 
         const [businessDept] = await db.query('SELECT id FROM courses WHERE school_id = $1 LIMIT 1', [6]);
         if (businessDept[0]) {
-            await db.query(`
-                INSERT INTO units (name, code, dept_id, is_common) VALUES
-                ('Principles of Management', 'BUS101', $1, false),
-                ('Business Mathematics',     'BUS102', $1, false),
-                ('Financial Accounting',     'ACC101', $1, false)
-            `, [businessDept[0].id]);
+            const [unitRows] = await db.query(`
+                INSERT INTO units (name, code) VALUES
+                ('Principles of Management', 'BUS101'),
+                ('Business Mathematics',     'BUS102'),
+                ('Financial Accounting',     'ACC101')
+                RETURNING id
+            `);
+            for (const unit of unitRows) {
+                await db.query('INSERT INTO course_units (course_id, unit_id) VALUES ($1, $2)', [businessDept[0].id, unit.id]);
+            }
             results.push({ school: 'Business', unitsAdded: 3 });
         }
 
         const [lawDept] = await db.query('SELECT id FROM courses WHERE school_id = $1 LIMIT 1', [8]);
         if (lawDept[0]) {
-            await db.query(`
-                INSERT INTO units (name, code, dept_id, is_common) VALUES
-                ('Legal Methods',      'LAW101', $1, false),
-                ('Constitutional Law', 'LAW102', $1, false),
-                ('Criminal Law',       'LAW103', $1, false)
-            `, [lawDept[0].id]);
+            const [unitRows] = await db.query(`
+                INSERT INTO units (name, code) VALUES
+                ('Legal Methods',      'LAW101'),
+                ('Constitutional Law', 'LAW102'),
+                ('Criminal Law',       'LAW103')
+                RETURNING id
+            `);
+            for (const unit of unitRows) {
+                await db.query('INSERT INTO course_units (course_id, unit_id) VALUES ($1, $2)', [lawDept[0].id, unit.id]);
+            }
             results.push({ school: 'Law', unitsAdded: 3 });
         }
 
-        await db.query(`
-            INSERT INTO units (name, code, dept_id, is_common) VALUES
-            ('Communication Skills',  'COM101', NULL, true),
-            ('Computer Literacy',     'CIT101', NULL, true),
-            ('Research Methodology',  'RES101', NULL, true)
-            ON CONFLICT DO NOTHING
+        const [commonUnits] = await db.query(`
+            INSERT INTO units (name, code) VALUES
+            ('Communication Skills',  'COM101'),
+            ('Computer Literacy',     'CIT101'),
+            ('Research Methodology',  'RES101')
+            RETURNING id
         `);
-        results.push({ action: 'Common units added', unitsAdded: 3 });
+        results.push({ action: 'Common units added', unitsAdded: commonUnits.length });
 
         res.json({ message: 'Units distributed successfully', results });
     } catch (error) {
