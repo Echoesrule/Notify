@@ -551,11 +551,11 @@ app.get('/api/schools/:schoolId/departments', async (req, res) => {
         const [departments] = await db.query(`
             SELECT
                 c.*,
-                COUNT(DISTINCT u.id)::int   AS "unitCount",
+                COUNT(DISTINCT cu.unit_id)::int AS "unitCount",
                 COUNT(DISTINCT uc.user_id)::int AS "studentCount",
                 COUNT(DISTINCT n.id)::int   AS "noteCount"
             FROM courses c
-            LEFT JOIN units u ON u.dept_id = c.id
+            LEFT JOIN course_units cu ON cu.course_id = c.id
             LEFT JOIN user_courses uc ON uc.course_id = c.id
             LEFT JOIN notes n ON n.dept_id = c.id
             WHERE c.school_id = $1
@@ -606,8 +606,9 @@ app.get('/api/schools/:schoolId/departments/:deptId/units', async (req, res) => 
         const [units] = await db.query(`
             SELECT u.*, COUNT(DISTINCT n.id)::int AS "noteCount"
             FROM units u
+            LEFT JOIN course_units cu ON cu.unit_id = u.id
             LEFT JOIN notes n ON n.unit_id = u.id
-            WHERE u.dept_id = $1
+            WHERE cu.course_id = $1
             GROUP BY u.id
             ORDER BY u.name
         `, [req.params.deptId]);
@@ -623,7 +624,8 @@ app.get('/api/schools/:schoolId/departments/:deptId/units/:unitId', async (req, 
         const [units] = await db.query(`
             SELECT u.*, c.name as "courseName", s.name as "schoolName"
             FROM units u
-            LEFT JOIN courses c ON u.dept_id = c.id
+            LEFT JOIN course_units cu ON cu.unit_id = u.id
+            LEFT JOIN courses c ON cu.course_id = c.id
             LEFT JOIN schools s ON c.school_id = s.id
             WHERE u.id = $1
         `, [req.params.unitId]);
