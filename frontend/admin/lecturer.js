@@ -72,10 +72,10 @@ const API = {
         body: JSON.stringify({ name, code, school_id: schoolId })
     }).then(r => r.json()),
 
-    createUnit: (name, code, schoolId, deptId) => fetch(`${API_URL}/units`, {
+    createUnit: (name, code, schoolId, courseId) => fetch(`${API_URL}/units`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, code, school_id: schoolId, dept_id: deptId })
+        body: JSON.stringify({ name, code, school_id: schoolId, course_id: courseId })
     }).then(r => r.json()),
 
     createNote: async (data) => {
@@ -175,7 +175,7 @@ async function fetchData() {
                         }
                         dept.units?.forEach(unit => {
                             if (!units.find(u => u.id === unit.id)) {
-                                units.push({ ...unit, deptId: dept.id, schoolId: school.id });
+                                units.push({ ...unit, courseId: dept.id, schoolId: school.id });
                             }
                         });
                     }
@@ -189,8 +189,8 @@ async function fetchData() {
                 schools.forEach(school => {
                     school.departments?.forEach(dept => {
                         const unit = dept.units?.find(u => u.id === unitId);
-                        if (unit && !units.find(u => u.id === unit.id)) {
-                            units.push({ ...unit, deptId: dept.id, schoolId: school.id });
+                            if (unit && !units.find(u => u.id === unit.id)) {
+                            units.push({ ...unit, courseId: dept.id, schoolId: school.id });
                             if (!departments.find(d => d.id === dept.id)) {
                                 departments.push({ ...dept, schoolId: school.id });
                             }
@@ -434,9 +434,9 @@ async function confirmCommonUnitInline() {
     try {
         const newUnit = await API.createUnit(unitName, unitCode || '', schoolId, deptId);
         
-        newUnit.deptId = parseInt(deptId);
+        newUnit.courseId = parseInt(deptId);
         newUnit.schoolId = parseInt(schoolId);
-        newUnit.isCommon = true;
+        newUnit.courseCount = 1;
         
         if (!units.find(u => u.id == newUnit.id)) {
             units.push(newUnit);
@@ -689,7 +689,7 @@ async function createNew(type) {
             }
             
             const duplicateCheck = units.find(u => 
-                u.name.toLowerCase() === name.toLowerCase() && u.deptId == deptId
+                u.name.toLowerCase() === name.toLowerCase() && u.courseId == deptId
             );
             if (duplicateCheck) {
                 alert('This unit already exists in this course!');
@@ -701,7 +701,7 @@ async function createNew(type) {
             if (newUnit.exists) {
                 alert('This unit already exists in this course. Using existing unit.');
             }
-            newUnit.deptId = parseInt(deptId);
+            newUnit.courseId = parseInt(deptId);
             newUnit.schoolId = parseInt(schoolId);
             const existingIdx = units.findIndex(u => u.id == newUnit.id);
             if (existingIdx === -1) {
@@ -1014,7 +1014,7 @@ function renderCourses() {
     }
 
     container.innerHTML = departments.map(course => {
-        const courseUnits = units.filter(u => u.deptId == course.id);
+        const courseUnits = units.filter(u => u.courseId == course.id);
         const school = schools.find(s => s.id == course.schoolId);
         return `
             <div class="course-item">
@@ -1319,9 +1319,8 @@ async function confirmCommonUnit() {
     try {
         const newUnit = await API.createUnit(unitName, unitCode || '', schoolId, deptId);
         
-        newUnit.deptId = parseInt(deptId);
+        newUnit.courseId = parseInt(deptId);
         newUnit.schoolId = parseInt(schoolId);
-        newUnit.isCommon = true;
         
         if (!units.find(u => u.id == newUnit.id)) {
             units.push(newUnit);
@@ -1449,7 +1448,7 @@ function addUnitToCourse(deptId) {
     (async () => {
         try {
             const newUnit = await API.createUnit(unitName, unitCode || '', targetSchoolId, targetDeptId);
-            newUnit.deptId = targetDeptId;
+            newUnit.courseId = targetDeptId;
             newUnit.schoolId = targetSchoolId;
             
             if (!units.find(u => u.id == newUnit.id)) {
@@ -1496,7 +1495,7 @@ async function deleteCourse(id) {
         console.error('Error deleting course:', err);
     }
     departments = departments.filter(c => c.id != id);
-    units = units.filter(u => u.deptId != id);
+    units = units.filter(u => u.courseId != id);
     renderCourses();
     updateStats();
 }
@@ -1557,7 +1556,7 @@ function addUnitToDept(schoolId, deptId) {
     (async () => {
         try {
             const newUnit = await API.createUnit(name, code || '', schoolId, deptId);
-            newUnit.deptId = parseInt(deptId);
+            newUnit.courseId = parseInt(deptId);
             newUnit.schoolId = parseInt(schoolId);
             
             if (!units.find(u => u.id == newUnit.id)) {
@@ -2165,7 +2164,7 @@ function handleSearch(query) {
         }
         
         container.innerHTML = filteredNotes.map(note => {
-            const course = departments.find(c => c.id == (note.deptId || note.dept_id));
+        const course = departments.find(c => c.id == (note.courseId || note.course_id || note.dept_id));
             const unit = units.find(u => u.id == (note.unitId || note.unit_id));
             return `
             <div class="note-card">
@@ -2239,7 +2238,7 @@ function handleSearch(query) {
         }
         
         coursesContainer.innerHTML = filteredDepartments.map(course => {
-            const courseUnits = units.filter(u => u.deptId == course.id);
+        const courseUnits = units.filter(u => u.courseId == course.id);
             const school = schools.find(s => s.id == course.schoolId);
             return `
                 <div class="course-item">

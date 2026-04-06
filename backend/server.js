@@ -422,12 +422,13 @@ app.get('/api/schools', async (req, res) => {
                     u.id,
                     u.name,
                     u.code,
-                    u.is_common,
+                    COUNT(DISTINCT cu.course_id)::int AS "courseCount",
                     COUNT(DISTINCT n.id)::int AS "noteCount"
                 FROM units u
+                LEFT JOIN course_units cu ON cu.unit_id = u.id
                 LEFT JOIN notes n ON n.unit_id = u.id
-                WHERE u.is_common = true
-                GROUP BY u.id, u.name, u.code, u.is_common
+                GROUP BY u.id, u.name, u.code
+                HAVING COUNT(DISTINCT cu.course_id) > 1
                 ORDER BY u.name
             `);
 
