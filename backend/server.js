@@ -432,7 +432,7 @@ app.get('/api/schools', async (req, res) => {
                 ORDER BY u.name
             `);
 
-            const totalUnits = departmentsWithUnits.reduce((sum, d) => sum + d.unitCount, 0) + commonUnits.length;
+            const totalUnits = departmentsWithUnits.reduce((sum, d) => sum + d.unitCount, 0);
 
             return {
                 id:           school.id,

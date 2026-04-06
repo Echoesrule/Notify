@@ -129,12 +129,10 @@ async function displayDepartments() {
 
         console.log('Fetching departments...');
 
-           const [departments] = await Promise.all([
-    getDepartmentsBySchool(schoolId),           
-    new Promise(resolve => setTimeout(resolve, 1500))  
-]);
+        const departments = await getDepartmentsBySchool(schoolId);
+        await new Promise(resolve => setTimeout(resolve, 500));
 
-          console.log('Departments received:', departments);
+        console.log('Departments received:', departments);
         const grid = document.getElementById('courseGrid');
         const insightsGrid = document.getElementById('insightsGrid');
         
