@@ -1250,6 +1250,7 @@ function openCommonUnitModal() {
     const modal = document.getElementById('commonUnitModal');
     const schoolSelect = document.getElementById('commonUnitSchoolSelect');
     const deptSelect = document.getElementById('commonUnitDeptSelect');
+    const shareWithSelect = document.getElementById('commonUnitShareWith');
     
     schoolSelect.innerHTML = '<option value="">Select School</option>' + 
         schools.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
@@ -1257,25 +1258,54 @@ function openCommonUnitModal() {
     deptSelect.innerHTML = '<option value="">Select Department</option>';
     deptSelect.disabled = true;
     
+    shareWithSelect.innerHTML = '<option value="">Select courses to share with</option>';
+    
     modal.style.display = 'flex';
     
     schoolSelect.onchange = function() {
         const schoolId = this.value;
         
-        // FIX: Get departments from the global departments array, filtered by schoolId
-        const filteredDepts = departments.filter(d => d.schoolId == schoolId);
+        const school = schools.find(s => s.id == schoolId);
+        const filteredDepts = school?.departments || [];
         
-        console.log('Selected schoolId:', schoolId);
-        console.log('Filtered departments:', filteredDepts);
+        deptSelect.innerHTML = '<option value="">Select Department</option>' + 
+            filteredDepts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+        deptSelect.disabled = !this.value;
         
-        if (filteredDepts.length === 0) {
-            deptSelect.innerHTML = '<option value="">No departments available for this school</option>';
-            deptSelect.disabled = true;
-        } else {
-            deptSelect.innerHTML = '<option value="">Select Department</option>' + 
-                filteredDepts.map(d => `<option value="${d.id}">${d.name} ${d.code ? '(' + d.code + ')' : ''}</option>`).join('');
-            deptSelect.disabled = false;
+        const selectedDeptId = deptSelect.value;
+        const selectedDept = filteredDepts.find(d => d.id == selectedDeptId);
+        
+        let availableCourses = [];
+        if (selectedDept) {
+            schools.forEach(s => {
+                s.departments?.forEach(d => {
+                    if (d.id != selectedDeptId) {
+                        availableCourses.push({ id: d.id, name: `${s.name} - ${d.name}` });
+                    }
+                });
+            });
         }
+        
+        shareWithSelect.innerHTML = '<option value="">Select courses to share with</option>' +
+            availableCourses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    };
+    
+    deptSelect.onchange = function() {
+        const selectedDeptId = this.value;
+        const schoolId = schoolSelect.value;
+        const school = schools.find(s => s.id == schoolId);
+        
+        let availableCourses = [];
+        schools.forEach(s => {
+            s.departments?.forEach(d => {
+                if (d.id != selectedDeptId) {
+                    availableCourses.push({ id: d.id, name: `${s.name} - ${d.name}` });
+                }
+            });
+        });
+        
+        shareWithSelect.innerHTML = '<option value="">Select courses to share with</option>' +
+            availableCourses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     };
 }
 
@@ -1330,16 +1360,16 @@ function openCommonUnitModalFromCheckbox() {
 async function confirmCommonUnit() {
     const schoolId = document.getElementById('commonUnitSchoolSelect').value;
     const deptId = document.getElementById('commonUnitDeptSelect').value;
+    const shareWithSelect = document.getElementById('commonUnitShareWith');
+    const selectedShareWith = Array.from(shareWithSelect.selectedOptions).map(opt => parseInt(opt.value));
     
-    // Validation
     if (!schoolId || !deptId) {
         showNotification('Please select both school and department', 'error');
         return;
     }
     
-    // Find school and department from global arrays
     const school = schools.find(s => s.id == schoolId);
-    const dept = departments.find(d => d.id == deptId);
+    const dept = school?.departments?.find(d => d.id == deptId);
     
     if (!school) {
         showNotification('Selected school not found', 'error');
@@ -1351,7 +1381,6 @@ async function confirmCommonUnit() {
         return;
     }
     
-    // Get unit details from user
     const unitName = prompt('Enter the name of the common unit you want to share:');
     if (!unitName || unitName.trim() === '') {
         showNotification('Unit name is required', 'error');
@@ -1360,7 +1389,6 @@ async function confirmCommonUnit() {
     
     const unitCode = prompt('Enter unit code (optional):');
     
-    // Show loading state
     const confirmBtn = document.querySelector('#commonUnitModal button[onclick="confirmCommonUnit()"]');
     const originalBtnText = confirmBtn?.innerHTML || 'Confirm';
     if (confirmBtn) {
@@ -1369,53 +1397,58 @@ async function confirmCommonUnit() {
     }
     
     try {
-        // Create the common unit
         const newUnit = await API.createUnit(unitName.trim(), unitCode?.trim() || '', schoolId, deptId);
         
-        // Enhance unit object with additional properties
         newUnit.courseId = parseInt(deptId);
         newUnit.schoolId = parseInt(schoolId);
-        newUnit.isCommon = true;
         
-        // Add to global units array if not exists
-        const existingUnit = units.find(u => u.id == newUnit.id);
-        if (!existingUnit) {
+        if (!units.find(u => u.id == newUnit.id)) {
             units.push(newUnit);
         }
         
-        // Add unit to department's units array
         if (dept) {
             if (!dept.units) dept.units = [];
-            const unitExists = dept.units.find(u => u.id == newUnit.id);
-            if (!unitExists) {
+            if (!dept.units.find(u => u.id == newUnit.id)) {
                 dept.units.push(newUnit);
             }
         }
         
-        // Also update the school's department reference if needed
         if (school && school.departments) {
             const schoolDept = school.departments.find(d => d.id == deptId);
             if (schoolDept) {
                 if (!schoolDept.units) schoolDept.units = [];
-                const unitExistsInSchool = schoolDept.units.find(u => u.id == newUnit.id);
-                if (!unitExistsInSchool) {
+                if (!schoolDept.units.find(u => u.id == newUnit.id)) {
                     schoolDept.units.push(newUnit);
                 }
             }
         }
         
-        // Close the common unit modal
+        for (const shareCourseId of selectedShareWith) {
+            try {
+                const shareSchool = schools.find(s => s.departments?.some(d => d.id == shareCourseId));
+                await API.createUnit(newUnit.name, newUnit.code || '', shareSchool?.id || schoolId, shareCourseId);
+                
+                const shareDept = shareSchool?.departments?.find(d => d.id == shareCourseId);
+                if (shareDept) {
+                    if (!shareDept.units) shareDept.units = [];
+                    if (!shareDept.units.find(u => u.id == newUnit.id)) {
+                        shareDept.units.push(newUnit);
+                    }
+                }
+            } catch (e) {
+                console.warn(`Failed to share unit with course ${shareCourseId}:`, e);
+            }
+        }
+        
         closeCommonUnitModal();
         
-        // Handle pending note upload if exists
         if (pendingNoteData) {
             await handlePendingNoteUpload(newUnit, schoolId, deptId);
         } else {
             await handleUnitSelectionOnly(newUnit, schoolId, deptId);
         }
         
-        // Show success message
-        showNotification(`Common unit "${newUnit.name}" created successfully!`, 'success');
+        showNotification(`Common unit "${newUnit.name}" created and shared with ${selectedShareWith.length} course(s)!`, 'success');
         
     } catch (err) {
         console.error('Error creating common unit:', err);
@@ -1429,7 +1462,6 @@ async function confirmCommonUnit() {
         
         showNotification(errorMessage, 'error');
     } finally {
-        // Restore button state
         if (confirmBtn) {
             confirmBtn.innerHTML = originalBtnText;
             confirmBtn.disabled = false;
