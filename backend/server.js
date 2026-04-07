@@ -824,6 +824,29 @@ app.get('/api/notes/:id/preview', async (req, res) => {
     }
 });
 
+// Download note
+app.get('/api/notes/:id/download', async (req, res) => {
+    try {
+        const [notes] = await db.query('SELECT * FROM notes WHERE id = $1', [parseInt(req.params.id)]);
+        if (!notes[0]) return res.status(404).json({ error: 'Note not found' });
+
+        const note = notes[0];
+        if (!note.file_path) return res.status(404).json({ error: 'No file attached to this note' });
+
+        await db.query('UPDATE notes SET downloads = COALESCE(downloads, 0) + 1 WHERE id = $1', [req.params.id]);
+
+        const fileName = note.file_path.split('/').pop();
+        const filePath = path.join(__dirname, 'uploads', 'notes', fileName);
+
+        if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found on server' });
+        res.download(filePath);
+    } catch (error) {
+        console.error('Error downloading note:', error);
+        res.status(500).json({ error: 'Failed to download note' });
+    }
+});
+
+// Get single note
 app.get('/api/notes/:id', async (req, res) => {
     try {
         const [notes] = await db.query(`
@@ -843,27 +866,6 @@ app.get('/api/notes/:id', async (req, res) => {
     } catch (error) {
         console.error('Error fetching note:', error);
         res.status(500).json({ error: 'Failed to fetch note' });
-    }
-});
-
-app.get('/api/notes/:id/download', async (req, res) => {
-    try {
-        const [notes] = await db.query('SELECT * FROM notes WHERE id = $1', [parseInt(req.params.id)]);
-        if (!notes[0]) return res.status(404).json({ error: 'Note not found' });
-
-        const note = notes[0];
-        if (!note.file_path) return res.status(404).json({ error: 'No file attached to this note' });
-
-        await db.query('UPDATE notes SET downloads = COALESCE(downloads, 0) + 1 WHERE id = $1', [req.params.id]);
-
-        const fileName = note.file_path.split('/').pop();
-        const filePath = path.join(__dirname, 'uploads', 'notes', fileName);
-
-        if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found on server' });
-        res.download(filePath);
-    } catch (error) {
-        console.error('Error downloading note:', error);
-        res.status(500).json({ error: 'Failed to download note' });
     }
 });
 
