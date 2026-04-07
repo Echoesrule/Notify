@@ -347,6 +347,18 @@ function getBookmarks() {
     return JSON.parse(localStorage.getItem('notifyBookmarks') || '[]');
 }
 
+function showNotification(message, type = 'info') {
+    const container = document.getElementById('notification-container') || document.body;
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i><span>${message}</span>`;
+    container.appendChild(notification);
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
 function saveBookmarks(bookmarks) {
     localStorage.setItem('notifyBookmarks', JSON.stringify(bookmarks));
 }

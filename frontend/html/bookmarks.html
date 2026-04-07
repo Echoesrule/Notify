@@ -444,18 +444,27 @@
         }
         
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Bookmarks page loaded');
             const foldersGrid = document.getElementById('foldersGrid');
             const bookmarksGrid = document.getElementById('bookmarksGrid');
-            if (!foldersGrid || !bookmarksGrid) return;
+            if (!foldersGrid || !bookmarksGrid) {
+                console.error('Grid elements not found');
+                return;
+            }
             
             const folders = getBookmarkFolders();
             const bookmarks = getBookmarks();
+            console.log('Folders:', folders);
+            console.log('Bookmarks:', bookmarks);
             
             // Update count
             const bookmarkCount = document.getElementById('bookmarkCount');
             if (bookmarkCount) {
                 bookmarkCount.textContent = `${bookmarks.length} items`;
             }
+            
+            console.log('Rendering', bookmarks.length, 'bookmarks');
+            console.log('Sample bookmark:', bookmarks[0]);
             
             // Render folders
             let foldersHtml = '';
