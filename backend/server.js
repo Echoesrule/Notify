@@ -1156,6 +1156,51 @@ app.get('/api/admin/institutions', adminMiddleware, async (req, res) => {
     }
 });
 
+// Admin units endpoint
+app.get('/api/admin/units', adminMiddleware, async (req, res) => {
+    try {
+        const [units] = await db.query(`
+            SELECT u.*,
+                   COUNT(DISTINCT n.id)::int AS "noteCount"
+            FROM units u
+            LEFT JOIN notes n ON n.unit_id = u.id
+            GROUP BY u.id
+            ORDER BY u.name
+        `);
+        res.json(units);
+    } catch (error) {
+        console.error('Error fetching units:', error);
+        res.status(500).json({ error: 'Failed to fetch units' });
+    }
+});
+
+app.delete('/api/admin/units/:id', adminMiddleware, async (req, res) => {
+    try {
+        const unitId = parseInt(req.params.id);
+        await db.query('DELETE FROM notes WHERE unit_id = $1', [unitId]);
+        await db.query('DELETE FROM course_units WHERE unit_id = $1', [unitId]);
+        await db.query('DELETE FROM units WHERE id = $1', [unitId]);
+        res.json({ message: 'Unit deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting unit:', error);
+        res.status(500).json({ error: 'Failed to delete unit' });
+    }
+});
+
+app.put('/api/admin/units/:id', adminMiddleware, async (req, res) => {
+    try {
+        const unitId = parseInt(req.params.id);
+        const { name } = req.body;
+        if (!name) return res.status(400).json({ error: 'Name is required' });
+        
+        await db.query('UPDATE units SET name = $1 WHERE id = $2', [name, unitId]);
+        res.json({ message: 'Unit updated successfully' });
+    } catch (error) {
+        console.error('Error updating unit:', error);
+        res.status(500).json({ error: 'Failed to update unit' });
+    }
+});
+
 // Admin updates endpoint
 app.get('/api/admin/updates', adminMiddleware, async (req, res) => {
     try {

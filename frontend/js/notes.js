@@ -159,6 +159,7 @@ const currentSubject= document.getElementById('currentSubject')
                 <img src="../images/dashboardImages/no notes.jpg" alt="No notes">
                 <p>No notes found for this subject</p>
             </div>`;
+            showContent();
         } else {
             // Store original notes for sorting
             window.originalNotes = notes;
@@ -181,6 +182,7 @@ const currentSubject= document.getElementById('currentSubject')
             };
             
             renderSortedNotes(notes);
+            showContent();
         }
     } catch (error) {
         console.error(' Error loading notes:', error);
