@@ -544,14 +544,18 @@ function setupProfileImageButtons() {
                     formData.append('pfp', file);
                     
                     try {
+                        console.log('Uploading PFP to:', `${window.API_URL}/user/pfp`);
                         const res = await fetch(`${window.API_URL}/user/pfp`, {
                             method: 'POST',
                             headers: { 'Authorization': `Bearer ${token}` },
                             body: formData
                         });
                         
+                        console.log('PFP response status:', res.status);
+                        
                         if (res.ok) {
                             const data = await res.json();
+                            console.log('PFP upload success:', data);
                             localStorage.setItem('user_pfp', data.pfp);
                             
                             // Update image display
@@ -570,9 +574,12 @@ function setupProfileImageButtons() {
                             showNotification('Session expired. Please log in again.', 'error');
                         
                         } else {
-                            showNotification('Failed to upload image', 'error');
+                            const errorData = await res.json().catch(() => ({}));
+                            console.error('PFP upload failed:', res.status, errorData);
+                            showNotification('Failed to upload image: ' + (errorData.message || res.status), 'error');
                         }
                     } catch (err) {
+                        console.error('PFP upload error:', err);
                         showNotification('Error uploading image', 'error');
                     }
                 }

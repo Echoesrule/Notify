@@ -1277,17 +1277,28 @@ app.post('/api/user/pfp', async (req, res) => {
 
     try {
         const decoded = jwt.verify(token, SECRET);
+        console.log('PFP upload - User ID:', decoded.id);
 
         uploadPfp.single('pfp')(req, res, async (err) => {
             if (err) {
+                console.error('Multer error:', err);
                 if (err.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ message: 'File too large. Max 2MB' });
                 return res.status(400).json({ message: 'File upload error' });
             }
-            if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+            if (!req.file) {
+                console.error('No file uploaded');
+                return res.status(400).json({ message: 'No file uploaded' });
+            }
+
+            console.log('File uploaded:', req.file.filename);
 
             try {
                 const pfpPath = '/uploads/pfps/' + req.file.filename;
+                console.log('Updating user', decoded.id, 'with pfp:', pfpPath);
+                
                 await db.query('UPDATE notify_users SET pfp = $1 WHERE id = $2', [pfpPath, decoded.id]);
+                console.log('PFP updated successfully');
+                
                 res.json({ pfp: pfpPath });
             } catch (dbErr) {
                 console.error('Error updating profile picture:', dbErr);

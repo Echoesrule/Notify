@@ -39,7 +39,7 @@ router.post('/login', authLimiter, async (req, res) => {
 
     try {
         const [rows] = await db.query(
-            'SELECT * FROM notify_users WHERE email = ?',
+            'SELECT * FROM notify_users WHERE email = $1',
             [email]
         );
 
