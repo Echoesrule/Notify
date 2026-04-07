@@ -256,6 +256,32 @@ body {
     margin-right: 8px;
 }
 
+.institution-info {
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.institution-info.success {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+    border: 1px solid var(--success);
+}
+
+.institution-info.warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+    border: 1px solid #f59e0b;
+}
+
+.institution-info i {
+    font-size: 1rem;
+}
+
 @import url('responsive.css');
 
 /* Notification Styles for Login/Register */

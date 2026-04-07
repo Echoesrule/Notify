@@ -29,10 +29,55 @@ function showNotification(message, type = 'info') {
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
     const message = document.getElementById('loginMessage');
+    const emailInput = document.getElementById('loginEmail');
+    const institutionDisplay = document.getElementById('institution-display');
 
     if (!loginForm) {
         console.error('Login form not found');
         return;
+    }
+
+    // Check institution on email blur
+    if (emailInput) {
+        emailInput.addEventListener('blur', async () => {
+            const email = emailInput.value.trim();
+            
+            if (!email || !email.includes('@')) {
+                institutionDisplay.style.display = 'none';
+                return;
+            }
+
+            try {
+                console.log('Checking institution for email:', email);
+                const res = await fetch(`${API_URL}/user_auth/check-institution`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                console.log('Institution response:', data);
+
+                if (data.found) {
+                    institutionDisplay.innerHTML = `<i class="fas fa-university"></i> <strong>${data.name}</strong> detected`;
+                    institutionDisplay.className = 'institution-info success';
+                    institutionDisplay.style.display = 'block';
+                } else {
+                    institutionDisplay.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Institution <strong>${data.domain}</strong> not registered. Please contact admin.`;
+                    institutionDisplay.className = 'institution-info warning';
+                    institutionDisplay.style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Institution check error:', err);
+                institutionDisplay.style.display = 'none';
+            }
+        });
+
+        // Clear institution display when email is cleared
+        emailInput.addEventListener('input', () => {
+            if (!emailInput.value.includes('@')) {
+                institutionDisplay.style.display = 'none';
+            }
+        });
     }
 
     loginForm.addEventListener('submit', async (e) => {

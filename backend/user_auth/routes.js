@@ -106,20 +106,15 @@ router.post('/register', async (req, res) => {
             // Try to find institution by domain (for role assignment only)
             const [institution] = await db.query(
                 `SELECT * FROM institutions 
-                 WHERE staff_domain = ? 
-                    OR student_domain = ? 
-                    OR admin_domain = ?`,
-                [emailDomain, emailDomain, emailDomain]
+                 WHERE staff_domain = $1 
+                    OR student_domain = $2`,
+                [emailDomain, emailDomain]
             );
 
             if (institution && institution.length > 0) {
                 const inst = institution[0];
                 
-                if (inst.admin_domain && emailDomain === inst.admin_domain) {
-                    role = 'admin';
-                    console.log('Admin detected for domain:', emailDomain);
-                } 
-                else if (inst.staff_domain && emailDomain === inst.staff_domain) {
+                if (inst.staff_domain && emailDomain === inst.staff_domain) {
                     role = 'lecturer';
                     console.log('Lecturer detected for domain:', emailDomain);
                 } 
@@ -271,6 +266,51 @@ router.post('/forgot-password', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Failed to process request' });
+    }
+});
+
+// Check institution by email domain
+router.post('/check-institution', async (req, res) => {
+    const { email } = req.body;
+    
+    if (!email || !email.includes('@')) {
+        return res.json({ found: false, message: 'Invalid email format' });
+    }
+    
+    const emailDomain = email.split('@')[1].toLowerCase();
+    console.log('Checking institution for domain:', emailDomain);
+    
+    try {
+        const [institutions] = await db.query(
+            `SELECT * FROM institutions 
+             WHERE LOWER(staff_domain) = $1 
+                OR LOWER(student_domain) = $1`,
+            [emailDomain]
+        );
+        
+        if (institutions && institutions.length > 0) {
+            const inst = institutions[0];
+            console.log('Institution found:', inst.name);
+            return res.json({
+                found: true,
+                name: inst.name,
+                domain: emailDomain
+            });
+        } else {
+            console.log('No institution found for domain:', emailDomain);
+            return res.json({
+                found: false,
+                message: 'Institution not registered',
+                domain: emailDomain
+            });
+        }
+    } catch (err) {
+        console.error('Error checking institution:', err);
+        return res.status(500).json({
+            found: false,
+            message: 'Unable to verify institution',
+            error: err.message
+        });
     }
 });
 

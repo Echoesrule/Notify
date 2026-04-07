@@ -27,8 +27,49 @@ function showNotification(message, type = 'info') {
 
 document.addEventListener('DOMContentLoaded', () => {
     const registerForm = document.getElementById('registerForm');
+    const emailInput = document.getElementById('regEmail');
+    const institutionDisplay = document.getElementById('institution-display');
 
     if (!registerForm) return;
+
+    // Check institution on email blur
+    emailInput.addEventListener('blur', async () => {
+        const email = emailInput.value.trim();
+        
+        if (!email || !email.includes('@')) {
+            institutionDisplay.style.display = 'none';
+            return;
+        }
+
+        try {
+            const res = await fetch(`${window.API_URL}/user_auth/check-institution`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            const data = await res.json();
+
+            if (data.found) {
+                institutionDisplay.innerHTML = `<i class="fas fa-university"></i> <strong>${data.name}</strong> detected`;
+                institutionDisplay.className = 'institution-info success';
+                institutionDisplay.style.display = 'block';
+            } else {
+                institutionDisplay.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Institution <strong>${data.domain}</strong> not registered. You can still register as a student.`;
+                institutionDisplay.className = 'institution-info warning';
+                institutionDisplay.style.display = 'block';
+            }
+        } catch (err) {
+            console.error('Institution check error:', err);
+            institutionDisplay.style.display = 'none';
+        }
+    });
+
+    // Clear institution display when email is cleared
+    emailInput.addEventListener('input', () => {
+        if (!emailInput.value.includes('@')) {
+            institutionDisplay.style.display = 'none';
+        }
+    });
 
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
