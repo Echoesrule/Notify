@@ -43,9 +43,12 @@ function showContent() {
 
 async function fetchNotesByUnit(schoolId, deptId, unitId) {
     try {
-        const res = await fetch(`${window.API_URL}/schools/${schoolId}/departments/${deptId}/units/${unitId}/notes?_t=${Date.now()}`, {
+        const url = `${window.API_URL}/schools/${schoolId}/departments/${deptId}/units/${unitId}/notes?_t=${Date.now()}`;
+        console.log('Fetching from:', url);
+        const res = await fetch(url, {
             cache: 'no-store'
         });
+        console.log('Response status:', res.status);
         if (!res.ok) {
             throw new Error(`Failed to fetch notes: ${res.status} ${res.statusText}`);
         }
@@ -53,7 +56,7 @@ async function fetchNotesByUnit(schoolId, deptId, unitId) {
         console.log('Fetched notes for unit:', unitId, data);
         return Array.isArray(data) ? data : [];
     } catch (err) {
-        console.error("Error in getNotesByUnit:", err); 
+        console.error("Error in fetchNotesByUnit:", err); 
         return [];
     }
 }
@@ -139,11 +142,8 @@ const currentSubject= document.getElementById('currentSubject')
         if(pageTitle) pageTitle.textContent = `${unitName || 'Subject'} - Notes`;
 
         console.log('Fetching notes...');
-        const [notes] = await Promise.all([
-        fetchNotesByUnit(schoolId,deptId,unitId),
-                new Promise(resolve => setTimeout(resolve, 1500)) 
-        ]);
-    console.log('Notes Fetched')
+        const notesData = await fetchNotesByUnit(schoolId,deptId,unitId);
+        console.log('Notes Fetched:', notesData);
         
         hideLoader();
         
@@ -154,14 +154,14 @@ const currentSubject= document.getElementById('currentSubject')
             return;
         }
         
-        if (!notes || notes.length === 0) {
+        if (!notesData || notesData.length === 0) {
             grid.innerHTML = `<div class="no-data">
                 <img src="../images/dashboardImages/no notes.jpg" alt="No notes">
                 <p>No notes found for this subject</p>
             </div>`;
             showContent();
         } else {
-            // Store original notes for sorting
+            const notes = notesData;
             window.originalNotes = notes;
             
             let sortedNotes = [...notes];
