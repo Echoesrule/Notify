@@ -140,7 +140,7 @@ async function handleSchoolChange() {
  */
 async function loadUserEnrollment(userId) {
     try {
-        const res = await fetch(`${window.API_URL}/users/${userId}/enrollments`);
+        const res = await fetch(`${window.API_URL}/users/${userId}/enrollment`);
         if (res.ok) {
             const enrollments = await res.json();
             if (enrollments && enrollments.length > 0) {

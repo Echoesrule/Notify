@@ -1,4 +1,4 @@
 git status
 git add .
-git commit -m "fix"
+git commit -m "fix double units in db"
 git push origin main

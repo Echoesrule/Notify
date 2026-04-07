@@ -644,20 +644,48 @@ app.post('/api/units', async (req, res) => {
         const { name, code, school_id, course_id } = req.body;
         if (!name || !school_id) return res.status(400).json({ error: 'Name and school_id are required' });
         
-        const [rows] = await db.query(
-            'INSERT INTO units (name, code) VALUES ($1, $2) RETURNING id',
-            [name, code]
+        // Check if unit with same name already exists (case-insensitive)
+        const [existingUnits] = await db.query(
+            'SELECT id, name, code FROM units WHERE LOWER(name) = LOWER($1)',
+            [name]
         );
-        const unitId = rows[0].id;
         
-        if (course_id) {
-            await db.query(
-                'INSERT INTO course_units (course_id, unit_id) VALUES ($1, $2)',
-                [course_id, unitId]
+        let unitId;
+        
+        if (existingUnits.length > 0) {
+            // Unit exists - use existing one
+            unitId = existingUnits[0].id;
+            console.log('Using existing unit:', unitId, existingUnits[0].name);
+        } else {
+            // Create new unit
+            const [rows] = await db.query(
+                'INSERT INTO units (name, code) VALUES ($1, $2) RETURNING id',
+                [name, code]
             );
+            unitId = rows[0].id;
+            console.log('Created new unit:', unitId);
         }
         
-        res.json({ id: unitId, name, code, course_id });
+        // Link unit to course if course_id provided
+        if (course_id) {
+            // Check if link already exists
+            const [existingLink] = await db.query(
+                'SELECT 1 FROM course_units WHERE course_id = $1 AND unit_id = $2',
+                [course_id, unitId]
+            );
+            
+            if (existingLink.length === 0) {
+                await db.query(
+                    'INSERT INTO course_units (course_id, unit_id) VALUES ($1, $2)',
+                    [course_id, unitId]
+                );
+                console.log('Linked unit to course:', course_id);
+            } else {
+                console.log('Unit already linked to course');
+            }
+        }
+        
+        res.json({ id: unitId, name, code, course_id, isExisting: existingUnits.length > 0 });
     } catch (error) {
         console.error('Error creating unit:', error);
         res.status(500).json({ error: 'Failed to create unit' });
@@ -814,6 +842,26 @@ app.get('/api/notes/:id/download', async (req, res) => {
     } catch (error) {
         console.error('Error downloading note:', error);
         res.status(500).json({ error: 'Failed to download note' });
+    }
+});
+
+// Preview note (serve PDF inline)
+app.get('/api/notes/:id/preview', async (req, res) => {
+    try {
+        const [notes] = await db.query('SELECT * FROM notes WHERE id = $1', [parseInt(req.params.id)]);
+        if (!notes[0]) return res.status(404).json({ error: 'Note not found' });
+
+        const note = notes[0];
+        if (!note.file_path) return res.status(404).json({ error: 'No file attached to this note' });
+
+        const fileName = note.file_path.split('/').pop();
+        const filePath = path.join(__dirname, 'uploads', 'notes', fileName);
+
+        if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found on server' });
+        res.sendFile(filePath);
+    } catch (error) {
+        console.error('Error previewing note:', error);
+        res.status(500).json({ error: 'Failed to preview note' });
     }
 });
 

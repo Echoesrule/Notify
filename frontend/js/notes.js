@@ -145,6 +145,8 @@ const currentSubject= document.getElementById('currentSubject')
         ]);
     console.log('Notes Fetched')
         
+        hideLoader();
+        
         const grid = document.getElementById('notesGrid');
         
         if (!grid) {
