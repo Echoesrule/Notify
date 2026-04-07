@@ -706,6 +706,7 @@ app.delete('/api/units/:id', async (req, res) => {
 // NOTES ENDPOINTS
 // =====================
 app.get('/api/schools/:schoolId/departments/:deptId/units/:unitId/notes', async (req, res) => {
+    console.log('Notes endpoint hit:', req.params);
     try {
         const [notes] = await db.query(`
             SELECT n.*, u.name as "uploadedByName"
@@ -714,6 +715,7 @@ app.get('/api/schools/:schoolId/departments/:deptId/units/:unitId/notes', async 
             WHERE n.unit_id = $1
             ORDER BY n.created_at DESC
         `, [req.params.unitId]);
+        console.log('Notes found:', notes.length);
         res.json(notes);
     } catch (error) {
         console.error('Error fetching notes:', error);

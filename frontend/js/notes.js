@@ -49,12 +49,13 @@ async function fetchNotesByUnit(schoolId, deptId, unitId) {
             cache: 'no-store'
         });
         console.log('Response status:', res.status);
+        const responseData = await res.json();
+        console.log('Response data:', responseData);
         if (!res.ok) {
-            throw new Error(`Failed to fetch notes: ${res.status} ${res.statusText}`);
+            throw new Error(`Failed to fetch notes: ${res.status} ${res.statusText} - ${JSON.stringify(responseData)}`);
         }
-        const data = await res.json();
-        console.log('Fetched notes for unit:', unitId, data);
-        return Array.isArray(data) ? data : [];
+        console.log('Fetched notes for unit:', unitId, responseData);
+        return Array.isArray(responseData) ? responseData : [];
     } catch (err) {
         console.error("Error in fetchNotesByUnit:", err); 
         return [];
