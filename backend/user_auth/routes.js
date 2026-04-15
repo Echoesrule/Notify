@@ -12,7 +12,7 @@ const SECRET = process.env.JWT_SECRET || 'notify_fallback_dev_key_change_in_prod
 
 let transporter;
 if (process.env.BREVO_API_KEY) {
-    transporter = null; // Use Brevo API instead
+    transporter = null;
 } else if (process.env.SMTP_HOST) {
     transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
@@ -254,7 +254,14 @@ router.put('/change-password', async (req, res) => {
     }
 });
 
-// Forgot password
+// Store reset codes in memory (resets on server restart - consider DB for production)
+const resetCodes = new Map();
+
+function generateResetCode() {
+    return Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
+}
+
+// Forgot password - sends code
 router.post('/forgot-password', async (req, res) => {
     const { email } = req.body;
     
@@ -269,28 +276,27 @@ router.post('/forgot-password', async (req, res) => {
         }
         
         const user = rows[0];
-        const resetToken = jwt.sign(
-            { userId: user.id, email },
-            SECRET,
-            { expiresIn: '1h' }
-        );
+        const code = generateResetCode();
         
-        const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/reset-password.html?token=${resetToken}`;
+        // Store code with 10 min expiry
+        resetCodes.set(email, {
+            code,
+            userId: user.id,
+            expires: Date.now() + 10 * 60 * 1000
+        });
         
         const htmlContent = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2>Password Reset Request</h2>
+                <h2>Password Reset Code</h2>
                 <p>Hi ${user.name},</p>
-                <p>You requested a password reset. Click the button below to reset your password:</p>
-                <a href="${resetUrl}" style="display: inline-block; background: #4a90d9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0;">Reset Password</a>
-                <p>Or copy this link: <a href="${resetUrl}">${resetUrl}</a></p>
-                <p>This link expires in 1 hour.</p>
+                <p>Your password reset code is:</p>
+                <h1 style="font-size: 36px; letter-spacing: 8px; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 8px; margin: 20px 0;">${code}</h1>
+                <p>This code expires in 10 minutes.</p>
                 <p>If you didn't request this, ignore this email.</p>
             </div>
         `;
         
         if (process.env.BREVO_API_KEY) {
-            // Use Brevo API
             const response = await fetch('https://api.brevo.com/v3/smtp/email', {
                 method: 'POST',
                 headers: {
@@ -300,7 +306,7 @@ router.post('/forgot-password', async (req, res) => {
                 body: JSON.stringify({
                     sender: { name: 'Notify App', email: process.env.BREVO_SENDER_EMAIL },
                     to: [{ email }],
-                    subject: 'Password Reset - Notify App',
+                    subject: 'Password Reset Code - Notify App',
                     htmlContent
                 })
             });
@@ -309,11 +315,10 @@ router.post('/forgot-password', async (req, res) => {
                 throw new Error('Brevo API error');
             }
         } else if (transporter) {
-            // Fallback to SMTP
             const mailOptions = {
                 from: `"Notify App" <${process.env.SMTP_USER}>`,
                 to: email,
-                subject: 'Password Reset - Notify App',
+                subject: 'Password Reset Code - Notify App',
                 html: htmlContent
             };
             await transporter.sendMail(mailOptions);
@@ -321,12 +326,53 @@ router.post('/forgot-password', async (req, res) => {
             throw new Error('No email service configured');
         }
         
-        console.log('Password reset email sent to:', email);
-        res.json({ message: 'Password reset email sent. Check your inbox.' });
+        console.log('Password reset code sent to:', email, 'Code:', code);
+        res.json({ message: 'Reset code sent to your email', email });
     } catch (err) {
         console.error('Forgot password error:', err);
-        res.status(500).json({ message: 'Failed to process request' });
+        res.status(500).json({ message: 'Failed to send reset code' });
     }
+});
+
+// Verify reset code
+router.post('/verify-reset-code', async (req, res) => {
+    const { email, code, newPassword } = req.body;
+    
+    if (!email || !code || !newPassword) {
+        return res.status(400).json({ message: 'Email, code, and new password required' });
+    }
+    
+    const stored = resetCodes.get(email);
+    
+    if (!stored) {
+        return res.status(400).json({ message: 'No reset code found. Request a new one.' });
+    }
+    
+    if (Date.now() > stored.expires) {
+        resetCodes.delete(email);
+        return res.status(400).json({ message: 'Code expired. Request a new one.' });
+    }
+    
+    if (stored.code !== code) {
+        return res.status(400).json({ message: 'Invalid code' });
+    }
+    
+    try {
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await db.query(
+            'UPDATE notify_users SET password = $1 WHERE id = $2',
+            [hashedPassword, stored.userId]
+        );
+        
+        resetCodes.delete(email);
+        
+        console.log('Password reset successful for:', email);
+        res.json({ message: 'Password reset successful. You can now login.' });
+    } catch (err) {
+        console.error('Reset password error:', err);
+        res.status(500).json({ message: 'Failed to reset password' });
+    }
+});
 });
 
 // Reset password with token

@@ -104,6 +104,8 @@
     </div>
 
     <script>
+        let resetEmail = '';
+
         function togglePassword(inputId, toggleBtn) {
             const input = document.getElementById(inputId);
             if (input.type === 'password') {
@@ -127,8 +129,8 @@
         }
 
         async function sendResetCode() {
-            const email = document.getElementById('forgotEmail').value;
-            if (!email) {
+            resetEmail = document.getElementById('forgotEmail').value;
+            if (!resetEmail) {
                 document.getElementById('forgotMessage').textContent = 'Please enter your email';
                 return;
             }
@@ -136,7 +138,7 @@
                 const res = await fetch(`${window.API_URL}/user_auth/forgot-password`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email })
+                    body: JSON.stringify({ email: resetEmail })
                 });
                 const data = await res.json();
                 if (res.ok) {
@@ -155,7 +157,6 @@
         }
 
         async function resetPassword() {
-            const email = document.getElementById('forgotEmail').value;
             const code = document.getElementById('resetCode').value;
             const newPassword = document.getElementById('newResetPassword').value;
             if (!code || !newPassword) {
@@ -163,10 +164,10 @@
                 return;
             }
             try {
-                const res = await fetch(`${window.API_URL}/user_auth/reset-password`, {
+                const res = await fetch(`${window.API_URL}/user_auth/verify-reset-code`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, otp: code, newPassword })
+                    body: JSON.stringify({ email: resetEmail, code, newPassword })
                 });
                 const data = await res.json();
                 if (res.ok) {
