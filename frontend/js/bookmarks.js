@@ -5,6 +5,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     setupBookmarkActions();
     setupExportImport();
+    renderBookmarksPage();
 });
 
 function setupBookmarkActions() {
@@ -14,6 +15,21 @@ function setupBookmarkActions() {
     if (addBookmarkBtn) {
         addBookmarkBtn.addEventListener('click', showAddBookmarkForm);
     }
+    
+    const cancelFolderBtn = document.getElementById('cancelFolder');
+    if (cancelFolderBtn) {
+        cancelFolderBtn.addEventListener('click', closeFolderModal);
+    }
+    
+    const createFolderBtn = document.getElementById('createFolder');
+    if (createFolderBtn) {
+        createFolderBtn.addEventListener('click', createNewFolder);
+    }
+    
+    const closeModalBtns = document.querySelectorAll('.close-modal');
+    closeModalBtns.forEach(btn => {
+        btn.addEventListener('click', closeFolderModal);
+    });
 }
 
 function showAddBookmarkForm() {
@@ -138,6 +154,42 @@ function saveBookmarkFolders(folders) {
     localStorage.setItem('notifyBookmarkFolders', JSON.stringify(folders));
 }
 
+function closeFolderModal() {
+    const modal = document.getElementById('folderModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function createNewFolder() {
+    const folderName = document.getElementById('folderName').value.trim();
+    const folderDesc = document.getElementById('folderDesc').value.trim();
+    
+    if (!folderName) {
+        showNotificationModal('Please enter a folder name', 'error');
+        return;
+    }
+    
+    const folders = getBookmarkFolders();
+    folders.push({
+        name: folderName,
+        description: folderDesc,
+        color: '#4a90d9',
+        created_at: new Date().toISOString()
+    });
+    
+    saveBookmarkFolders(folders);
+    closeFolderModal();
+    showNotificationModal('Folder created successfully!', 'success');
+    
+    document.getElementById('folderName').value = '';
+    document.getElementById('folderDesc').value = '';
+    
+    if (typeof renderBookmarksPage === 'function') {
+        renderBookmarksPage();
+    }
+}
+
 function getBookmarks() {
     return JSON.parse(localStorage.getItem('notifyBookmarks') || '[]');
 }
@@ -145,6 +197,205 @@ function getBookmarks() {
 function saveBookmarks(bookmarks) {
     localStorage.setItem('notifyBookmarks', JSON.stringify(bookmarks));
 }
+
+function renderBookmarksPage() {
+    console.log('Rendering bookmarks page...');
+    
+    const folders = getBookmarkFolders();
+    const bookmarks = getBookmarks();
+    
+    renderFolders(folders);
+    renderAllBookmarks(bookmarks);
+    
+    const countEl = document.getElementById('bookmarkCount');
+    if (countEl) countEl.textContent = `${bookmarks.length} items`;
+}
+
+function renderFolders(folders) {
+    const grid = document.getElementById('foldersGrid');
+    if (!grid) return;
+    
+    if (folders.length === 0) {
+        grid.innerHTML = '<p class="no-items">No folders yet. Create one!</p>';
+        return;
+    }
+    
+    grid.innerHTML = folders.map((folder, index) => `
+        <div class="folder-card" onclick="openFolder(${index})">
+            <div class="folder-icon" style="background: ${folder.color || '#4a90d9'}">
+                <i class="fas fa-folder"></i>
+            </div>
+            <div class="folder-info">
+                <h4>${folder.name}</h4>
+                <p>${getBookmarksCountInFolder(index)} bookmarks</p>
+            </div>
+        </div>
+    `).join('');
+}
+
+function getBookmarksCountInFolder(folderIndex) {
+    const bookmarks = getBookmarks();
+    return bookmarks.filter(b => b.folderIndex === folderIndex).length;
+}
+
+function openFolder(folderIndex) {
+    const folders = getBookmarkFolders();
+    const bookmarks = getBookmarks();
+    const folder = folders[folderIndex];
+    
+    if (!folder) return;
+    
+    document.getElementById('folderViewName').textContent = folder.name;
+    
+    const folderBookmarks = bookmarks.filter(b => b.folderIndex === folderIndex);
+    const countEl = document.getElementById('folderViewCount');
+    if (countEl) countEl.textContent = folderBookmarks.length;
+    
+    const grid = document.getElementById('folderBookmarksGrid');
+    if (grid) {
+        if (folderBookmarks.length === 0) {
+            grid.innerHTML = '<p class="no-items">No bookmarks in this folder</p>';
+        } else {
+            grid.innerHTML = folderBookmarks.map(bookmark => createBookmarkCard(bookmark)).join('');
+        }
+    }
+    
+    document.getElementById('foldersSection').style.display = 'none';
+    document.getElementById('allBookmarksSection').style.display = 'none';
+    document.getElementById('folderView').style.display = 'block';
+}
+
+function showFoldersView() {
+    const folderView = document.getElementById('folderView');
+    const noteDetailView = document.getElementById('noteDetailView');
+    const foldersSection = document.getElementById('foldersSection');
+    const allBookmarksSection = document.getElementById('allBookmarksSection');
+    
+    if (folderView) folderView.style.display = 'none';
+    if (noteDetailView) noteDetailView.style.display = 'none';
+    if (foldersSection) foldersSection.style.display = 'block';
+    if (allBookmarksSection) allBookmarksSection.style.display = 'block';
+}
+
+function renderAllBookmarks(bookmarks) {
+    const grid = document.getElementById('bookmarksGrid');
+    if (!grid) return;
+    
+    if (bookmarks.length === 0) {
+        grid.innerHTML = '<p class="no-items">No bookmarks yet. Bookmark notes from the notes page!</p>';
+        return;
+    }
+    
+    grid.innerHTML = bookmarks.map(bookmark => createBookmarkCard(bookmark)).join('');
+}
+
+function createBookmarkCard(bookmark) {
+    const folders = getBookmarkFolders();
+    const folderName = bookmark.folderIndex !== undefined && bookmark.folderIndex !== null ? folders[bookmark.folderIndex]?.name : '';
+    
+    return `
+        <div class="bookmark-card" onclick="viewBookmarkDetail(${bookmark.id || bookmark.noteId})">
+            <div class="bookmark-icon">
+                <i class="fas fa-file-pdf"></i>
+            </div>
+            <div class="bookmark-info">
+                <h4>${bookmark.title || 'Untitled'}</h4>
+                <p>${bookmark.description || ''}</p>
+                <div class="bookmark-meta">
+                    <span><i class="fas fa-user"></i> ${bookmark.uploadedByName || 'Unknown'}</span>
+                    ${folderName ? `<span><i class="fas fa-folder"></i> ${folderName}</span>` : ''}
+                </div>
+            </div>
+            <div class="bookmark-actions">
+                <button class="action-btn" onclick="event.stopPropagation(); previewBookmark(${bookmark.noteId})" title="Preview">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="action-btn" onclick="event.stopPropagation(); downloadBookmark(${bookmark.noteId})" title="Download">
+                    <i class="fas fa-download"></i>
+                </button>
+                <button class="action-btn remove" onclick="event.stopPropagation(); removeBookmark(${bookmark.id || bookmark.noteId})" title="Remove">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function viewBookmarkDetail(bookmarkId) {
+    const bookmarks = getBookmarks();
+    const bookmark = bookmarks.find(b => (b.id || b.noteId) == bookmarkId);
+    
+    if (!bookmark || !bookmark.noteId) {
+        showNotificationModal('Note details not available', 'error');
+        return;
+    }
+    
+    fetch(`${window.API_URL}/notes/${bookmark.noteId}`)
+        .then(res => res.json())
+        .then(note => {
+            document.getElementById('noteDetailTitle').textContent = note.title || bookmark.title;
+            document.getElementById('noteDetailAuthor').textContent = note.uploadedByName || note.uploadedBy || 'Unknown';
+            document.getElementById('noteDetailDate').textContent = new Date(note.created_at).toLocaleDateString();
+            document.getElementById('noteDetailPages').textContent = note.pages || note.page_count || '?';
+            document.getElementById('noteDetailDescription').textContent = note.description || '';
+            const downloadsEl = document.getElementById('noteDetailDownloads');
+            if (downloadsEl) downloadsEl.textContent = note.downloads || 0;
+            
+            window.currentBookmarkNoteId = bookmark.noteId;
+            window.currentBookmarkId = bookmarkId;
+            
+            document.getElementById('foldersSection').style.display = 'none';
+            document.getElementById('allBookmarksSection').style.display = 'none';
+            document.getElementById('folderView').style.display = 'none';
+            document.getElementById('noteDetailView').style.display = 'block';
+        })
+        .catch(err => {
+            console.error('Error loading note:', err);
+            showNotificationModal('Failed to load note details', 'error');
+        });
+}
+
+function previewBookmark(noteId) {
+    if (noteId) {
+        window.open(`${window.API_URL}/notes/${noteId}/preview`, '_blank');
+    }
+}
+
+function downloadBookmark(noteId) {
+    if (noteId) {
+        window.location.href = `${window.API_URL}/notes/${noteId}/download`;
+    }
+}
+
+function removeBookmark(bookmarkId) {
+    let bookmarks = getBookmarks();
+    bookmarks = bookmarks.filter(b => (b.id || b.noteId) != bookmarkId);
+    saveBookmarks(bookmarks);
+    showNotificationModal('Bookmark removed', 'success');
+    renderBookmarksPage();
+}
+
+function removeBookmarkFromDetail() {
+    if (window.currentBookmarkId) {
+        removeBookmark(window.currentBookmarkId);
+        showFoldersView();
+    }
+}
+
+function goBackFromNoteDetail() {
+    document.getElementById('noteDetailView').style.display = 'none';
+    showFoldersView();
+}
+
+window.renderBookmarksPage = renderBookmarksPage;
+window.openFolder = openFolder;
+window.showFoldersView = showFoldersView;
+window.viewBookmarkDetail = viewBookmarkDetail;
+window.previewBookmark = previewBookmark;
+window.downloadBookmark = downloadBookmark;
+window.removeBookmark = removeBookmark;
+window.removeBookmarkFromDetail = removeBookmarkFromDetail;
+window.goBackFromNoteDetail = goBackFromNoteDetail;
 
 function setupExportImport() {
     const exportBtn = document.getElementById('exportBookmarks');
@@ -817,3 +1068,10 @@ window.clearSearch = function() {
     document.getElementById('globalSearch').value = '';
     document.getElementById('noResults').style.display = 'none';
 };
+window.closeAddBookmarkModal = closeAddBookmarkModal;
+window.addBookmarkFromForm = addBookmarkFromForm;
+window.closeImportChoiceModal = closeImportChoiceModal;
+window.importFromJSON = importFromJSON;
+window.importFromLocalFolder = importFromLocalFolder;
+window.closeFolderModal = closeFolderModal;
+window.createNewFolder = createNewFolder;
