@@ -4,6 +4,7 @@
 
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Settings DOM loaded');
     initializeSettings();
     loadUserSettings();
     setupEventListeners();
@@ -510,24 +511,59 @@ function handleFontSizeChange(e) {
  * Setup profile image buttons
  */
 function setupProfileImageButtons() {
-    const changeBtn = document.getElementById('changeProfileImage');
-    const removeBtn = document.getElementById('removeProfileImage');
-    const profileImg = document.getElementById('profileImage');
+    console.log('setupProfileImageButtons called');
+    try {
+        const changeBtn = document.getElementById('changeProfileImage');
+        const removeBtn = document.getElementById('removeProfileImage');
+        const profileImg = document.getElementById('profileImage');
+        
+        console.log('changeBtn:', !!changeBtn);
+        console.log('removeBtn:', !!removeBtn);
+        console.log('profileImg:', !!profileImg);
+        
+        // Load saved pfp - handle both local and server paths
+        const savedPfp = localStorage.getItem('user_pfp');
+        console.log('Setup PFP - savedPfp from localStorage:', savedPfp);
+        
+        if (profileImg && savedPfp) {
     
-    // Load saved pfp - handle both local and server paths
-    const savedPfp = localStorage.getItem('user_pfp');
     if (profileImg && savedPfp) {
         let pfpUrl = savedPfp;
         if (savedPfp.startsWith('/uploads/')) {
-            // Server path - need to remove /api prefix if present
-            const baseUrl = window.API_URL.replace('/api', '');
+            // Get base URL - remove /api from the end
+            let baseUrl = window.API_URL || 'http://localhost:3000/api';
+            baseUrl = baseUrl.replace(/\/api$/, '');
             pfpUrl = baseUrl + savedPfp;
         } else if (savedPfp.startsWith('http')) {
             pfpUrl = savedPfp;
         }
         console.log('Loading PFP from:', pfpUrl);
+        console.log('ProfileImg element found:', !!profileImg);
+        
+        // Add error handler to debug
+        profileImg.onerror = function() {
+            console.error('Failed to load PFP image:', pfpUrl);
+            this.src = '../images/dashboardImages/v3321_68.png';
+        };
+        profileImg.onload = function() {
+            console.log('PFP image loaded successfully');
+        };
+        
         profileImg.src = pfpUrl;
+        console.log('Set profileImg.src to:', profileImg.src);
+    } else {
+        console.log('No saved PFP found or profileImg not found');
+        console.log('savedPfp:', savedPfp);
+        console.log('profileImg:', profileImg);
     }
+    
+    // Force setup after a short delay to ensure DOM is ready
+    setTimeout(() => {
+        if (!changeBtn && !document.getElementById('changeProfileImage')) {
+            console.log('Retrying to find profile elements...');
+            setupProfileImageButtons();
+        }
+    }, 500);
     
     if (changeBtn) {
         changeBtn.addEventListener('click', async function() {
@@ -569,14 +605,16 @@ function setupProfileImageButtons() {
                             
                             // Update image display - handle path correctly
                             if (profileImg) {
-                                const baseUrl = window.API_URL.replace('/api', '');
+                                let baseUrl = window.API_URL || 'http://localhost:3000/api';
+                                baseUrl = baseUrl.replace(/\/api$/, '');
                                 profileImg.src = baseUrl + data.pfp;
                             }
                             
                             // Update topbar
                             const topProfileImg = document.getElementById('profileImg');
                             if (topProfileImg) {
-                                const baseUrl = window.API_URL.replace('/api', '');
+                                let baseUrl = window.API_URL || 'http://localhost:3000/api';
+                                baseUrl = baseUrl.replace(/\/api$/, '');
                                 topProfileImg.src = baseUrl + data.pfp;
                             }
                             

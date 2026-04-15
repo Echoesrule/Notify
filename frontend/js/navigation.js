@@ -532,7 +532,8 @@ function updateTopbar() {
         if (userPfp) {
             let pfpUrl = userPfp;
             if (userPfp.startsWith('/uploads/')) {
-                const baseUrl = window.API_URL.replace('/api', '');
+                let baseUrl = window.API_URL || 'http://localhost:3000/api';
+                baseUrl = baseUrl.replace(/\/api$/, '');
                 pfpUrl = baseUrl + userPfp;
             } else if (userPfp.startsWith('http')) {
                 pfpUrl = userPfp;
