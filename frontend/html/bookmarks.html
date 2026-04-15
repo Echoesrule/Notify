@@ -199,371 +199,50 @@
     <!-- Notification Container -->
     <div id="notification-container"></div>
 
-    <!-- Scripts -->
+<!-- Scripts -->
     <script src="../js/config.js"></script>
     <script src="../js/navigation.js"></script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const folderModal = document.getElementById('folderModal');
-            const newFolderBtn = document.getElementById('newFolder');
-            const addFolderCard = document.getElementById('addFolderCard');
-            const createFolderBtn = document.getElementById('createFolder');
-            const cancelFolderBtn = document.getElementById('cancelFolder');
-            const closeModalBtn = folderModal?.querySelector('.close-modal');
-            
-            function openFolderModal() {
-                if (folderModal) folderModal.style.display = 'flex';
-            }
-            
-            function closeFolderModal() {
-                if (folderModal) folderModal.style.display = 'none';
-                document.getElementById('folderName').value = '';
-                document.getElementById('folderDesc').value = '';
-            }
-            
-            if (newFolderBtn) newFolderBtn.addEventListener('click', openFolderModal);
-            if (addFolderCard) addFolderCard.addEventListener('click', openFolderModal);
-            if (cancelFolderBtn) cancelFolderBtn.addEventListener('click', closeFolderModal);
-            if (closeModalBtn) closeModalBtn.addEventListener('click', closeFolderModal);
-            
-            if (createFolderBtn) {
-                createFolderBtn.addEventListener('click', function() {
-                    const folderName = document.getElementById('folderName').value.trim();
-                    if (!folderName) {
-                        alert('Please enter a folder name');
-                        return;
-                    }
-                    
-                    const folders = getBookmarkFolders();
-                    folders.push({
-                        name: folderName,
-                        color: '#4a90d9',
-                        created_at: new Date().toISOString()
-                    });
-                    saveBookmarkFolders(folders);
-                    closeFolderModal();
-                    location.reload();
-                });
-            }
-            
-            // Close modal on outside click
-            if (folderModal) {
-                folderModal.addEventListener('click', function(e) {
-                    if (e.target === folderModal) closeFolderModal();
-                });
-            }
+    <script src="../js/notes.js"></script>
+    <script>
+    // Global functions - available immediately
+    function showModal(options) {
+        let modalHtml = `<div class="modal-overlay" id="customModal">
+            <div class="modal-dialog">
+                <div class="modal-icon ${options.icon || 'info'}">
+                    <i class="fas fa-${options.icon === 'danger' ? 'exclamation-triangle' : 'question-circle'}"></i>
+                </div>
+                <h3 class="modal-title">${options.title}</h3>
+                <p class="modal-message">${options.message}</p>
+                <div class="modal-actions">
+                    <button class="modal-btn-cancel" onclick="closeModal()">${options.cancelText || 'Cancel'}</button>
+                    <button class="modal-btn-confirm ${options.isDanger ? 'danger' : 'primary'}" id="modalConfirmBtn">${options.confirmText || 'OK'}</button>
+                </div>
+            </div>
+        </div>`;
+        document.getElementById('modalContainer').innerHTML = modalHtml;
+        const modal = document.getElementById('customModal');
+        setTimeout(() => modal.classList.add('show'), 10);
+        document.getElementById('modalConfirmBtn').onclick = () => { closeModal(); if (options.onConfirm) options.onConfirm(); };
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    }
+    function closeModal() {
+        const modal = document.getElementById('customModal');
+        if (modal) { modal.classList.remove('show'); setTimeout(() => modal.remove(), 200); }
+    }
+    window.friendlyConfirm = function(options) {
+        return new Promise((resolve) => {
+            showModal({ ...options, onConfirm: () => resolve(true), icon: options.isDanger ? 'danger' : 'warning' });
         });
-        
-        let currentFolderIndex = null;
-        let previousView = 'folders';
-        
-        function getBookmarkFolders() {
-            return JSON.parse(localStorage.getItem('notifyBookmarkFolders') || '[]');
-        }
-        
-        function saveBookmarkFolders(folders) {
-            localStorage.setItem('notifyBookmarkFolders', JSON.stringify(folders));
-        }
-        
-        function getBookmarks() {
-            return JSON.parse(localStorage.getItem('notifyBookmarks') || '[]');
-        }
-        
-        async function removeBookmark(index) {
-            if (!await friendlyConfirm({ title: 'Remove Bookmark?', message: 'Are you sure you want to remove this bookmark?', confirmText: 'Remove', isDanger: true })) return;
-            let bookmarks = getBookmarks();
-            bookmarks.splice(index, 1);
-            localStorage.setItem('notifyBookmarks', JSON.stringify(bookmarks));
-            location.reload();
-        }
-        
-        async function removeFolder(index) {
-            event.stopPropagation();
-            if (!await friendlyConfirm({ title: 'Delete Folder?', message: 'Delete this folder and all its bookmarks?', confirmText: 'Delete', isDanger: true })) return;
-            let folders = getBookmarkFolders();
-            let bookmarks = getBookmarks();
-            
-            bookmarks = bookmarks.filter(b => b.folderIndex != index);
-            bookmarks.forEach(b => {
-                if (b.folderIndex > index) b.folderIndex--;
-            });
-            
-            folders.splice(index, 1);
-            saveBookmarkFolders(folders);
-            localStorage.setItem('notifyBookmarks', JSON.stringify(bookmarks));
-            location.reload();
-        }
-        
-        function showFoldersView() {
-            document.getElementById('foldersSection').style.display = 'block';
-            document.getElementById('allBookmarksSection').style.display = 'block';
-            document.getElementById('folderView').classList.remove('active');
-            document.getElementById('noteDetailView').classList.remove('active');
-            currentFolderIndex = null;
-        }
-        
-        function openFolder(index) {
-            const folders = getBookmarkFolders();
-            const bookmarks = getBookmarks();
-            const folder = folders[index];
-            
-            if (!folder) return;
-            
-            currentFolderIndex = index;
-            previousView = 'folder';
-            
-            document.getElementById('foldersSection').style.display = 'none';
-            document.getElementById('allBookmarksSection').style.display = 'none';
-            document.getElementById('folderView').classList.add('active');
-            document.getElementById('noteDetailView').classList.remove('active');
-            
-            document.getElementById('folderViewName').textContent = folder.name;
-            
-            const folderBookmarks = bookmarks.filter(b => b.folderIndex == index);
-            document.getElementById('folderViewCount').textContent = folderBookmarks.length;
-            
-            const grid = document.getElementById('folderBookmarksGrid');
-            
-            if (folderBookmarks.length === 0) {
-                grid.innerHTML = '<div class="empty-folder"><i class="fas fa-folder-open"></i><h3>This folder is empty</h3><p>Add notes from the Notes page to see them here.</p></div>';
-                return;
-            }
-            
-            let html = '';
-            folderBookmarks.forEach((bookmark, idx) => {
-                const actualIndex = bookmarks.findIndex(b => b.id === bookmark.id);
-                const date = bookmark.date ? new Date(bookmark.date).toLocaleDateString() : 'Recently';
-                
-                html += `
-                    <div class="bookmark-card" onclick="openNoteDetail(${actualIndex})" style="cursor:pointer">
-                        <div class="bookmark-type">
-                            <i class="fas fa-file-pdf"></i>
-                        </div>
-                        <div class="bookmark-content">
-                            <h3>${bookmark.title || 'Untitled'}</h3>
-                            <p class="bookmark-meta">
-                                <span><i class="fas fa-calendar"></i> ${date}</span>
-                            </p>
-                            <p class="bookmark-description">${bookmark.description || ''}</p>
-                        </div>
-                        <div class="bookmark-actions">
-                            <button class="action-btn" title="Delete" onclick="removeBookmark(${actualIndex})"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>`;
-            });
-            
-            grid.innerHTML = html;
-        }
-        
-        function openNoteDetail(index) {
-            event.stopPropagation();
-            const bookmarks = getBookmarks();
-            const bookmark = bookmarks[index];
-            
-            if (!bookmark) return;
-            
-            previousView = 'note';
-            
-            document.getElementById('foldersSection').style.display = 'none';
-            document.getElementById('allBookmarksSection').style.display = 'none';
-            document.getElementById('folderView').classList.remove('active');
-            document.getElementById('noteDetailView').classList.add('active');
-            
-            document.getElementById('noteDetailTitle').textContent = bookmark.title || 'Untitled';
-            document.getElementById('noteDetailAuthor').textContent = bookmark.uploadedByName || 'Unknown';
-            document.getElementById('noteDetailDate').textContent = bookmark.date ? new Date(bookmark.date).toLocaleDateString() : 'Unknown';
-            document.getElementById('noteDetailPages').textContent = bookmark.pages || 'Unknown';
-            document.getElementById('noteDetailDescription').textContent = bookmark.description || 'No description available.';
-            document.getElementById('noteDetailDownloads').textContent = bookmark.downloads || '0';
-            
-            document.getElementById('noteDetailView').dataset.bookmarkIndex = index;
-            
-            // Show/hide buttons based on noteId availability
-            const hasNoteId = bookmark.noteId;
-            document.getElementById('btnPreviewNote').style.display = hasNoteId ? 'flex' : 'none';
-            document.getElementById('btnDownloadNote').style.display = hasNoteId ? 'flex' : 'none';
-        }
-        
-        function goBackFromNoteDetail() {
-            if (currentFolderIndex !== null) {
-                openFolder(currentFolderIndex);
-            } else {
-                showAllBookmarksView();
-            }
-        }
-        
-        function showAllBookmarksView() {
-            document.getElementById('foldersSection').style.display = 'block';
-            document.getElementById('allBookmarksSection').style.display = 'block';
-            document.getElementById('folderView').classList.remove('active');
-            document.getElementById('noteDetailView').classList.remove('active');
-            currentFolderIndex = null;
-        }
-        
-        function previewNoteDetail() {
-            const index = document.getElementById('noteDetailView').dataset.bookmarkIndex;
-            const bookmarks = getBookmarks();
-            const bookmark = bookmarks[index];
-            
-            if (bookmark && bookmark.noteId) {
-                const baseUrl = window.BASE_URL || window.location.origin || window.API_URL?.replace('/api', '') || '';
-                window.open(`${baseUrl}/api/notes/${bookmark.noteId}/preview`, '_blank');
-            }
-        }
-        
-        function downloadNoteDetail() {
-            const index = document.getElementById('noteDetailView').dataset.bookmarkIndex;
-            const bookmarks = getBookmarks();
-            const bookmark = bookmarks[index];
-            
-            if (bookmark && bookmark.noteId) {
-                const baseUrl = window.BASE_URL || window.location.origin || window.API_URL?.replace('/api', '') || '';
-                window.location.href = `${baseUrl}/api/notes/${bookmark.noteId}/download`;
-            }
-        }
-        
-        function previewBookmark(index) {
-            event.stopPropagation();
-            const bookmarks = getBookmarks();
-            const bookmark = bookmarks[index];
-            
-            if (bookmark && bookmark.noteId) {
-                const baseUrl = window.BASE_URL || window.location.origin || window.API_URL?.replace('/api', '') || '';
-                window.open(`${baseUrl}/api/notes/${bookmark.noteId}/preview`, '_blank');
-            }
-        }
-        
-        function downloadBookmark(index) {
-            event.stopPropagation();
-            const bookmarks = getBookmarks();
-            const bookmark = bookmarks[index];
-            
-            if (bookmark && bookmark.noteId) {
-                const baseUrl = window.BASE_URL || window.location.origin || window.API_URL?.replace('/api', '') || '';
-                window.location.href = `${baseUrl}/api/notes/${bookmark.noteId}/download`;
-            }
-        }
-        
-        async function removeBookmarkFromDetail() {
-            const index = document.getElementById('noteDetailView').dataset.bookmarkIndex;
-            if (!await friendlyConfirm({ title: 'Remove Bookmark?', message: 'Are you sure you want to remove this bookmark?', confirmText: 'Remove', isDanger: true })) return;
-            
-            let bookmarks = getBookmarks();
-            bookmarks.splice(index, 1);
-            localStorage.setItem('notifyBookmarks', JSON.stringify(bookmarks));
-            
-            if (currentFolderIndex !== null) {
-                openFolder(currentFolderIndex);
-            } else {
-                location.reload();
-            }
-        }
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Bookmarks page loaded');
-            const foldersGrid = document.getElementById('foldersGrid');
-            const bookmarksGrid = document.getElementById('bookmarksGrid');
-            if (!foldersGrid || !bookmarksGrid) {
-                console.error('Grid elements not found');
-                return;
-            }
-            
-            const folders = getBookmarkFolders();
-            const bookmarks = getBookmarks();
-            console.log('Folders:', folders);
-            console.log('Bookmarks:', bookmarks);
-            
-            // Update count
-            const bookmarkCount = document.getElementById('bookmarkCount');
-            if (bookmarkCount) {
-                bookmarkCount.textContent = `${bookmarks.length} items`;
-            }
-            
-            console.log('Rendering', bookmarks.length, 'bookmarks');
-            console.log('Sample bookmark:', bookmarks[0]);
-            
-            // Render folders
-            let foldersHtml = '';
-            folders.forEach((folder, index) => {
-                const count = bookmarks.filter(b => b.folderIndex == index).length;
-                const isLocal = folder.isLocal;
-                
-                let folderClass = 'folder-card';
-                if (isLocal) {
-                    folderClass += ' local-import';
-                    if (count === 0) {
-                        folderClass += ' empty-folder';
-                    }
-                }
-                
-                foldersHtml += `
-                    <div class="${folderClass}" onclick="openFolder(${index})" style="cursor:pointer">
-                        <div class="folder-icon">
-                            <i class="fas ${isLocal ? 'fa-folder-open' : 'fa-folder'}"></i>
-                        </div>
-                        <div class="folder-info">
-                            <h3>${folder.name}${isLocal ? ' (Local)' : ''}</h3>
-                            <p>${count} bookmark${count !== 1 ? 's' : ''}</p>
-                        </div>
-                        <div class="folder-actions">
-                            <button class="folder-menu" onclick="removeFolder(${index})" title="Delete"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>`;
-            });
-            
-            // Add folder card
-            foldersHtml += `
-                <div class="folder-card add-folder" id="addFolderCard" onclick="document.getElementById('folderModal').style.display='flex'" style="cursor:pointer">
-                    <div class="folder-icon">
-                        <i class="fas fa-plus-circle"></i>
-                    </div>
-                    <div class="folder-info">
-                        <h3>Create New Folder</h3>
-                        <p>Click to add</p>
-                    </div>
-                </div>`;
-            
-            foldersGrid.innerHTML = foldersHtml;
-            
-            // Render bookmarks
-            if (bookmarks.length === 0) {
-                bookmarksGrid.innerHTML = '<div class="no-results"><i class="fas fa-bookmark"></i><p>No bookmarks yet. Save notes from the Notes page to see them here.</p></div>';
-                return;
-            }
-            
-            let html = '';
-            bookmarks.forEach((bookmark, index) => {
-                const icon = 'fa-file-pdf';
-                const date = bookmark.date ? new Date(bookmark.date).toLocaleDateString() : 'Recently';
-                const folderName = folders[bookmark.folderIndex] ? folders[bookmark.folderIndex].name : 'Uncategorized';
-                
-                html += `
-                    <div class="bookmark-card" onclick="openNoteDetail(${index})" style="cursor:pointer">
-                        <div class="bookmark-type">
-                            <i class="fas ${icon}"></i>
-                        </div>
-                        <div class="bookmark-content">
-                            <h3>${bookmark.title || 'Untitled'}</h3>
-                            <p class="bookmark-meta">
-                                <span><i class="fas fa-folder"></i> ${folderName}</span>
-                                <span><i class="fas fa-calendar"></i> ${date}</span>
-                                ${bookmark.downloads ? `<span><i class="fas fa-download"></i> ${bookmark.downloads}</span>` : ''}
-                            </p>
-                            <p class="bookmark-description">${bookmark.description || ''}</p>
-                        </div>
-                        <div class="bookmark-actions" onclick="event.stopPropagation()">
-                            ${bookmark.noteId ? `
-                            <button class="action-btn" title="Preview" onclick="previewBookmark(${index})"><i class="fas fa-eye"></i></button>
-                            <button class="action-btn" title="Download" onclick="downloadBookmark(${index})"><i class="fas fa-download"></i></button>
-                            ` : ''}
-                            <button class="action-btn" title="Remove" onclick="removeBookmark(${index})"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>`;
-            });
-            
-            bookmarksGrid.innerHTML = html;
-        });
+    };
+    window.showNotificationModal = function(message, type = 'info') {
+        const container = document.getElementById('notification-container') || document.body;
+        const notification = document.createElement('div');
+        notification.className = 'notification ' + type;
+        notification.innerHTML = '<span>' + message + '</span>';
+        container.appendChild(notification);
+        setTimeout(() => { notification.remove(); }, 3500);
+    };
     </script>
-    <div id="modalContainer"></div>
     <script>
     function showModal(options) {
         const { title, message, icon = 'info', confirmText = 'Confirm', cancelText = 'Cancel', onConfirm, isDanger = false } = options;

@@ -266,7 +266,7 @@ body {
 .topbar-logo {
     font-size: 2.5rem;
     font-weight: 700;
-    background: var(--sidebar-bg);
+    background: var(--text-primary);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;

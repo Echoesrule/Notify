@@ -845,11 +845,9 @@ app.get('/api/notes/:id/download', async (req, res) => {
         // Handle multiple path formats
         let filePath = note.file_path;
         if (!path.isAbsolute(filePath)) {
-            // If stored as /uploads/notes/filename, join with __dirname
-            if (filePath.startsWith('/uploads')) {
-                filePath = path.join(__dirname, filePath);
+            if (filePath.startsWith('/')) {
+                filePath = path.join(__dirname, filePath.substring(1));
             } else {
-                // Just filename
                 filePath = path.join(__dirname, 'uploads', 'notes', filePath);
             }
         }

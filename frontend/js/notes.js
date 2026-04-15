@@ -579,7 +579,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    displayNotes();
+    // Delay to ensure DOM elements are ready after navigation injects
+    setTimeout(() => displayNotes(), 100);
     
 
     const themeSelect = document.getElementById('theme-select');

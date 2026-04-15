@@ -526,26 +526,24 @@ function setupProfileImageButtons() {
         console.log('Setup PFP - savedPfp from localStorage:', savedPfp);
         
         if (profileImg && savedPfp) {
-    
-    if (profileImg && savedPfp) {
-        let pfpUrl = savedPfp;
-        if (savedPfp.startsWith('/uploads/')) {
-            pfpUrl = (window.BASE_URL || window.API_URL?.replace('/api', '') || window.location.origin) + savedPfp;
-        } else if (savedPfp.startsWith('http')) {
-            pfpUrl = savedPfp;
+            let pfpUrl = savedPfp;
+            if (savedPfp.startsWith('/uploads/')) {
+                pfpUrl = (window.BASE_URL || window.API_URL?.replace('/api', '') || window.location.origin) + savedPfp;
+            } else if (savedPfp.startsWith('http')) {
+                pfpUrl = savedPfp;
+            }
+            console.log('Loading PFP from:', pfpUrl);
+            
+            profileImg.onerror = function() {
+                console.error('Failed to load PFP image:', pfpUrl);
+                this.src = '../images/dashboardImages/v3321_68.png';
+            };
+            profileImg.onload = function() {
+                console.log('PFP image loaded successfully');
+            };
+            
+            profileImg.src = pfpUrl;
         }
-        console.log('Loading PFP from:', pfpUrl);
-        
-        profileImg.onerror = function() {
-            console.error('Failed to load PFP image:', pfpUrl);
-            this.src = '../images/dashboardImages/v3321_68.png';
-        };
-        profileImg.onload = function() {
-            console.log('PFP image loaded successfully');
-        };
-        
-        profileImg.src = pfpUrl;
-    }
     
     if (changeBtn) {
         changeBtn.addEventListener('click', async function() {
@@ -632,6 +630,9 @@ function setupProfileImageButtons() {
                 showNotification('Profile image removed', 'info');
             }
         });
+    }
+    } catch (err) {
+        console.error('setupProfileImageButtons error:', err);
     }
 }
 
