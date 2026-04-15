@@ -11,11 +11,12 @@ const db = require('../db');
 const SECRET = process.env.JWT_SECRET || 'notify_fallback_dev_key_change_in_production';
 
 const transporter = nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
+    host: process.env.SMTP_HOST || 'smtp-relay.sendinblue.com',
+    port: process.env.SMTP_PORT || 587,
+    secure: false,
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
     }
 });
 
@@ -254,7 +255,7 @@ router.post('/forgot-password', async (req, res) => {
     
     try {
         const [rows] = await db.query(
-            'SELECT id FROM notify_users WHERE email = ?',
+            'SELECT id, name FROM notify_users WHERE email = $1',
             [email]
         );
         
@@ -262,10 +263,66 @@ router.post('/forgot-password', async (req, res) => {
             return res.json({ message: 'If the email exists, a reset code has been sent' });
         }
         
-        res.json({ message: 'If the email exists, a reset code has been sent' });
+        const user = rows[0];
+        const resetToken = jwt.sign(
+            { userId: user.id, email },
+            SECRET,
+            { expiresIn: '1h' }
+        );
+        
+        const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/reset-password.html?token=${resetToken}`;
+        
+        const mailOptions = {
+            from: `"Notify App" <${process.env.SMTP_USER}>`,
+            to: email,
+            subject: 'Password Reset - Notify App',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2>Password Reset Request</h2>
+                    <p>Hi ${user.name},</p>
+                    <p>You requested a password reset. Click the button below to reset your password:</p>
+                    <a href="${resetUrl}" style="display: inline-block; background: #4a90d9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0;">Reset Password</a>
+                    <p>Or copy this link: <a href="${resetUrl}">${resetUrl}</a></p>
+                    <p>This link expires in 1 hour.</p>
+                    <p>If you didn't request this, ignore this email.</p>
+                </div>
+            `
+        };
+        
+        await transporter.sendMail(mailOptions);
+        console.log('Password reset email sent to:', email);
+        
+        res.json({ message: 'Password reset email sent. Check your inbox.' });
     } catch (err) {
-        console.error(err);
+        console.error('Forgot password error:', err);
         res.status(500).json({ message: 'Failed to process request' });
+    }
+});
+
+// Reset password with token
+router.post('/reset-password', async (req, res) => {
+    const { token, newPassword } = req.body;
+    
+    if (!token || !newPassword) {
+        return res.status(400).json({ message: 'Token and new password required' });
+    }
+    
+    try {
+        const decoded = jwt.verify(token, SECRET);
+        
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await db.query(
+            'UPDATE notify_users SET password = $1 WHERE id = $2',
+            [hashedPassword, decoded.userId]
+        );
+        
+        res.json({ message: 'Password reset successful. You can now login.' });
+    } catch (err) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(400).json({ message: 'Reset link has expired' });
+        }
+        console.error('Reset password error:', err);
+        res.status(400).json({ message: 'Invalid or expired reset link' });
     }
 });
 
