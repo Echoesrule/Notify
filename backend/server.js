@@ -842,15 +842,8 @@ app.get('/api/notes/:id/download', async (req, res) => {
 
         await db.query('UPDATE notes SET downloads = COALESCE(downloads, 0) + 1 WHERE id = $1', [req.params.id]);
 
-        // Handle multiple path formats
-        let filePath = note.file_path;
-        if (!path.isAbsolute(filePath)) {
-            if (filePath.startsWith('/')) {
-                filePath = path.join(__dirname, filePath.substring(1));
-            } else {
-                filePath = path.join(__dirname, 'uploads', 'notes', filePath);
-            }
-        }
+        const fileName = note.file_path.split('/').pop();
+        const filePath = path.join(__dirname, 'uploads', 'notes', fileName);
 
         console.log('Download - filePath:', filePath);
         console.log('Download - file exists:', fs.existsSync(filePath));
