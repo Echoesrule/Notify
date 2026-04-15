@@ -10,15 +10,20 @@ const db = require('../db');
 
 const SECRET = process.env.JWT_SECRET || 'notify_fallback_dev_key_change_in_production';
 
-const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp-relay.sendinblue.com',
-    port: process.env.SMTP_PORT || 587,
-    secure: false,
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-    }
-});
+let transporter;
+if (process.env.SMTP_API_KEY) {
+    transporter = null; // Use Brevo API instead
+} else {
+    transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT || 587,
+        secure: false,
+        auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS
+        }
+    });
+}
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -272,26 +277,51 @@ router.post('/forgot-password', async (req, res) => {
         
         const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/reset-password.html?token=${resetToken}`;
         
-        const mailOptions = {
-            from: `"Notify App" <${process.env.SMTP_USER}>`,
-            to: email,
-            subject: 'Password Reset - Notify App',
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2>Password Reset Request</h2>
-                    <p>Hi ${user.name},</p>
-                    <p>You requested a password reset. Click the button below to reset your password:</p>
-                    <a href="${resetUrl}" style="display: inline-block; background: #4a90d9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0;">Reset Password</a>
-                    <p>Or copy this link: <a href="${resetUrl}">${resetUrl}</a></p>
-                    <p>This link expires in 1 hour.</p>
-                    <p>If you didn't request this, ignore this email.</p>
-                </div>
-            `
-        };
+        const htmlContent = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2>Password Reset Request</h2>
+                <p>Hi ${user.name},</p>
+                <p>You requested a password reset. Click the button below to reset your password:</p>
+                <a href="${resetUrl}" style="display: inline-block; background: #4a90d9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0;">Reset Password</a>
+                <p>Or copy this link: <a href="${resetUrl}">${resetUrl}</a></p>
+                <p>This link expires in 1 hour.</p>
+                <p>If you didn't request this, ignore this email.</p>
+            </div>
+        `;
         
-        await transporter.sendMail(mailOptions);
+        if (process.env.BREVO_API_KEY) {
+            // Use Brevo API
+            const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'api-key': process.env.BREVO_API_KEY
+                },
+                body: JSON.stringify({
+                    sender: { name: 'Notify App', email: process.env.BREVO_SENDER_EMAIL },
+                    to: [{ email }],
+                    subject: 'Password Reset - Notify App',
+                    htmlContent
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Brevo API error');
+            }
+        } else if (transporter) {
+            // Fallback to SMTP
+            const mailOptions = {
+                from: `"Notify App" <${process.env.SMTP_USER}>`,
+                to: email,
+                subject: 'Password Reset - Notify App',
+                html: htmlContent
+            };
+            await transporter.sendMail(mailOptions);
+        } else {
+            throw new Error('No email service configured');
+        }
+        
         console.log('Password reset email sent to:', email);
-        
         res.json({ message: 'Password reset email sent. Check your inbox.' });
     } catch (err) {
         console.error('Forgot password error:', err);

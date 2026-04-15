@@ -1,4 +1,4 @@
 git status
 git add .
-git commit -m "fix pfp issue"
+git commit -m "Added realtime mailing system"
 git push origin main
