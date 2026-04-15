@@ -11,9 +11,9 @@ const db = require('../db');
 const SECRET = process.env.JWT_SECRET || 'notify_fallback_dev_key_change_in_production';
 
 let transporter;
-if (process.env.SMTP_API_KEY) {
+if (process.env.BREVO_API_KEY) {
     transporter = null; // Use Brevo API instead
-} else {
+} else if (process.env.SMTP_HOST) {
     transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: process.env.SMTP_PORT || 587,
