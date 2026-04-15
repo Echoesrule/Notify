@@ -373,34 +373,6 @@ router.post('/verify-reset-code', async (req, res) => {
         res.status(500).json({ message: 'Failed to reset password' });
     }
 });
-});
-
-// Reset password with token
-router.post('/reset-password', async (req, res) => {
-    const { token, newPassword } = req.body;
-    
-    if (!token || !newPassword) {
-        return res.status(400).json({ message: 'Token and new password required' });
-    }
-    
-    try {
-        const decoded = jwt.verify(token, SECRET);
-        
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-        await db.query(
-            'UPDATE notify_users SET password = $1 WHERE id = $2',
-            [hashedPassword, decoded.userId]
-        );
-        
-        res.json({ message: 'Password reset successful. You can now login.' });
-    } catch (err) {
-        if (err.name === 'TokenExpiredError') {
-            return res.status(400).json({ message: 'Reset link has expired' });
-        }
-        console.error('Reset password error:', err);
-        res.status(400).json({ message: 'Invalid or expired reset link' });
-    }
-});
 
 // Check institution by email domain
 router.post('/check-institution', async (req, res) => {
