@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const loginUrl = `${API_URL}/user_auth/login`;
-        console.log('📡 Attempting login to:', loginUrl);
+        console.log('Attempting login to:', loginUrl);
 
         // Show loading state
         const submitBtn = loginForm.querySelector('button[type="submit"]');

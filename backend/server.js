@@ -5,7 +5,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
-const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');//jsonwebtoken is used for creating and verifying JSON Web Tokens (JWTs) for authentication and authorization in the application.
 const bcrypt = require('bcrypt');
 
 const db = require('./db');
@@ -366,14 +366,17 @@ app.get('/api/schools', async (req, res) => {
         const [schools] = await db.query(`
             SELECT
                 s.id,
+                s.institution_id,
                 s.name,
                 s.created_at,
+                i.name as "institutionName",
                 COUNT(DISTINCT u.id)::int AS "studentCount",
                 COUNT(DISTINCT c.id)::int AS "courseCount"
             FROM schools s
+            LEFT JOIN institutions i ON s.institution_id = i.id
             LEFT JOIN notify_users u ON u.school_id = s.id
             LEFT JOIN courses c ON c.school_id = s.id
-            GROUP BY s.id, s.name, s.created_at
+            GROUP BY s.id, s.institution_id, s.name, s.created_at, i.name
             ORDER BY s.name
         `);
 
@@ -521,10 +524,10 @@ app.get('/api/schools-legacy', async (req, res) => {
 
 app.post('/api/schools', async (req, res) => {
     try {
-        const { name } = req.body;
+        const { name, institution_id } = req.body;
         if (!name) return res.status(400).json({ error: 'School name is required' });
-        const [rows] = await db.query('INSERT INTO schools (name) VALUES ($1) RETURNING id', [name]);
-        res.json({ id: rows[0].id, name });
+        const [rows] = await db.query('INSERT INTO schools (name, institution_id) VALUES ($1, $2) RETURNING id', [name, institution_id || null]);
+        res.json({ id: rows[0].id, name, institution_id });
     } catch (error) {
         console.error('Error creating school:', error);
         res.status(500).json({ error: 'Failed to create school' });
@@ -729,9 +732,11 @@ app.get('/api/notes', async (req, res) => {
         let query = `
             SELECT n.*, s.name as "schoolName", c.name as "deptName", u.name as "unitName",
                    s.id as "schoolId", c.id as "deptId", u.id as "unitId",
-                   p.name as "uploadedByName"
+                   p.name as "uploadedByName",
+                   i.name as "institutionName", s.institution_id
             FROM notes n
             LEFT JOIN schools s ON n.school_id = s.id
+            LEFT JOIN institutions i ON s.institution_id = i.id
             LEFT JOIN courses c ON n.dept_id = c.id
             LEFT JOIN units u ON n.unit_id = u.id
             LEFT JOIN notify_users p ON n.user_id = p.id
@@ -759,9 +764,11 @@ app.get('/api/notes/my-notes', async (req, res) => {
         const [notes] = await db.query(`
             SELECT n.*, s.name as "schoolName", c.name as "courseName", u.name as "unitName",
                    u.id as "unitId", u.code as "unitCode",
-                   p.name as "uploadedByName"
+                   p.name as "uploadedByName",
+                   i.name as "institutionName", s.institution_id
             FROM notes n
             LEFT JOIN schools s ON n.school_id = s.id
+            LEFT JOIN institutions i ON s.institution_id = i.id
             LEFT JOIN courses c ON n.dept_id = c.id
             LEFT JOIN units u ON n.unit_id = u.id
             LEFT JOIN notify_users p ON n.user_id = p.id
@@ -989,6 +996,19 @@ app.post('/api/users/enroll-school', async (req, res) => {
     }
 });
 
+app.get('/api/users/:userId', async (req, res) => {
+    try {
+        const [users] = await db.query('SELECT id, name, email, role, pfp FROM notify_users WHERE id = $1', [req.params.userId]);
+        if (users.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        res.json(users[0]);
+    } catch (error) {
+        console.error('Error fetching user:', error);
+        res.status(500).json({ error: 'Failed to fetch user' });
+    }
+});
+
 app.get('/api/users/:userId/enrollment', async (req, res) => {
     try {
         const [enrollments] = await db.query(`
@@ -1076,14 +1096,16 @@ app.get('/api/admin/schools', adminMiddleware, async (req, res) => {
     try {
         const [schools] = await db.query(`
             SELECT s.*,
+                   i.name as "institutionName",
                    COUNT(DISTINCT u.id)::int AS "studentCount",
                    COUNT(DISTINCT c.id)::int AS "courseCount",
                    COUNT(DISTINCT n.id)::int AS "noteCount"
             FROM schools s
+            LEFT JOIN institutions i ON s.institution_id = i.id
             LEFT JOIN notify_users u ON u.school_id = s.id
             LEFT JOIN courses c ON c.school_id = s.id
             LEFT JOIN notes n ON n.school_id = s.id
-            GROUP BY s.id
+            GROUP BY s.id, i.name
             ORDER BY s.name
         `);
         res.json(schools);
@@ -1095,9 +1117,9 @@ app.get('/api/admin/schools', adminMiddleware, async (req, res) => {
 
 app.post('/api/admin/schools', adminMiddleware, async (req, res) => {
     try {
-        const { name } = req.body;
-        const [rows] = await db.query('INSERT INTO schools (name) VALUES ($1) RETURNING id', [name]);
-        res.json({ id: rows[0].id, name });
+        const { name, institution_id } = req.body;
+        const [rows] = await db.query('INSERT INTO schools (name, institution_id) VALUES ($1, $2) RETURNING id', [name, institution_id || null]);
+        res.json({ id: rows[0].id, name, institution_id });
     } catch (error) {
         console.error('Error creating school:', error);
         res.status(500).json({ error: 'Failed to create school' });
@@ -1106,8 +1128,8 @@ app.post('/api/admin/schools', adminMiddleware, async (req, res) => {
 
 app.put('/api/admin/schools/:id', adminMiddleware, async (req, res) => {
     try {
-        const { name } = req.body;
-        await db.query('UPDATE schools SET name = $1 WHERE id = $2', [name, req.params.id]);
+        const { name, institution_id } = req.body;
+        await db.query('UPDATE schools SET name = $1, institution_id = $2 WHERE id = $3', [name, institution_id, req.params.id]);
         res.json({ message: 'School updated successfully' });
     } catch (error) {
         console.error('Error updating school:', error);
@@ -1232,9 +1254,11 @@ app.get('/api/admin/notes', adminMiddleware, async (req, res) => {
                    s.name as "schoolName", 
                    c.name as "courseName", 
                    u.name as "unitName",
-                   p.name as "uploadedByName"
+                   p.name as "uploadedByName",
+                   i.name as "institutionName", s.institution_id
             FROM notes n
             LEFT JOIN schools s ON n.school_id = s.id
+            LEFT JOIN institutions i ON s.institution_id = i.id
             LEFT JOIN courses c ON n.dept_id = c.id
             LEFT JOIN units u ON n.unit_id = u.id
             LEFT JOIN notify_users p ON n.user_id = p.id
