@@ -1274,6 +1274,34 @@ app.get('/api/admin/notes', adminMiddleware, async (req, res) => {
     }
 });
 
+// Admin delete note endpoint
+app.delete('/api/admin/notes/:id', adminMiddleware, async (req, res) => {
+    try {
+        const noteId = parseInt(req.params.id);
+        const [notes] = await db.query('SELECT * FROM notes WHERE id = $1', [noteId]);
+        
+        if (!notes[0]) {
+            return res.status(404).json({ error: 'Note not found' });
+        }
+        
+        const note = notes[0];
+        
+        if (note.file_path) {
+            const fileName = note.file_path.split('/').pop();
+            const filePath = path.join(__dirname, 'uploads', 'notes', fileName);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        }
+        
+        await db.query('DELETE FROM notes WHERE id = $1', [noteId]);
+        res.json({ message: 'Note deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting note:', error);
+        res.status(500).json({ error: 'Failed to delete note' });
+    }
+});
+
 // Create institution endpoint
 app.post('/api/admin/institutions', adminMiddleware, async (req, res) => {
     try {

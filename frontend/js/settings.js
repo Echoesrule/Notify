@@ -528,7 +528,8 @@ function setupProfileImageButtons() {
         if (profileImg && savedPfp) {
             let pfpUrl = savedPfp;
             if (savedPfp.startsWith('/uploads/')) {
-                pfpUrl = (window.BASE_URL || window.API_URL?.replace('/api', '') || window.location.origin) + savedPfp;
+                const apiBase = window.API_URL?.replace('/api', '') || window.BASE_URL;
+                pfpUrl = apiBase + savedPfp;
             } else if (savedPfp.startsWith('http')) {
                 pfpUrl = savedPfp;
             }
@@ -583,17 +584,17 @@ function setupProfileImageButtons() {
                             console.log('PFP upload success:', data);
                             localStorage.setItem('user_pfp', data.pfp);
                             
-                            // Update image display - handle path correctly
+                            // Update image display - use API base URL
                             if (profileImg) {
-                                const baseUrl = window.BASE_URL || window.location.origin;
-                                profileImg.src = baseUrl + data.pfp;
+                                const apiBase = window.API_URL?.replace('/api', '') || window.BASE_URL;
+                                profileImg.src = apiBase + data.pfp;
                             }
                             
                             // Update topbar
                             const topProfileImg = document.getElementById('profileImg');
                             if (topProfileImg) {
-                                const baseUrl = window.BASE_URL || window.location.origin;
-                                topProfileImg.src = baseUrl + data.pfp;
+                                const apiBase = window.API_URL?.replace('/api', '') || window.BASE_URL;
+                                topProfileImg.src = apiBase + data.pfp;
                             }
                             
                             showNotification('Profile image updated', 'success');
