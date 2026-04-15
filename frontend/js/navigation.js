@@ -506,23 +506,6 @@ function updateTopbar() {
     const role = localStorage.getItem('notify_role') || 'student';
     let userPfp = localStorage.getItem('user_pfp') || '';
     
-    // If no cached pfp, fetch from server
-    if (!userPfp && user.id) {
-        fetch(`${window.API_URL}/api/users/${user.id}`)
-            .then(r => r.json())
-            .then(userData => {
-                if (userData.pfp) {
-                    localStorage.setItem('user_pfp', userData.pfp);
-                    userPfp = userPfp;
-                    const profileImg = document.getElementById('profileImg');
-                    if (profileImg) {
-                        profileImg.src = `${window.API_URL}${userData.pfp}`;
-                    }
-                }
-            })
-            .catch(() => {});
-    }
-    
     const userNameEl = document.getElementById('topUserName');
     const userRoleEl = document.getElementById('topUserRole');
     const menuUserName = document.getElementById('menuUserName');

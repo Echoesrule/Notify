@@ -842,10 +842,22 @@ app.get('/api/notes/:id/download', async (req, res) => {
 
         await db.query('UPDATE notes SET downloads = COALESCE(downloads, 0) + 1 WHERE id = $1', [req.params.id]);
 
-        const fileName = note.file_path.split('/').pop();
-        const filePath = path.join(__dirname, 'uploads', 'notes', fileName);
+        // Handle multiple path formats
+        let filePath = note.file_path;
+        if (!path.isAbsolute(filePath)) {
+            // If stored as /uploads/notes/filename, join with __dirname
+            if (filePath.startsWith('/uploads')) {
+                filePath = path.join(__dirname, filePath);
+            } else {
+                // Just filename
+                filePath = path.join(__dirname, 'uploads', 'notes', filePath);
+            }
+        }
 
-        if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found on server' });
+        console.log('Download - filePath:', filePath);
+        console.log('Download - file exists:', fs.existsSync(filePath));
+
+        if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found on server: ' + filePath });
         res.download(filePath);
     } catch (error) {
         console.error('Error downloading note:', error);
