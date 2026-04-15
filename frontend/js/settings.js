@@ -530,17 +530,12 @@ function setupProfileImageButtons() {
     if (profileImg && savedPfp) {
         let pfpUrl = savedPfp;
         if (savedPfp.startsWith('/uploads/')) {
-            // Get base URL - remove /api from the end
-            let baseUrl = window.API_URL || 'http://localhost:3000/api';
-            baseUrl = baseUrl.replace(/\/api$/, '');
-            pfpUrl = baseUrl + savedPfp;
+            pfpUrl = (window.BASE_URL || window.API_URL?.replace('/api', '') || window.location.origin) + savedPfp;
         } else if (savedPfp.startsWith('http')) {
             pfpUrl = savedPfp;
         }
         console.log('Loading PFP from:', pfpUrl);
-        console.log('ProfileImg element found:', !!profileImg);
         
-        // Add error handler to debug
         profileImg.onerror = function() {
             console.error('Failed to load PFP image:', pfpUrl);
             this.src = '../images/dashboardImages/v3321_68.png';
@@ -550,20 +545,7 @@ function setupProfileImageButtons() {
         };
         
         profileImg.src = pfpUrl;
-        console.log('Set profileImg.src to:', profileImg.src);
-    } else {
-        console.log('No saved PFP found or profileImg not found');
-        console.log('savedPfp:', savedPfp);
-        console.log('profileImg:', profileImg);
     }
-    
-    // Force setup after a short delay to ensure DOM is ready
-    setTimeout(() => {
-        if (!changeBtn && !document.getElementById('changeProfileImage')) {
-            console.log('Retrying to find profile elements...');
-            setupProfileImageButtons();
-        }
-    }, 500);
     
     if (changeBtn) {
         changeBtn.addEventListener('click', async function() {
@@ -605,16 +587,14 @@ function setupProfileImageButtons() {
                             
                             // Update image display - handle path correctly
                             if (profileImg) {
-                                let baseUrl = window.API_URL || 'http://localhost:3000/api';
-                                baseUrl = baseUrl.replace(/\/api$/, '');
+                                const baseUrl = window.BASE_URL || window.location.origin;
                                 profileImg.src = baseUrl + data.pfp;
                             }
                             
                             // Update topbar
                             const topProfileImg = document.getElementById('profileImg');
                             if (topProfileImg) {
-                                let baseUrl = window.API_URL || 'http://localhost:3000/api';
-                                baseUrl = baseUrl.replace(/\/api$/, '');
+                                const baseUrl = window.BASE_URL || window.location.origin;
                                 topProfileImg.src = baseUrl + data.pfp;
                             }
                             

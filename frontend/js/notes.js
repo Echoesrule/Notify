@@ -373,19 +373,59 @@ function saveBookmarks(bookmarks) {
 }
 
 function bookmarkNote(noteId) {
-    console.log('Bookmarking note:', noteId);
+    console.log('Quick bookmarking note:', noteId);
     fetch(`${window.API_URL}/notes/${noteId}`)
         .then(res => {
             if (!res.ok) throw new Error('Note not found');
             return res.json();
         })
         .then(note => {
-            showBookmarkModal(note);
+            quickSaveBookmark(note);
         })
         .catch(err => {
             console.error('Error fetching note:', err);
             showNotification('Failed to load note for bookmarking', 'error');
         });
+}
+
+function quickSaveBookmark(note) {
+    const bookmarks = getBookmarks();
+    
+    // Check if already bookmarked
+    if (bookmarks.some(b => b.noteId === note.id)) {
+        showNotification('Note already in bookmarks', 'info');
+        return;
+    }
+    
+    // Get or create default "Saved Notes" folder
+    let folders = getBookmarkFolders();
+    let defaultFolderIndex = folders.findIndex(f => f.name === 'Saved Notes');
+    
+    if (defaultFolderIndex === -1) {
+        folders.push({
+            name: 'Saved Notes',
+            color: '#4a90d9',
+            created_at: new Date().toISOString()
+        });
+        saveBookmarkFolders(folders);
+        defaultFolderIndex = folders.length - 1;
+    }
+    
+    // Add bookmark
+    bookmarks.push({
+        id: Date.now(),
+        noteId: note.id,
+        title: note.title,
+        description: note.description,
+        uploadedByName: note.uploadedByName || note.uploadedBy,
+        pages: note.pages || note.page_count,
+        downloads: note.downloads || 0,
+        folderIndex: defaultFolderIndex,
+        date: new Date().toISOString()
+    });
+    
+    saveBookmarks(bookmarks);
+    showNotification(`"${note.title}" added to bookmarks!`, 'success');
 }
 
 function showBookmarkModal(note) {

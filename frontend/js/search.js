@@ -1,7 +1,5 @@
-// frontend/js/search.js - Fixed to use existing endpoints
-if (typeof window.API_URL === 'undefined') {
-    window.API_URL = 'https://notify-sxkf.onrender.com/api';
-}
+// frontend/js/search.js - Search page functionality
+// Note: API_URL is set by config.js
 
 const API_URL = window.API_URL;
 

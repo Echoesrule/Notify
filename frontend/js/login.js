@@ -1,7 +1,6 @@
 
-if (typeof window.API_URL === 'undefined') {
-    window.API_URL = 'https://notify-sxkf.onrender.com/api';
-}
+// frontend/js/login.js - Login functionality
+// Note: API_URL is set by config.js
 
 const API_URL = window.API_URL;
 
