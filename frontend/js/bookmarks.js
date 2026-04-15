@@ -1,12 +1,339 @@
 /**
- * search.js - Search page functionality
+ * bookmarks.js - Bookmarks page functionality
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    initializeSearch();
-    loadSearchHistory();
-    setupEventListeners();
+    setupBookmarkActions();
+    setupExportImport();
 });
+
+function setupBookmarkActions() {
+    console.log('Setting up bookmark actions');
+    
+    const addBookmarkBtn = document.getElementById('addBookmarkBtn');
+    if (addBookmarkBtn) {
+        addBookmarkBtn.addEventListener('click', showAddBookmarkForm);
+    }
+}
+
+function showAddBookmarkForm() {
+    const modalHtml = `
+    <div class="modal" id="addBookmarkModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-bookmark"></i> Add Bookmark</h3>
+                <button class="close-modal" onclick="closeAddBookmarkModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Note ID or URL</label>
+                    <input type="text" id="bookmarkNoteId" placeholder="Enter note ID or URL">
+                </div>
+                <div class="form-group">
+                    <label>Select Folder</label>
+                    <select id="bookmarkFormFolderSelect">
+                        <option value="">Choose a folder...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Or Create New Folder</label>
+                    <input type="text" id="bookmarkFormNewFolder" placeholder="New folder name">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" onclick="closeAddBookmarkModal()">Cancel</button>
+                <button class="btn-primary" onclick="addBookmarkFromForm()">Add Bookmark</button>
+            </div>
+        </div>
+    </div>`;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    updateBookmarkFormFolderSelect();
+    document.getElementById('addBookmarkModal').style.display = 'flex';
+    document.getElementById('addBookmarkModal').style.zIndex = '10000';
+}
+
+function updateBookmarkFormFolderSelect() {
+    const select = document.getElementById('bookmarkFormFolderSelect');
+    if (!select) return;
+    
+    const folders = getBookmarkFolders();
+    select.innerHTML = '<option value="">Choose a folder...</option>';
+    folders.forEach((folder, index) => {
+        select.innerHTML += `<option value="${index}">${folder.name}</option>`;
+    });
+}
+
+function closeAddBookmarkModal() {
+    const modal = document.getElementById('addBookmarkModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+async function addBookmarkFromForm() {
+    const noteIdInput = document.getElementById('bookmarkNoteId').value.trim();
+    const folderSelect = document.getElementById('bookmarkFormFolderSelect');
+    const newFolderInput = document.getElementById('bookmarkFormNewFolder');
+    const selectedFolder = folderSelect.value;
+    const newFolderName = newFolderInput.value.trim();
+    
+    if (!noteIdInput) {
+        showNotificationModal('Please enter a note ID', 'error');
+        return;
+    }
+    
+    if (!selectedFolder && !newFolderName) {
+        showNotificationModal('Please select or create a folder', 'error');
+        return;
+    }
+    
+    let folderIndex;
+    
+    if (newFolderName) {
+        const folders = getBookmarkFolders();
+        folders.push({
+            name: newFolderName,
+            color: '#4a90d9',
+            created_at: new Date().toISOString()
+        });
+        saveBookmarkFolders(folders);
+        folderIndex = folders.length - 1;
+    } else {
+        folderIndex = parseInt(selectedFolder);
+    }
+    
+    try {
+        const res = await fetch(`${window.API_URL}/notes/${noteIdInput}`);
+        if (!res.ok) throw new Error('Note not found');
+        const note = await res.json();
+        
+        const bookmarks = getBookmarks();
+        bookmarks.push({
+            id: Date.now(),
+            noteId: note.id,
+            title: note.title,
+            description: note.description,
+            uploadedByName: note.uploadedByName || note.uploadedBy,
+            pages: note.pages || note.page_count,
+            folderIndex: folderIndex,
+            date: new Date().toISOString()
+        });
+        saveBookmarks(bookmarks);
+        
+        closeAddBookmarkModal();
+        showNotificationModal('Bookmark added successfully!', 'success');
+        setTimeout(() => location.reload(), 1500);
+    } catch (err) {
+        console.error('Error adding bookmark:', err);
+        showNotificationModal('Failed to add bookmark. Note not found.', 'error');
+    }
+}
+
+function getBookmarkFolders() {
+    return JSON.parse(localStorage.getItem('notifyBookmarkFolders') || '[]');
+}
+
+function saveBookmarkFolders(folders) {
+    localStorage.setItem('notifyBookmarkFolders', JSON.stringify(folders));
+}
+
+function getBookmarks() {
+    return JSON.parse(localStorage.getItem('notifyBookmarks') || '[]');
+}
+
+function saveBookmarks(bookmarks) {
+    localStorage.setItem('notifyBookmarks', JSON.stringify(bookmarks));
+}
+
+function setupExportImport() {
+    const exportBtn = document.getElementById('exportBookmarks');
+    const importBtn = document.getElementById('importBookmarks');
+    
+    if (exportBtn) {
+        exportBtn.addEventListener('click', exportBookmarks);
+    }
+    
+    if (importBtn) {
+        importBtn.addEventListener('click', importBookmarks);
+    }
+}
+
+function exportBookmarks() {
+    const bookmarks = getBookmarks();
+    const folders = getBookmarkFolders();
+    
+    if (bookmarks.length === 0 && folders.length === 0) {
+        showNotificationModal('No bookmarks to export', 'info');
+        return;
+    }
+    
+    const exportData = {
+        version: '1.0',
+        exportDate: new Date().toISOString(),
+        bookmarks: bookmarks,
+        folders: folders
+    };
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `notify-bookmarks-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showNotificationModal('Bookmarks exported successfully', 'success');
+}
+
+function importBookmarks() {
+    const choiceModal = `
+    <div class="modal" id="importChoiceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-import"></i> Import</h3>
+                <button class="close-modal" onclick="closeImportChoiceModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>Choose what to import:</p>
+                <div class="import-options">
+                    <button class="import-option" onclick="importFromJSON()">
+                        <i class="fas fa-file-code"></i>
+                        <span>Import Bookmarks (JSON)</span>
+                    </button>
+                    <button class="import-option" onclick="importFromLocalFolder()">
+                        <i class="fas fa-folder-open"></i>
+                        <span>Import from Local Folder</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>`;
+    
+    document.body.insertAdjacentHTML('beforeend', choiceModal);
+    document.getElementById('importChoiceModal').style.display = 'flex';
+    document.getElementById('importChoiceModal').style.zIndex = '10000';
+}
+
+function closeImportChoiceModal() {
+    const modal = document.getElementById('importChoiceModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function importFromJSON() {
+    closeImportChoiceModal();
+    
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                const importData = JSON.parse(event.target.result);
+                
+                if (!importData.bookmarks && !importData.folders) {
+                    showNotificationModal('Invalid bookmark file format', 'error');
+                    return;
+                }
+                
+                if (importData.folders && Array.isArray(importData.folders)) {
+                    const existingFolders = getBookmarkFolders();
+                    const mergedFolders = [...existingFolders, ...importData.folders];
+                    saveBookmarkFolders(mergedFolders);
+                }
+                
+                if (importData.bookmarks && Array.isArray(importData.bookmarks)) {
+                    const existingBookmarks = getBookmarks();
+                    const existingIds = new Set(existingBookmarks.map(b => b.noteId));
+                    const newBookmarks = importData.bookmarks.filter(b => !existingIds.has(b.noteId));
+                    const mergedBookmarks = [...existingBookmarks, ...newBookmarks];
+                    saveBookmarks(mergedBookmarks);
+                }
+                
+                showNotificationModal('Bookmarks imported successfully', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } catch (err) {
+                console.error('Import error:', err);
+                showNotificationModal('Failed to import bookmarks', 'error');
+            }
+        };
+        reader.readAsText(file);
+    };
+    
+    input.click();
+}
+
+function importFromLocalFolder() {
+    closeImportChoiceModal();
+    
+    const folderInput = document.createElement('input');
+    folderInput.type = 'file';
+    folderInputwebkitdirectory = true;
+    folderInput.multiple = true;
+    folderInput.accept = '.pdf,.doc,.docx,.txt,.md';
+    
+    folderInput.onchange = function(e) {
+        const files = Array.from(e.target.files).filter(f => 
+            f.name.match(/\.(pdf|doc|docx|txt|md)$/i)
+        );
+        
+        if (files.length === 0) {
+            showNotificationModal('No supported files found in folder', 'error');
+            return;
+        }
+        
+        const folderName = 'Imported Files';
+        let folders = getBookmarkFolders();
+        let folderIndex = folders.findIndex(f => f.name === folderName);
+        
+        if (folderIndex === -1) {
+            folders.push({
+                name: folderName,
+                color: '#9ca3af',
+                created_at: new Date().toISOString(),
+                isLocal: true
+            });
+            saveBookmarkFolders(folders);
+            folderIndex = folders.length - 1;
+        }
+        
+        let bookmarks = getBookmarks();
+        let imported = 0;
+        
+        files.forEach(file => {
+            const bookmark = {
+                id: Date.now() + Math.random(),
+                noteId: null,
+                title: file.name.replace(/\.[^/.]+$/, ''),
+                description: `Imported from local folder: ${file.name}`,
+                uploadedByName: 'Local Import',
+                pages: '?',
+                folderIndex: folderIndex,
+                date: new Date().toISOString(),
+                isLocal: true,
+                fileName: file.name,
+                fileSize: file.size
+            };
+            bookmarks.push(bookmark);
+            imported++;
+        });
+        
+        saveBookmarks(bookmarks);
+        showNotificationModal(`Imported ${imported} files successfully`, 'success');
+        setTimeout(() => location.reload(), 1500);
+    };
+    
+    folderInput.click();
+}
 
 function initializeSearch() {
     console.log('Initializing search page...');

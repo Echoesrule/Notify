@@ -148,10 +148,17 @@ const currentSubject= document.getElementById('currentSubject')
         
         hideLoader();
         
-        const grid = document.getElementById('notesGrid');
+        // Wait for grid to be available
+        let grid = document.getElementById("notesGrid");
+        let attempts = 0;
+        while (!grid && attempts < 50) {
+            await new Promise(r => setTimeout(r, 50));
+            grid = document.getElementById("notesGrid");
+            attempts++;
+        }
         
         if (!grid) {
-            console.error('Notes grid not found!');
+            console.error('Notes grid not found after waiting!');
             return;
         }
         
@@ -344,7 +351,9 @@ function saveBookmarkFolders(folders) {
 }
 
 function getBookmarks() {
-    return JSON.parse(localStorage.getItem('notifyBookmarks') || '[]');
+    const val = localStorage.getItem('notifyBookmarks');
+    console.log('getBookmarks - raw:', val);
+    return JSON.parse(val || '[]');
 }
 
 function showNotification(message, type = 'info') {
@@ -364,8 +373,12 @@ function saveBookmarks(bookmarks) {
 }
 
 function bookmarkNote(noteId) {
+    console.log('Bookmarking note:', noteId);
     fetch(`${window.API_URL}/notes/${noteId}`)
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error('Note not found');
+            return res.json();
+        })
         .then(note => {
             showBookmarkModal(note);
         })
@@ -416,6 +429,7 @@ function showBookmarkModal(note) {
     document.querySelector('#bookmarkModal .bookmark-note-preview p').textContent = note.description || '';
     modal.dataset.noteId = note.id;
     modal.style.display = 'flex';
+    modal.style.zIndex = '10000';
 }
 
 function updateFolderSelect() {
@@ -438,6 +452,14 @@ function closeBookmarkModal() {
 }
 
 function saveBookmark(noteId) {
+    const modal = document.getElementById('bookmarkModal');
+    const noteIdToSave = noteId || modal?.dataset?.noteId;
+    
+    if (!noteIdToSave) {
+        showNotificationModal('Error: No note selected', 'error');
+        return;
+    }
+    
     const folderSelect = document.getElementById('bookmarkFolderSelect');
     const newFolderInput = document.getElementById('newFolderName');
     const selectedFolder = folderSelect.value;
@@ -448,7 +470,7 @@ function saveBookmark(noteId) {
         return;
     }
     
-    let folderIndex = selectedFolder;
+    let folderIndex;
     
     if (newFolderName) {
         const folders = getBookmarkFolders();
@@ -459,9 +481,11 @@ function saveBookmark(noteId) {
         });
         saveBookmarkFolders(folders);
         folderIndex = folders.length - 1;
+    } else {
+        folderIndex = parseInt(selectedFolder);
     }
     
-    fetch(`${window.API_URL}/notes/${noteId}`)
+    fetch(`${window.API_URL}/notes/${noteIdToSave}`)
         .then(res => res.json())
         .then(note => {
             const bookmarks = getBookmarks();
@@ -475,7 +499,10 @@ function saveBookmark(noteId) {
                 folderIndex: folderIndex,
                 date: new Date().toISOString()
             });
+            console.log('Saving bookmark:', bookmarks[bookmarks.length - 1]);
+            console.log('All bookmarks:', getBookmarks());
             saveBookmarks(bookmarks);
+            console.log('Saved bookmarks to localStorage');
             closeBookmarkModal();
             showNotificationModal('Note bookmarked successfully!', 'success');
         })

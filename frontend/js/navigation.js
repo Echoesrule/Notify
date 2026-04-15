@@ -530,7 +530,14 @@ function updateTopbar() {
     }
     if (profileImg) {
         if (userPfp) {
-            profileImg.src = `${window.API_URL}${userPfp}`;
+            let pfpUrl = userPfp;
+            if (userPfp.startsWith('/uploads/')) {
+                const baseUrl = window.API_URL.replace('/api', '');
+                pfpUrl = baseUrl + userPfp;
+            } else if (userPfp.startsWith('http')) {
+                pfpUrl = userPfp;
+            }
+            profileImg.src = pfpUrl;
         } else {
             profileImg.src = '../images/dashboardImages/v3321_68.png';
         }

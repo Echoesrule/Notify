@@ -514,10 +514,19 @@ function setupProfileImageButtons() {
     const removeBtn = document.getElementById('removeProfileImage');
     const profileImg = document.getElementById('profileImage');
     
-    // Load saved pfp
+    // Load saved pfp - handle both local and server paths
     const savedPfp = localStorage.getItem('user_pfp');
     if (profileImg && savedPfp) {
-        profileImg.src = `${window.API_URL}${savedPfp}`;
+        let pfpUrl = savedPfp;
+        if (savedPfp.startsWith('/uploads/')) {
+            // Server path - need to remove /api prefix if present
+            const baseUrl = window.API_URL.replace('/api', '');
+            pfpUrl = baseUrl + savedPfp;
+        } else if (savedPfp.startsWith('http')) {
+            pfpUrl = savedPfp;
+        }
+        console.log('Loading PFP from:', pfpUrl);
+        profileImg.src = pfpUrl;
     }
     
     if (changeBtn) {
@@ -558,15 +567,17 @@ function setupProfileImageButtons() {
                             console.log('PFP upload success:', data);
                             localStorage.setItem('user_pfp', data.pfp);
                             
-                            // Update image display
+                            // Update image display - handle path correctly
                             if (profileImg) {
-                                profileImg.src = `${window.API_URL}${data.pfp}`;
+                                const baseUrl = window.API_URL.replace('/api', '');
+                                profileImg.src = baseUrl + data.pfp;
                             }
                             
                             // Update topbar
                             const topProfileImg = document.getElementById('profileImg');
                             if (topProfileImg) {
-                                topProfileImg.src = `${window.API_URL}${data.pfp}`;
+                                const baseUrl = window.API_URL.replace('/api', '');
+                                topProfileImg.src = baseUrl + data.pfp;
                             }
                             
                             showNotification('Profile image updated', 'success');

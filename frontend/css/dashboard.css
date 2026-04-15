@@ -368,6 +368,7 @@ body {
     border: 1px solid var(--border);
     border-radius: 12px;
     transition: all 0.3s;
+    margin-bottom: 10px;
 }
 
 .update-card.unread {

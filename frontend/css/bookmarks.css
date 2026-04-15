@@ -1043,6 +1043,113 @@
     font-size: 1rem;
 }
 
+/* Import Options Modal */
+.import-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.import-option {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: left;
+}
+
+.import-option:hover {
+    border-color: var(--primary);
+    background: var(--card-bg);
+}
+
+.import-option i {
+    font-size: 2rem;
+    color: var(--primary);
+}
+
+.import-option span {
+    font-size: 1rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Notification Styles */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideIn 0.3s ease;
+    z-index: 2000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    color: white;
+    font-weight: 500;
+}
+
+.notification.success {
+    background: #10b981;
+}
+
+.notification.error {
+    background: #ef4444;
+}
+
+.notification.info {
+    background: #3b82f6;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+}
+
+/* Local Folder Import */
+.folder-card.local-import {
+    opacity: 0.6;
+}
+
+.folder-card.local-import .folder-icon i {
+    color: #9ca3af;
+}
+
+.folder-card.local-import .folder-info p {
+    font-style: italic;
+}
+
+.folder-card.local-import.empty-folder {
+    background: var(--bg-tertiary);
+    border: 2px dashed var(--border);
+    opacity: 0.5;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .bookmarks-header {
