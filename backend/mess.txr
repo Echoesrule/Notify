@@ -1,5 +1,5 @@
 
 git status
 git add .
-git commit -m "show who uploaded notes and university they teach"
+git commit -m "added institution id to users local storage"
 git push origin main

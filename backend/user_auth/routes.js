@@ -80,28 +80,37 @@ router.post('/login', authLimiter, async (req, res) => {
             { expiresIn: '7d' }
         );
 
-        // Get institution from email domain
+        // Get institution from email domain (or from user record)
         let institutionName = null;
-        let institutionId = null;
-        const emailDomain = user.email.split('@')[1]?.toLowerCase();
-        if (emailDomain) {
-            try {
-                console.log('Looking for institution with domain:', emailDomain);
-                const [institutions] = await db.query(
-                    `SELECT * FROM institutions 
-                     WHERE LOWER(staff_domain) = $1 OR LOWER(student_domain) = $1`,
-                    [emailDomain]
-                );
-                console.log('Found institutions:', institutions);
-                if (institutions.length > 0) {
-                    institutionName = institutions[0].name;
-                    institutionId = institutions[0].id;
+        let institutionId = user.institution_id; // Use existing if set
+        
+        if (!institutionId) {
+            const emailDomain = user.email.split('@')[1]?.toLowerCase();
+            if (emailDomain) {
+                try {
+                    console.log('Looking for institution with domain:', emailDomain);
+                    const [institutions] = await db.query(
+                        `SELECT * FROM institutions 
+                         WHERE LOWER(staff_domain) = $1 OR LOWER(student_domain) = $1`,
+                        [emailDomain]
+                    );
+                    console.log('Found institutions:', institutions);
+                    if (institutions.length > 0) {
+                        institutionName = institutions[0].name;
+                        institutionId = institutions[0].id;
+                        
+                        // Update user record with institution
+                        await db.query(
+                            'UPDATE notify_users SET institution_id = $1 WHERE id = $2',
+                            [institutionId, user.id]
+                        );
+                    }
+                } catch(e) {
+                    console.warn('Error finding institution:', e);
                 }
-            } catch(e) {
-                console.warn('Error finding institution:', e);
+            } else {
+                console.log('No email domain found for:', user.email);
             }
-        } else {
-            console.log('No email domain found for:', user.email);
         }
 
         res.json({
