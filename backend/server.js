@@ -774,9 +774,19 @@ app.get('/api/schools/:schoolId/departments/:deptId/units/:unitId/notes', async 
     console.log('Notes endpoint hit:', req.params);
     try {
         const [notes] = await db.query(`
-            SELECT n.*, u.name as "uploadedByName"
+            SELECT n.*, 
+                   u.name as "uploadedByName",
+                   s.name as "schoolName",
+                   s.institution_id,
+                   i.name as "institutionName",
+                   c.name as "courseName",
+                   un.name as "unitName"
             FROM notes n
             LEFT JOIN notify_users u ON n.user_id = u.id
+            LEFT JOIN schools s ON n.school_id = s.id
+            LEFT JOIN institutions i ON s.institution_id = i.id
+            LEFT JOIN courses c ON n.dept_id = c.id
+            LEFT JOIN units un ON n.unit_id = un.id
             WHERE n.unit_id = $1
             ORDER BY n.created_at DESC
         `, [req.params.unitId]);
@@ -1095,16 +1105,18 @@ app.get('/api/users/:userId/enrollment', async (req, res) => {
 // =====================
 app.get('/api/counts', async (req, res) => {
     try {
-        const [s] = await db.query('SELECT COUNT(*) as count FROM notify_users WHERE school_id IS NOT NULL');
-        const [n] = await db.query('SELECT COUNT(*) as count FROM notes');
+        const [users] = await db.query('SELECT COUNT(*) as count FROM notify_users');
+        const [notes] = await db.query('SELECT COUNT(*) as count FROM notes');
         const [sc] = await db.query('SELECT COUNT(*) as count FROM schools');
         const [c] = await db.query('SELECT COUNT(*) as count FROM courses');
+        const [inst] = await db.query('SELECT COUNT(*) as count FROM institutions');
 
         res.json({
-            students: parseInt(s[0].count)  || 0,
-            notes:    parseInt(n[0].count)  || 0,
+            students: parseInt(users[0].count)  || 0,
+            notes:    parseInt(notes[0].count)  || 0,
             schools:  parseInt(sc[0].count) || 0,
-            courses:  parseInt(c[0].count)  || 0
+            courses:  parseInt(c[0].count)  || 0,
+            institutions: parseInt(inst[0].count) || 0
         });
     } catch (error) {
         console.error('Error fetching counts:', error);
