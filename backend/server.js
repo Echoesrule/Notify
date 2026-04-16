@@ -695,6 +695,57 @@ app.post('/api/units', async (req, res) => {
     }
 });
 
+// Link unit to additional courses (for shared/common units)
+app.post('/api/units/:unitId/link-courses', async (req, res) => {
+    try {
+        const { course_ids } = req.body;
+        const { unitId } = req.params;
+        
+        if (!course_ids || !Array.isArray(course_ids) || course_ids.length === 0) {
+            return res.status(400).json({ error: 'course_ids array is required' });
+        }
+        
+        const linked = [];
+        for (const course_id of course_ids) {
+            const [existing] = await db.query(
+                'SELECT 1 FROM course_units WHERE course_id = $1 AND unit_id = $2',
+                [course_id, unitId]
+            );
+            
+            if (existing.length === 0) {
+                await db.query(
+                    'INSERT INTO course_units (course_id, unit_id) VALUES ($1, $2)',
+                    [course_id, unitId]
+                );
+                linked.push(course_id);
+            }
+        }
+        
+        res.json({ message: `Unit linked to ${linked.length} course(s)`, linked });
+    } catch (error) {
+        console.error('Error linking unit to courses:', error);
+        res.status(500).json({ error: 'Failed to link unit to courses' });
+    }
+});
+
+// Get courses linked to a unit
+app.get('/api/units/:unitId/courses', async (req, res) => {
+    try {
+        const { unitId } = req.params;
+        const [courses] = await db.query(`
+            SELECT c.id, c.name, s.name as school_name
+            FROM course_units cu
+            JOIN courses c ON cu.course_id = c.id
+            JOIN schools s ON c.school_id = s.id
+            WHERE cu.unit_id = $1
+        `, [unitId]);
+        res.json(courses);
+    } catch (error) {
+        console.error('Error fetching unit courses:', error);
+        res.status(500).json({ error: 'Failed to fetch courses' });
+    }
+});
+
 app.delete('/api/units/:id', async (req, res) => {
     try {
         await db.query('DELETE FROM units WHERE id = $1', [parseInt(req.params.id)]);

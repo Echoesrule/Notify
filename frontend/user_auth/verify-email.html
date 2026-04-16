@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email - Notify</title>
+    <link href="https://fonts.googleapis.com/css?family=Fredoka|Inter&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="../css/login.css" rel="stylesheet">
+    <style>
+        body { min-height: 100vh; }
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            padding: 20px;
+        }
+        .auth-card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+        .auth-card i { font-size: 64px; margin-bottom: 20px; }
+        .auth-card i.success { color: var(--success); }
+        .auth-card i.error { color: var(--error); }
+        .auth-card h2 { margin-bottom: 15px; }
+        .auth-card p { color: var(--text-secondary); margin-bottom: 20px; }
+        .btn-primary { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-outline { padding: 12px 24px; background: transparent; border: 2px solid var(--primary); color: var(--primary); border-radius: 8px; cursor: pointer; margin-top: 15px; }
+        .btn-outline:hover { background: var(--primary); color: white; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card" id="content">
+            <div class="spinner"></div>
+            <p>Verifying your email...</p>
+        </div>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script>
+        const content = document.getElementById('content');
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const email = urlParams.get('email');
+        
+        if (!token || !email) {
+            content.innerHTML = `
+                <i class="fas fa-times-circle error"></i>
+                <h2>Invalid Link</h2>
+                <p>This verification link is invalid. Please request a new one.</p>
+                <a href="index.html" class="btn-primary">Go to Login</a>
+            `;
+        } else {
+            verifyEmail();
+        }
+        
+        async function verifyEmail() {
+            try {
+                const res = await fetch(`${window.API_URL}/user_auth/verify-email`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: decodeURIComponent(email), token })
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    content.innerHTML = `
+                        <i class="fas fa-check-circle success"></i>
+                        <h2>Email Verified!</h2>
+                        <p>Your email has been verified successfully. You can now login to your account.</p>
+                        <a href="login.html" class="btn-primary">Go to Login</a>
+                    `;
+                } else {
+                    content.innerHTML = `
+                        <i class="fas fa-times-circle error"></i>
+                        <h2>Verification Failed</h2>
+                        <p>${data.message}</p>
+                        <button onclick="resendVerification()" class="btn-outline">Resend Verification Email</button>
+                        <br><br>
+                        <a href="login.html" class="btn-primary">Go to Login</a>
+                    `;
+                }
+            } catch (err) {
+                content.innerHTML = `
+                    <i class="fas fa-times-circle error"></i>
+                    <h2>Error</h2>
+                    <p>Something went wrong. Please try again.</p>
+                    <a href="login.html" class="btn-primary">Go to Login</a>
+                `;
+            }
+        }
+        
+        async function resendVerification() {
+            try {
+                const res = await fetch(`${window.API_URL}/user_auth/resend-verification`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: decodeURIComponent(email) })
+                });
+                
+                const data = await res.json();
+                alert(data.message || 'Verification email sent!');
+            } catch (err) {
+                alert('Failed to resend verification email');
+            }
+        }
+    </script>
+</body>
+</html>

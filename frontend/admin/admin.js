@@ -600,6 +600,7 @@ async function loadUnits() {
                         <p>Code: ${unit.code || 'N/A'} | Course: ${unit.courseName || 'N/A'}</p>
                         <p>Notes: ${unit.noteCount || 0}</p>
                         <div class="action-buttons">
+                            <button class="btn-sm" onclick="shareUnit('${unit.id}')" title="Share to other courses"><i class="fas fa-share-alt"></i></button>
                             <button class="btn-sm" onclick="editUnit('${unit.id}')"><i class="fas fa-edit"></i></button>
                             <button class="btn-sm btn-danger" onclick="deleteUnit('${unit.id}')"><i class="fas fa-trash"></i></button>
                         </div>
@@ -636,6 +637,48 @@ async function editUnit(unitId) {
             console.error(err); 
             alert('Error updating unit');
         }
+    }
+}
+
+async function shareUnit(unitId) {
+    try {
+        const headers = getAuthHeaders();
+        
+        // Get courses to share with
+        const coursesRes = await fetch(`${API_BASE}/api/admin/courses`, { headers });
+        const allCourses = await coursesRes.json();
+        
+        if (!allCourses.length) {
+            alert('No courses available');
+            return;
+        }
+        
+        // Show courses to share with (use prompt for simplicity)
+        const courseNames = allCourses.map(c => `${c.id}: ${c.name}`).join(', ');
+        const selectedIds = prompt(`Enter course IDs to share this unit with (comma-separated):\nAvailable: ${courseNames}`);
+        
+        if (!selectedIds) return;
+        
+        const courseIds = selectedIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+        
+        // Link unit to selected courses
+        const res = await fetch(`${API_BASE}/api/units/${unitId}/link-courses`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ course_ids: courseIds })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+            alert(`Unit shared successfully! Linked to ${data.linked?.length || 0} course(s)`);
+            loadSectionData('units');
+        } else {
+            alert('Failed to share unit: ' + data.error);
+        }
+    } catch (err) {
+        console.error('Error sharing unit:', err);
+        alert('Error sharing unit');
     }
 }
 

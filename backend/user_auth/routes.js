@@ -25,6 +25,19 @@ if (process.env.BREVO_API_KEY) {
     });
 }
 
+// Email verification tokens
+const verificationTokens = new Map();
+
+function generateVerificationToken() {
+    return jwt.sign(
+        { purpose: 'email_verify', timestamp: Date.now() },
+        SECRET,
+        { expiresIn: '24h' }
+    );
+}
+    });
+}
+
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 5,
@@ -150,15 +163,142 @@ router.post('/register', async (req, res) => {
 
         console.log('User registered successfully with role:', role);
         
+        // Generate verification token and send confirmation email
+        const verifyToken = generateVerificationToken();
+        verificationTokens.set(email, {
+            token: verifyToken,
+            expires: Date.now() + 24 * 60 * 60 * 1000
+        });
+        
+        const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/verify-email.html?token=${verifyToken}&email=${encodeURIComponent(email)}`;
+        
+        const htmlContent = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2>Welcome to Notify, ${name}!</h2>
+                <p>Thank you for registering. Please verify your email address to activate your account.</p>
+                <a href="${verifyUrl}" style="display: inline-block; background: #4a90d9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0;">Verify Email</a>
+                <p>Or copy this link: <a href="${verifyUrl}">${verifyUrl}</a></p>
+                <p>This link expires in 24 hours.</p>
+            </div>
+        `;
+        
+        if (process.env.BREVO_API_KEY) {
+            await fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'api-key': process.env.BREVO_API_KEY
+                },
+                body: JSON.stringify({
+                    sender: { name: 'Notify App', email: process.env.BREVO_SENDER_EMAIL },
+                    to: [{ email }],
+                    subject: 'Verify Your Email - Notify App',
+                    htmlContent
+                })
+            });
+        }
+        
+        console.log('Verification email sent to:', email);
+        
         res.status(201).json({ 
             success: true,
-            message: 'Registration successful! Please login.',
+            message: 'Registration successful! Please check your email to verify your account.',
             role: role
         });
         
     } catch (error) {
         console.error('Registration error:', error);
         res.status(500).json({ message: 'Registration Failed: ' + error.message });
+    }
+});
+
+// Verify email
+router.post('/verify-email', async (req, res) => {
+    const { email, token } = req.body;
+    
+    if (!email || !token) {
+        return res.status(400).json({ message: 'Email and token required' });
+    }
+    
+    const stored = verificationTokens.get(email);
+    
+    if (!stored || stored.token !== token) {
+        return res.status(400).json({ message: 'Invalid verification token' });
+    }
+    
+    if (Date.now() > stored.expires) {
+        verificationTokens.delete(email);
+        return res.status(400).json({ message: 'Verification link expired. Request a new one.' });
+    }
+    
+    try {
+        jwt.verify(token, SECRET);
+        verificationTokens.delete(email);
+        
+        console.log('Email verified for:', email);
+        res.json({ success: true, message: 'Email verified successfully! You can now login.' });
+    } catch (err) {
+        console.error('Email verification error:', err);
+        res.status(400).json({ message: 'Invalid or expired verification link' });
+    }
+});
+
+// Resend verification email
+router.post('/resend-verification', async (req, res) => {
+    const { email } = req.body;
+    
+    if (!email) {
+        return res.status(400).json({ message: 'Email required' });
+    }
+    
+    try {
+        const [rows] = await db.query('SELECT id, name FROM notify_users WHERE email = $1', [email]);
+        
+        if (!rows || rows.length === 0) {
+            return res.json({ message: 'If the email exists, a verification email has been sent' });
+        }
+        
+        const user = rows[0];
+        const verifyToken = generateVerificationToken();
+        verificationTokens.set(email, {
+            token: verifyToken,
+            expires: Date.now() + 24 * 60 * 60 * 1000
+        });
+        
+        const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/verify-email.html?token=${verifyToken}&email=${encodeURIComponent(email)}`;
+        
+        const htmlContent = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2>Verify Your Email</h2>
+                <p>Hi ${user.name},</p>
+                <p>Click the button below to verify your email address:</p>
+                <a href="${verifyUrl}" style="display: inline-block; background: #4a90d9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0;">Verify Email</a>
+                <p>Or copy this link: <a href="${verifyUrl}">${verifyUrl}</a></p>
+                <p>This link expires in 24 hours.</p>
+            </div>
+        `;
+        
+        if (process.env.BREVO_API_KEY) {
+            await fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'api-key': process.env.BREVO_API_KEY
+                },
+                body: JSON.stringify({
+                    sender: { name: 'Notify App', email: process.env.BREVO_SENDER_EMAIL },
+                    to: [{ email }],
+                    subject: 'Verify Your Email - Notify App',
+                    htmlContent
+                })
+            });
+        }
+        
+        console.log('Verification email resent to:', email);
+        res.json({ message: 'Verification email sent. Check your inbox.' });
+    } catch (err) {
+        console.error('Resend verification error:', err);
+        res.status(500).json({ message: 'Failed to send verification email' });
     }
 });
 

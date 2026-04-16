@@ -109,7 +109,13 @@ async function displaySchools() {
         const currentSchoolId = localStorage.getItem('selected_school');
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         
-        schools.forEach((school, index) => {
+        const sortedSchools = [...schools].sort((a, b) => {
+            const aEnrolled = a.id == currentSchoolId ? 0 : 1;
+            const bEnrolled = b.id == currentSchoolId ? 0 : 1;
+            return aEnrolled - bEnrolled;
+        });
+        
+        sortedSchools.forEach((school, index) => {
             const deptCount = school.departments?.length || 0;
             const isEnrolled = currentSchoolId == school.id;
 

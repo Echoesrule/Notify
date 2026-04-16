@@ -103,6 +103,20 @@
         </div>
     </div>
 
+    <!-- Resend Verification Modal -->
+    <div id="resendVerificationModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:white;padding:30px;border-radius:12px;max-width:400px;width:90%;">
+            <h3 style="margin-bottom:8px;color:var(--text-primary);">Resend Verification Email</h3>
+            <div class="input-group">
+                <label for="resendEmail">Email</label>
+                <input type="email" id="resendEmail" placeholder="Your registered email">
+            </div>
+            <button onclick="resendVerification()" style="width:100%;padding:12px;background:var(--primary);color:white;border:none;border-radius:8px;cursor:pointer;">Resend Email</button>
+            <p id="resendMessage" style="margin-top:12px;text-align:center;"></p>
+            <button onclick="closeResendVerification()" style="margin-top:12px;width:100%;padding:10px;background:#64748b;color:white;border:none;border-radius:8px;cursor:pointer;">Cancel</button>
+        </div>
+    </div>
+
     <script>
         let resetEmail = '';
 
@@ -181,6 +195,43 @@
             } catch (err) {
                 document.getElementById('forgotMessage').textContent = 'Error connecting to server';
                 document.getElementById('forgotMessage').style.color = 'var(--error)';
+            }
+        }
+
+        function showResendVerification(email = '') {
+            document.getElementById('resendVerificationModal').style.display = 'flex';
+            document.getElementById('resendEmail').value = email;
+            document.getElementById('resendMessage').textContent = '';
+        }
+
+        function closeResendVerification() {
+            document.getElementById('resendVerificationModal').style.display = 'none';
+        }
+
+        async function resendVerification() {
+            const email = document.getElementById('resendEmail').value;
+            if (!email) {
+                document.getElementById('resendMessage').textContent = 'Please enter your email';
+                return;
+            }
+            try {
+                const res = await fetch(`${window.API_URL}/user_auth/resend-verification`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('resendMessage').textContent = 'Verification email sent!';
+                    document.getElementById('resendMessage').style.color = 'var(--success)';
+                    setTimeout(closeResendVerification, 2000);
+                } else {
+                    document.getElementById('resendMessage').textContent = data.message;
+                    document.getElementById('resendMessage').style.color = 'var(--error)';
+                }
+            } catch (err) {
+                document.getElementById('resendMessage').textContent = 'Error connecting to server';
+                document.getElementById('resendMessage').style.color = 'var(--error)';
             }
         }
     </script>
