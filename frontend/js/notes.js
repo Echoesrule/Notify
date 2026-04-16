@@ -222,6 +222,10 @@ function renderSortedNotes(sortedNotes) {
         const uploadedBy = note.uploadedByName || note.uploadedBy || note.postedBy || note.name || 'Unknown';
         const createdDate = note.created_at || note.date;
         const pages = note.pages || note.page_count || '?';
+        const institutionName = note.institutionName || '';
+        const schoolName = note.schoolName || '';
+        const courseName = note.courseName || note.deptName || '';
+        const unitName = note.unitName || note.subjectName || '';
         
         html += `
             <div class="note-card ${note.popular ? 'popular' : ''}">
@@ -229,8 +233,12 @@ function renderSortedNotes(sortedNotes) {
                     <i class="fas fa-file-pdf"></i>
                 </div>
                 <h3>${note.title}</h3>
+                ${institutionName ? `<p style="color: var(--primary); font-weight: 600; margin-bottom: 5px;"><i class="fas fa-university"></i> ${institutionName}</p>` : ''}
                 <p class="note-description">${note.description ? (note.description.length > 100 ? note.description.substring(0, 100) + '...' : note.description) : 'No description available'}</p>
                 <div class="note-meta">
+                    ${schoolName ? `<span><i class="fas fa-school"></i> ${schoolName}</span>` : ''}
+                    ${courseName ? `<span><i class="fas fa-book"></i> ${courseName}</span>` : ''}
+                    ${unitName ? `<span><i class="fas fa-chalkboard-teacher"></i> ${unitName}</span>` : ''}
                     <span><i class="fas fa-user"></i> ${uploadedBy}</span>
                     <span><i class="fas fa-calendar"></i> ${createdDate ? new Date(createdDate).toLocaleDateString() : 'Not dated'}</span>
                     <span><i class="fas fa-file"></i> ${pages} pages</span>

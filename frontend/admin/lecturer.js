@@ -2129,6 +2129,34 @@ function viewNote(id) {
     alert(`Title: ${note.title}\nContent: ${note.content || 'No description'}`);
 }
 
+function populateShareWithDropdown() {
+    const shareSelect = document.getElementById('commonUnitShareWithInline');
+    if (!shareSelect) return;
+    
+    let availableCourses = [];
+    schools.forEach(s => {
+        s.departments?.forEach(d => {
+            availableCourses.push({ id: d.id, name: `${s.name} - ${d.name}` });
+        });
+    });
+    
+    shareSelect.innerHTML = '<option value="">Select courses to share with</option>' +
+        '<option value="select_all" style="font-weight:bold;color:var(--primary);">★ Select All</option>' +
+        availableCourses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    
+    // Handle Select All
+    shareSelect.onchange = function() {
+        const selectedOptions = Array.from(this.selectedOptions);
+        if (selectedOptions.some(o => o.value === 'select_all')) {
+            Array.from(this.options).forEach(opt => {
+                if (opt.value && opt.value !== 'select_all') {
+                    opt.selected = true;
+                }
+            });
+        }
+    };
+}
+
 document.getElementById('isCommonUnit').addEventListener('change', function() {
     const commonSection = document.getElementById('commonUnitSection');
     const confirmedDiv = document.getElementById('commonUnitConfirmed');
@@ -2176,12 +2204,18 @@ document.getElementById('isCommonUnit').addEventListener('change', function() {
                                 confirmBtn.disabled = true;
                                 confirmBtn.innerHTML = '<i class="fas fa-check"></i> Auto-filled from selection';
                             }
+                            
+                            // Populate "Also Share With" dropdown
+                            populateShareWithDropdown();
                         }
                     }, 100);
                 }
                 return;
             }
         }
+        
+        // Populate "Also Share With" dropdown
+        populateShareWithDropdown();
         
         const commonSchoolSelect = document.getElementById('commonUnitSchool');
         if (commonSchoolSelect) {
@@ -2255,13 +2289,30 @@ document.getElementById('noteForm').addEventListener('submit', async function(e)
         school_id: parseInt(schoolId),
         dept_id: parseInt(deptId),
         unit_id: parseInt(unitId),
-        isCommon: isCommonUnitChecked
+isCommon: isCommonUnitChecked
     };
-
+    
+    // Get selected courses to share with
+    if (isCommonUnitChecked) {
+        const shareSelectInline = document.getElementById('commonUnitShareWithInline');
+        if (shareSelectInline) {
+            const shareWithIds = Array.from(shareSelectInline.selectedOptions)
+                .map(opt => parseInt(opt.value))
+                .filter(id => !isNaN(id));
+            
+            if (shareWithIds.length > 0) {
+                data.shareWithCourses = shareWithIds;
+            }
+        }
+    }
+    
     const id = document.getElementById('noteId').value;
     
     try {
         if (!Array.isArray(notes)) notes = [];
+        
+        // First create the note
+        let newNote;
         if (id) {
             await fetch(`${API_URL}/notes/${id}`, {
                 method: 'PUT',
@@ -2273,6 +2324,19 @@ document.getElementById('noteForm').addEventListener('submit', async function(e)
         } else {
             const newNote = await API.createNote(data);
             notes.unshift(newNote);
+            
+            // If sharing with other courses, link the unit to those courses
+            if (data.shareWithCourses && data.shareWithCourses.length > 0) {
+                try {
+                    await fetch(`${API_URL}/units/${unitId}/link-courses`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ course_ids: data.shareWithCourses, is_common_unit: true })
+                    });
+                } catch(e) {
+                    console.warn('Failed to link unit to shared courses:', e);
+                }
+            }
         }
     } catch (err) {
         console.error('Error saving note:', err);
