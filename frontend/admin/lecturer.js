@@ -1325,7 +1325,20 @@ function openCommonUnitModal() {
         });
         
         shareWithSelect.innerHTML = '<option value="">Select courses to share with</option>' +
+            '<option value="select_all" style="font-weight:bold;color:var(--primary);">★ Select All</option>' +
             availableCourses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        
+        // Handle Select All
+        shareWithSelect.onchange = function() {
+            const selectedOptions = Array.from(this.selectedOptions);
+            if (selectedOptions.some(o => o.value === 'select_all')) {
+                Array.from(this.options).forEach(opt => {
+                    if (opt.value && opt.value !== 'select_all') {
+                        opt.selected = true;
+                    }
+                });
+            }
+        };
     };
 }
 
@@ -1382,6 +1395,8 @@ async function confirmCommonUnit() {
     const deptId = document.getElementById('commonUnitDeptSelect').value;
     const shareWithSelect = document.getElementById('commonUnitShareWith');
     const selectedShareWith = Array.from(shareWithSelect.selectedOptions).map(opt => parseInt(opt.value));
+    
+    console.log('Selected courses to share with:', selectedShareWith);
     
     if (!schoolId || !deptId) {
         showNotification('Please select both school and department', 'error');
@@ -1443,27 +1458,41 @@ async function confirmCommonUnit() {
             }
         }
         
-        for (const shareCourseId of selectedShareWith) {
+        // Link unit to all shared courses using the link-courses endpoint
+        if (selectedShareWith.length > 0) {
             try {
-                const shareSchool = schools.find(s => s.departments?.some(d => d.id == shareCourseId));
-                await API.createUnit(newUnit.name, newUnit.code || '', shareSchool?.id || schoolId, shareCourseId, true);
-                
-                const shareDept = shareSchool?.departments?.find(d => d.id == shareCourseId);
-                if (shareDept) {
-                    if (!shareDept.units) shareDept.units = [];
-                    if (!shareDept.units.find(u => u.id == newUnit.id)) {
-                        shareDept.units.push(newUnit);
+                await fetch(`${API_URL}/units/${newUnit.id}/link-courses`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ course_ids: selectedShareWith, is_common_unit: true })
+                });
+            } catch(e) {
+                console.warn('Link-courses failed, trying old method:', e);
+                // Fallback to old method if link-courses fails
+                for (const shareCourseId of selectedShareWith) {
+                    try {
+                        const shareSchool = schools.find(s => s.departments?.some(d => d.id == shareCourseId));
+                        await API.createUnit(newUnit.name, newUnit.code || '', shareSchool?.id || schoolId, shareCourseId, true);
+                    } catch (e) {
+                        console.warn(`Failed to share unit with course ${shareCourseId}:`, e);
                     }
                 }
-            } catch (e) {
-                console.warn(`Failed to share unit with course ${shareCourseId}:`, e);
             }
         }
         
         closeCommonUnitModal();
         
         if (pendingNoteData) {
+            // Upload note to original department first
             await handlePendingNoteUpload(newUnit, schoolId, deptId);
+            // Then upload to all shared courses
+            for (const shareCourseId of selectedShareWith) {
+                try {
+                    await handlePendingNoteUpload(newUnit, schoolId, shareCourseId);
+                } catch (e) {
+                    console.warn(`Failed to upload note to course ${shareCourseId}:`, e);
+                }
+            }
         } else {
             await handleUnitSelectionOnly(newUnit, schoolId, deptId);
         }

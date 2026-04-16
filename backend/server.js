@@ -647,6 +647,7 @@ app.get('/api/schools/:schoolId/departments/:deptId/units/:unitId', async (req, 
 app.post('/api/units', async (req, res) => {
     try {
         const { name, code, school_id, course_id, is_common_unit } = req.body;
+        console.log('Creating unit:', { name, code, school_id, course_id, is_common_unit });
         if (!name || !school_id) return res.status(400).json({ error: 'Name and school_id are required' });
         
         // Check if unit with same name already exists (case-insensitive)
@@ -677,6 +678,7 @@ app.post('/api/units', async (req, res) => {
         
         // Link unit to course if course_id provided
         if (course_id) {
+            console.log('Linking unit to course_id:', course_id);
             // Check if link already exists
             const [existingLink] = await db.query(
                 'SELECT 1 FROM course_units WHERE course_id = $1 AND unit_id = $2',
