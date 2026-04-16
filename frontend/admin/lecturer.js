@@ -88,7 +88,9 @@ const API = {
         formData.append('userId', data.userId || data.user_id || 1);
         
         // Get institution from logged-in user
-        const institutionId = localStorage.getItem('institutionId');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const institutionId = localStorage.getItem('institutionId') || user.institutionId;
+        console.log('Uploading with institutionId:', institutionId);
         if (institutionId) {
             formData.append('institution_id', institutionId);
         }
@@ -2284,7 +2286,7 @@ document.getElementById('noteForm').addEventListener('submit', async function(e)
     
     const fileInput = document.getElementById('noteFile');
     
-    const data = {
+const data = {
         title: document.getElementById('noteTitle').value,
         content: document.getElementById('noteContent').value,
         description: document.getElementById('noteContent').value,
@@ -2296,7 +2298,8 @@ document.getElementById('noteForm').addEventListener('submit', async function(e)
         school_id: parseInt(schoolId),
         dept_id: parseInt(deptId),
         unit_id: parseInt(unitId),
-isCommon: isCommonUnitChecked
+        isCommon: isCommonUnitChecked,
+        institution_id: user.institutionId || localStorage.getItem('institutionId')
     };
     
     // Get selected courses to share with

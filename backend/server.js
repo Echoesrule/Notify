@@ -865,9 +865,11 @@ app.post('/api/notes', upload.single('file'), async (req, res) => {
         
         // If no institution_id provided, try to get from school's institution
         let finalInstitutionId = institution_id;
+        console.log('Creating note - institution_id from request:', institution_id, 'school_id:', school_id);
         if (!finalInstitutionId) {
             try {
                 const [schoolRows] = await db.query('SELECT institution_id FROM schools WHERE id = $1', [school_id]);
+                console.log('School institution_id:', schoolRows[0]?.institution_id);
                 finalInstitutionId = schoolRows[0]?.institution_id;
             } catch(e) {}
         }

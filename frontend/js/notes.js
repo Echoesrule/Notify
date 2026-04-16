@@ -222,9 +222,25 @@ function renderSortedNotes(sortedNotes) {
         const uploadedBy = note.uploadedByName || note.uploadedBy || note.postedBy || note.name || 'Unknown';
         const createdDate = note.created_at || note.date;
         const pages = note.pages || note.page_count || '?';
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
         const userInstitution = localStorage.getItem('institutionName');
-        const institutionName = note.institutionName || userInstitution || note.schoolName || '';
+        const userEmail = localStorage.getItem('user_email') || '';
+        
+        // If no institution from DB, try to get from email domain
+        let inferredInstitution = userInstitution;
+        if (!inferredInstitution && userEmail) {
+            const domain = userEmail.split('@')[1]?.toLowerCase();
+            // Map common domains to institution names
+            const domainMap = {
+                'seku.ac.ke': 'South Eastern Kenya University',
+                'ku.ac.ke': 'Kenyatta University',
+                'uonbi.ac.ke': 'University of Nairobi',
+                'mku.ac.ke': 'Mount Kenya University',
+                'uasi.ac.ke': 'United States International University'
+            };
+            inferredInstitution = domainMap[domain] || domain?.replace('.ac.ke', ' University').replace('.', ' ');
+        }
+        
+        const institutionName = note.institutionName || inferredInstitution;
         const schoolName = note.schoolName || '';
         const courseName = note.courseName || note.deptName || '';
         const unitName = note.unitName || note.subjectName || '';
@@ -237,7 +253,7 @@ function renderSortedNotes(sortedNotes) {
                 <h3>${note.title}</h3>
                 <p class="note-description">${note.description ? (note.description.length > 100 ? note.description.substring(0, 100) + '...' : note.description) : 'No description available'}</p>
                 <div class="note-meta">
-                    ${institutionName ? `<p style="color: var(--primary); font-weight: 600; margin-bottom: 5px;"><i class="fas fa-university"></i> ${institutionName}</p>` : ''}
+                    ${institutionName ? `<p style="color: var(--primary); font-weight: 600; margin-bottom: 5px;"><i class="fas fa-university"></i> ${institutionName}</p>` : schoolName ? `<p style="color: var(--primary); font-weight: 600; margin-bottom: 5px;"><i class="fas fa-university"></i> ${schoolName}</p>` : ''}
 
                     ${schoolName ? `<span><i class="fas fa-school"></i> ${schoolName}</span>` : ''}
                     ${courseName ? `<span><i class="fas fa-book"></i> ${courseName}</span>` : ''}

@@ -86,11 +86,13 @@ router.post('/login', authLimiter, async (req, res) => {
         const emailDomain = user.email.split('@')[1]?.toLowerCase();
         if (emailDomain) {
             try {
+                console.log('Looking for institution with domain:', emailDomain);
                 const [institutions] = await db.query(
                     `SELECT * FROM institutions 
                      WHERE LOWER(staff_domain) = $1 OR LOWER(student_domain) = $1`,
                     [emailDomain]
                 );
+                console.log('Found institutions:', institutions);
                 if (institutions.length > 0) {
                     institutionName = institutions[0].name;
                     institutionId = institutions[0].id;
@@ -98,6 +100,8 @@ router.post('/login', authLimiter, async (req, res) => {
             } catch(e) {
                 console.warn('Error finding institution:', e);
             }
+        } else {
+            console.log('No email domain found for:', user.email);
         }
 
         res.json({
