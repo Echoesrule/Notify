@@ -263,13 +263,6 @@ function handleUnitSelectForCommon() {
     const selectedValue = unitSelect.value;
     const selectedOption = unitSelect.options[unitSelect.selectedIndex];
     
-    if (selectedValue === '__common__') {
-        unitSelect.value = '';
-        document.getElementById('isCommonUnit').checked = true;
-        document.getElementById('isCommonUnit').dispatchEvent(new Event('change'));
-        return;
-    }
-    
     if (selectedValue && selectedOption && selectedOption.text.includes('✓')) {
         document.getElementById('isCommonUnit').checked = true;
         document.getElementById('isCommonUnit').dispatchEvent(new Event('change'));
@@ -820,7 +813,6 @@ document.getElementById('courseSelect').addEventListener('change', function() {
     if (filtered.length > 0) {
         unitOptions += filtered.map(u => `<option value="${u.id}">${u.name}${u.isCommon ? ' ✓ (Common)' : ''}</option>`).join('');
     }
-    unitOptions += '<option value="__common__" style="color: var(--primary); font-weight: bold;">✨ + Mark as Common Unit</option>';
     
     unitSelect.innerHTML = unitOptions;
     unitSelect.disabled = !this.value;
@@ -829,11 +821,7 @@ document.getElementById('courseSelect').addEventListener('change', function() {
 
 // Unit Select Change Handler
 document.getElementById('unitSelect').addEventListener('change', function() {
-    if (this.value === '__common__') {
-        this.value = '';
-        document.getElementById('isCommonUnit').checked = true;
-        document.getElementById('isCommonUnit').dispatchEvent(new Event('change'));
-    } else if (this.value) {
+    if (this.value) {
         const selectedOption = this.options[this.selectedIndex];
         const isCommon = selectedOption.text.includes('✓');
         
@@ -1145,18 +1133,9 @@ function openCourseModal(deptId = null) {
                 optionsHtml += courseUnits.map(u => `<option value="${u.id}">${u.name} (${u.code || ''})</option>`).join('');
             }
             
-            optionsHtml += '<option value="__common__">+ Mark as Common Unit</option>';
-            
             unitSelect.innerHTML = optionsHtml;
             unitSelect.disabled = false;
             unitSelect.nextElementSibling.disabled = false;
-        }
-    };
-    
-    unitSelect.onchange = function() {
-        if (this.value === '__common__') {
-            this.value = '';
-            openCommonUnitModal();
         }
     };
     
@@ -1182,7 +1161,6 @@ function openCourseModal(deptId = null) {
             if (courseUnits.length > 0) {
                 unitOptions += courseUnits.map(u => `<option value="${u.id}">${u.name} (${u.code || ''})</option>`).join('');
             }
-            unitOptions += '<option value="__common__">+ Mark as Common Unit</option>';
             
             unitSelect.innerHTML = unitOptions;
             unitSelect.disabled = false;
@@ -1245,18 +1223,9 @@ function initCourseSelect2() {
                 optionsHtml += courseUnits.map(u => `<option value="${u.id}">${u.name} (${u.code || ''})</option>`).join('');
             }
             
-            optionsHtml += '<option value="__common__">+ Mark as Common Unit</option>';
-            
             unitSelect.innerHTML = optionsHtml;
             unitSelect.disabled = false;
             unitSelect.nextElementSibling.disabled = false;
-        }
-    });
-    
-    unitSelect.addEventListener('change', function() {
-        if (this.value === '__common__') {
-            this.value = '';
-            openCommonUnitModal();
         }
     });
     
