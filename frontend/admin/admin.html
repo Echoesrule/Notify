@@ -258,6 +258,10 @@
                         <select name="course" id="unitCourseSelect" required>
                             <option value="">Select Course</option>
                         </select>
+                        <label style="display:flex;align-items:center;gap:8px;margin:8px 0;">
+                            <input type="checkbox" name="is_common" id="unitIsCommon">
+                            <span>Mark as Common Unit (shared across courses)</span>
+                        </label>
                         <button type="submit" class="btn-primary"><i class="fas fa-plus"></i> Add Unit</button>
                     </form>
                     <div id="unitList"></div>

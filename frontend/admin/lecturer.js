@@ -72,10 +72,10 @@ const API = {
         body: JSON.stringify({ name, code, school_id: schoolId })
     }).then(r => r.json()),
 
-    createUnit: (name, code, schoolId, courseId) => fetch(`${API_URL}/units`, {
+    createUnit: (name, code, schoolId, courseId, is_common = false) => fetch(`${API_URL}/units`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, code, school_id: schoolId, course_id: courseId })
+        body: JSON.stringify({ name, code, school_id: schoolId, course_id: courseId, is_common })
     }).then(r => r.json()),
 
     createNote: async (data) => {
@@ -1417,7 +1417,7 @@ async function confirmCommonUnit() {
     }
     
     try {
-        const newUnit = await API.createUnit(unitName.trim(), unitCode?.trim() || '', schoolId, deptId);
+        const newUnit = await API.createUnit(unitName.trim(), unitCode?.trim() || '', schoolId, deptId, true);
         
         newUnit.courseId = parseInt(deptId);
         newUnit.schoolId = parseInt(schoolId);
@@ -1446,7 +1446,7 @@ async function confirmCommonUnit() {
         for (const shareCourseId of selectedShareWith) {
             try {
                 const shareSchool = schools.find(s => s.departments?.some(d => d.id == shareCourseId));
-                await API.createUnit(newUnit.name, newUnit.code || '', shareSchool?.id || schoolId, shareCourseId);
+                await API.createUnit(newUnit.name, newUnit.code || '', shareSchool?.id || schoolId, shareCourseId, true);
                 
                 const shareDept = shareSchool?.departments?.find(d => d.id == shareCourseId);
                 if (shareDept) {

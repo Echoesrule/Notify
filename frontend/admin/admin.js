@@ -596,7 +596,7 @@ async function loadUnits() {
             if (Array.isArray(units) && units.length > 0) {
                 container.innerHTML = units.map(unit => `
                     <div class="course-card">
-                        <h3>${unit.name}</h3>
+                        <h3>${unit.name} ${unit.is_common ? '<span class="common-badge">Common</span>' : ''}</h3>
                         <p>Code: ${unit.code || 'N/A'} | Course: ${unit.courseName || 'N/A'}</p>
                         <p>Notes: ${unit.noteCount || 0}</p>
                         <div class="action-buttons">
@@ -648,34 +648,69 @@ async function shareUnit(unitId) {
         const coursesRes = await fetch(`${API_BASE}/api/admin/courses`, { headers });
         const allCourses = await coursesRes.json();
         
-        if (!allCourses.length) {
-            alert('No courses available');
+        // Get currently linked courses
+        const linkedRes = await fetch(`${API_BASE}/api/units/${unitId}/courses`, { headers });
+        const linkedCourses = await linkedRes.json();
+        const linkedIds = linkedCourses.map(c => c.id);
+        
+        // Filter out already linked courses
+        const availableCourses = allCourses.filter(c => !linkedIds.includes(c.id));
+        
+        if (!availableCourses.length) {
+            alert('This unit is already shared with all available courses!');
             return;
         }
         
-        // Show courses to share with (use prompt for simplicity)
-        const courseNames = allCourses.map(c => `${c.id}: ${c.name}`).join(', ');
-        const selectedIds = prompt(`Enter course IDs to share this unit with (comma-separated):\nAvailable: ${courseNames}`);
+        // Show modal with dropdown
+        const modal = document.createElement('div');
+        modal.id = 'shareUnitModal';
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
         
-        if (!selectedIds) return;
+        const optionsHtml = availableCourses.map(c => 
+            `<option value="${c.id}">${c.name}</option>`
+        ).join('');
         
-        const courseIds = selectedIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+        modal.innerHTML = `
+            <div style="background:white;padding:24px;border-radius:12px;max-width:400px;width:90%;max-height:80vh;overflow-y:auto;">
+                <h3 style="margin-bottom:16px;">Share Unit to Other Courses</h3>
+                <p style="margin-bottom:12px;font-size:14px;color:#666;">Select courses to share this unit with (hold Ctrl/Cmd for multiple):</p>
+                <select id="shareCourseSelect" multiple style="width:100%;height:150px;padding:8px;border:1px solid #ddd;border-radius:6px;margin-bottom:16px;">
+                    ${optionsHtml}
+                </select>
+                <div style="display:flex;gap:8px;">
+                    <button id="confirmShareBtn" style="flex:1;padding:10px;background:var(--primary);color:white;border:none;border-radius:6px;cursor:pointer;">Share</button>
+                    <button onclick="document.getElementById('shareUnitModal').remove()" style="flex:1;padding:10px;background:#64748b;color:white;border:none;border-radius:6px;cursor:pointer;">Cancel</button>
+                </div>
+            </div>
+        `;
         
-        // Link unit to selected courses
-        const res = await fetch(`${API_BASE}/api/units/${unitId}/link-courses`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ course_ids: courseIds })
-        });
+        document.body.appendChild(modal);
         
-        const data = await res.json();
-        
-        if (res.ok) {
-            alert(`Unit shared successfully! Linked to ${data.linked?.length || 0} course(s)`);
-            loadSectionData('units');
-        } else {
-            alert('Failed to share unit: ' + data.error);
-        }
+        document.getElementById('confirmShareBtn').onclick = async () => {
+            const select = document.getElementById('shareCourseSelect');
+            const selectedIds = Array.from(select.selectedOptions).map(opt => parseInt(opt.value));
+            
+            if (!selectedIds.length) {
+                alert('Please select at least one course');
+                return;
+            }
+            
+            const res = await fetch(`${API_BASE}/api/units/${unitId}/link-courses`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ course_ids: selectedIds })
+            });
+            
+            const data = await res.json();
+            
+            if (res.ok) {
+                document.getElementById('shareUnitModal').remove();
+                alert(`Unit shared successfully! Linked to ${data.linked?.length || 0} course(s)`);
+                loadSectionData('units');
+            } else {
+                alert('Failed to share unit: ' + data.error);
+            }
+        };
     } catch (err) {
         console.error('Error sharing unit:', err);
         alert('Error sharing unit');
@@ -1230,7 +1265,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                     body: JSON.stringify({
                         name: formData.get('name'),
                         code: formData.get('code'),
-                        dept_id: formData.get('course')
+                        course_id: formData.get('course'),
+                        is_common: formData.get('is_common') === 'on'
                     })
                 });
                 if (res.ok) { 
