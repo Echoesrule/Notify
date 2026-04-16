@@ -1261,28 +1261,12 @@ function openCommonUnitModal() {
             filteredDepts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
         deptSelect.disabled = !this.value;
         
-        const selectedDeptId = deptSelect.value;
-        const selectedDept = filteredDepts.find(d => d.id == selectedDeptId);
-        
-        let availableCourses = [];
-        if (selectedDept) {
-            schools.forEach(s => {
-                s.departments?.forEach(d => {
-                    if (d.id != selectedDeptId) {
-                        availableCourses.push({ id: d.id, name: `${s.name} - ${d.name}` });
-                    }
-                });
-            });
-        }
-        
-        shareWithSelect.innerHTML = '<option value="">Select courses to share with</option>' +
-            availableCourses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        // Pre-populate share dropdown with all courses from other schools
+        updateShareDropdown();
     };
     
-    deptSelect.onchange = function() {
-        const selectedDeptId = this.value;
-        const schoolId = schoolSelect.value;
-        const school = schools.find(s => s.id == schoolId);
+    function updateShareDropdown() {
+        const selectedDeptId = deptSelect.value;
         
         let availableCourses = [];
         schools.forEach(s => {
@@ -1308,6 +1292,10 @@ function openCommonUnitModal() {
                 });
             }
         };
+    }
+    
+    deptSelect.onchange = function() {
+        updateShareDropdown();
     };
 }
 
@@ -1331,6 +1319,7 @@ function openCommonUnitModalFromCheckbox() {
     const modal = document.getElementById('commonUnitModal');
     const schoolSelect = document.getElementById('commonUnitSchoolSelect');
     const deptSelect = document.getElementById('commonUnitDeptSelect');
+    const shareWithSelect = document.getElementById('commonUnitShareWith');
     
     schoolSelect.innerHTML = '<option value="">Select School</option>' + 
         schools.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
@@ -1338,9 +1327,27 @@ function openCommonUnitModalFromCheckbox() {
     deptSelect.innerHTML = '<option value="">Select Department</option>';
     deptSelect.disabled = true;
     
+    shareWithSelect.innerHTML = '<option value="">Select courses to share with</option>';
+    
     document.getElementById('commonUnitModal').querySelector('.modal-header h3').innerHTML = '<i class="fas fa-share-alt"></i> Create Common Unit & Upload Note';
     
     modal.style.display = 'flex';
+    
+    // Pre-populate share dropdown
+    setTimeout(() => {
+        const selectedDeptId = deptSelect.value;
+        let availableCourses = [];
+        schools.forEach(s => {
+            s.departments?.forEach(d => {
+                if (d.id != selectedDeptId) {
+                    availableCourses.push({ id: d.id, name: `${s.name} - ${d.name}` });
+                }
+            });
+        });
+        shareWithSelect.innerHTML = '<option value="">Select courses to share with</option>' +
+            '<option value="select_all" style="font-weight:bold;color:var(--primary);">★ Select All</option>' +
+            availableCourses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }, 100);
     
     schoolSelect.onchange = function() {
         const schoolId = this.value;
@@ -1355,6 +1362,42 @@ function openCommonUnitModalFromCheckbox() {
             deptSelect.innerHTML = '<option value="">Select Department</option>' + 
                 filteredDepts.map(d => `<option value="${d.id}">${d.name} ${d.code ? '(' + d.code + ')' : ''}</option>`).join('');
             deptSelect.disabled = false;
+        }
+    };
+    
+    // Call updateShareDropdown when modal opens (will populate with all courses initially)
+    setTimeout(() => updateShareDropdown(), 200);
+}
+
+function updateShareDropdown() {
+    const deptSelect = document.getElementById('commonUnitDeptSelect');
+    const shareWithSelect = document.getElementById('commonUnitShareWith');
+    const selectedDeptId = deptSelect?.value;
+    
+    if (!shareWithSelect) return;
+    
+    let availableCourses = [];
+    schools.forEach(s => {
+        s.departments?.forEach(d => {
+            if (d.id != selectedDeptId) {
+                availableCourses.push({ id: d.id, name: `${s.name} - ${d.name}` });
+            }
+        });
+    });
+    
+    shareWithSelect.innerHTML = '<option value="">Select courses to share with</option>' +
+        '<option value="select_all" style="font-weight:bold;color:var(--primary);">★ Select All</option>' +
+        availableCourses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    
+    // Handle Select All
+    shareWithSelect.onchange = function() {
+        const selectedOptions = Array.from(this.selectedOptions);
+        if (selectedOptions.some(o => o.value === 'select_all')) {
+            Array.from(this.options).forEach(opt => {
+                if (opt.value && opt.value !== 'select_all') {
+                    opt.selected = true;
+                }
+            });
         }
     };
 }
