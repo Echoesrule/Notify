@@ -778,13 +778,14 @@ app.get('/api/schools/:schoolId/departments/:deptId/units/:unitId/notes', async 
                    u.name as "uploadedByName",
                    s.name as "schoolName",
                    s.institution_id,
-                   i.name as "institutionName",
+                   COALESCE(i.name, i2.name) as "institutionName",
                    c.name as "courseName",
                    un.name as "unitName"
             FROM notes n
             LEFT JOIN notify_users u ON n.user_id = u.id
             LEFT JOIN schools s ON n.school_id = s.id
             LEFT JOIN institutions i ON s.institution_id = i.id
+            LEFT JOIN institutions i2 ON n.institution_id = i2.id
             LEFT JOIN courses c ON n.dept_id = c.id
             LEFT JOIN units un ON n.unit_id = un.id
             WHERE n.unit_id = $1
@@ -856,16 +857,26 @@ app.get('/api/notes/my-notes', async (req, res) => {
 
 app.post('/api/notes', upload.single('file'), async (req, res) => {
     try {
-        const { title, description, school_id, dept_id, unit_id, userId } = req.body;
+        const { title, description, school_id, dept_id, unit_id, userId, institution_id } = req.body;
         if (!title || !school_id || !dept_id || !unit_id) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
         const filePath = req.file ? '/uploads/notes/' + req.file.filename : null;
+        
+        // If no institution_id provided, try to get from school's institution
+        let finalInstitutionId = institution_id;
+        if (!finalInstitutionId) {
+            try {
+                const [schoolRows] = await db.query('SELECT institution_id FROM schools WHERE id = $1', [school_id]);
+                finalInstitutionId = schoolRows[0]?.institution_id;
+            } catch(e) {}
+        }
+        
         const [rows] = await db.query(`
-            INSERT INTO notes (title, description, file_path, school_id, dept_id, unit_id, user_id)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            INSERT INTO notes (title, description, file_path, school_id, dept_id, unit_id, user_id, institution_id)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING id
-        `, [title, description, filePath, school_id, dept_id, unit_id, userId || null]);
+        `, [title, description, filePath, school_id, dept_id, unit_id, userId || null, finalInstitutionId || null]);
         res.json({ id: rows[0].id, title, description, file_path: filePath });
     } catch (error) {
         console.error('Error creating note:', error);

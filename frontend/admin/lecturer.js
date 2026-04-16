@@ -86,6 +86,13 @@ const API = {
         formData.append('dept_id', data.dept_id);
         formData.append('unit_id', data.unit_id);
         formData.append('userId', data.userId || data.user_id || 1);
+        
+        // Get institution from logged-in user
+        const institutionId = localStorage.getItem('institutionId');
+        if (institutionId) {
+            formData.append('institution_id', institutionId);
+        }
+        
         if (data.file) {
             formData.append('file', data.file);
         }

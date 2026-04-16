@@ -235,9 +235,10 @@ function renderSortedNotes(sortedNotes) {
                     <i class="fas fa-file-pdf"></i>
                 </div>
                 <h3>${note.title}</h3>
-                ${institutionName ? `<p style="color: var(--primary); font-weight: 600; margin-bottom: 5px;"><i class="fas fa-university"></i> ${institutionName}</p>` : ''}
                 <p class="note-description">${note.description ? (note.description.length > 100 ? note.description.substring(0, 100) + '...' : note.description) : 'No description available'}</p>
                 <div class="note-meta">
+                    ${institutionName ? `<p style="color: var(--primary); font-weight: 600; margin-bottom: 5px;"><i class="fas fa-university"></i> ${institutionName}</p>` : ''}
+
                     ${schoolName ? `<span><i class="fas fa-school"></i> ${schoolName}</span>` : ''}
                     ${courseName ? `<span><i class="fas fa-book"></i> ${courseName}</span>` : ''}
                     ${unitName ? `<span><i class="fas fa-chalkboard-teacher"></i> ${unitName}</span>` : ''}
@@ -247,7 +248,7 @@ function renderSortedNotes(sortedNotes) {
                 </div>
                 <div class="note-footer">
                     <div class="note-meta">
-                        <span><i class="fas fa-download"></i> ${downloads} downloads</span>
+                        <span><i class="fas fa-download"></i> ${downloads}</span>
                     </div>
                     <div class="note-actions">
                         <button class="btn-bookmark" onclick="bookmarkNote('${note.id}')" title="Bookmark">
