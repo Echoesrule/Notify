@@ -240,7 +240,8 @@ function renderSortedNotes(sortedNotes) {
             inferredInstitution = domainMap[domain] || domain?.replace('.ac.ke', ' University').replace('.', ' ');
         }
         
-        const institutionName = note.institutionName || inferredInstitution;
+        // Show the uploader's institution (not current user's)
+        const uploaderInstitution = note.uploaderInstitution || note.institutionName;
         const schoolName = note.schoolName || '';
         const courseName = note.courseName || note.deptName || '';
         const unitName = note.unitName || note.subjectName || '';
@@ -253,7 +254,7 @@ function renderSortedNotes(sortedNotes) {
                 <h3>${note.title}</h3>
                 <p class="note-description">${note.description ? (note.description.length > 100 ? note.description.substring(0, 100) + '...' : note.description) : 'No description available'}</p>
                 <div class="note-meta">
-                    ${institutionName ? `<p style="color: var(--primary); font-weight: 600; margin-bottom: 5px;"><i class="fas fa-university"></i> ${institutionName}</p>` : schoolName ? `<p style="color: var(--primary); font-weight: 600; margin-bottom: 5px;"><i class="fas fa-university"></i> ${schoolName}</p>` : ''}
+                    ${uploaderInstitution ? `<p style="color: var(--primary); font-weight: 600; margin-bottom: 5px;"><i class="fas fa-university"></i> ${uploaderInstitution}</p>` : ''}
 
                     ${schoolName ? `<span><i class="fas fa-school"></i> ${schoolName}</span>` : ''}
                     ${courseName ? `<span><i class="fas fa-book"></i> ${courseName}</span>` : ''}

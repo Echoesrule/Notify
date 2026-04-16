@@ -778,11 +778,13 @@ app.get('/api/schools/:schoolId/departments/:deptId/units/:unitId/notes', async 
                    u.name as "uploadedByName",
                    s.name as "schoolName",
                    s.institution_id,
+                   COALESCE(ui.name, i2.name, i.name) as "uploaderInstitution",
                    COALESCE(i.name, i2.name) as "institutionName",
                    c.name as "courseName",
                    un.name as "unitName"
             FROM notes n
             LEFT JOIN notify_users u ON n.user_id = u.id
+            LEFT JOIN institutions ui ON u.institution_id = ui.id
             LEFT JOIN schools s ON n.school_id = s.id
             LEFT JOIN institutions i ON s.institution_id = i.id
             LEFT JOIN institutions i2 ON n.institution_id = i2.id
@@ -806,6 +808,7 @@ app.get('/api/notes', async (req, res) => {
             SELECT n.*, s.name as "schoolName", c.name as "deptName", u.name as "unitName",
                    s.id as "schoolId", c.id as "deptId", u.id as "unitId",
                    p.name as "uploadedByName",
+                   COALESCE(ui.name, i.name) as "uploaderInstitution",
                    i.name as "institutionName", s.institution_id
             FROM notes n
             LEFT JOIN schools s ON n.school_id = s.id
@@ -813,6 +816,7 @@ app.get('/api/notes', async (req, res) => {
             LEFT JOIN courses c ON n.dept_id = c.id
             LEFT JOIN units u ON n.unit_id = u.id
             LEFT JOIN notify_users p ON n.user_id = p.id
+            LEFT JOIN institutions ui ON p.institution_id = ui.id
         `;
         const params = [];
         if (schoolId && !isNaN(parseInt(schoolId))) {
