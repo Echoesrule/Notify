@@ -35,8 +35,6 @@ function generateVerificationToken() {
         { expiresIn: '24h' }
     );
 }
-    });
-}
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
