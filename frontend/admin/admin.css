@@ -1,6 +1,10 @@
 /* =====================
    LOADER
    ===================== */
+.hidden {
+    display: none !important;
+}
+
 .loading-course {
     position: absolute;
     top: 0;
@@ -551,6 +555,103 @@
     margin-top: 10px;
 }
 
+.note-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    transition: all 0.3s;
+}
+
+.note-card:hover {
+    border-color: var(--primary);
+    box-shadow: var(--card-shadow-hover);
+}
+
+.note-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.note-card-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    flex: 1;
+    margin-right: 10px;
+}
+
+.note-card-body {
+    margin-bottom: 12px;
+}
+
+.note-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.note-meta i {
+    color: var(--primary);
+    width: 16px;
+}
+
+.note-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.note-date {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.note-date i {
+    margin-right: 4px;
+}
+
+.note-card-footer .note-actions {
+    margin-top: 0;
+}
+
+.btn-success {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    border: none;
+}
+
+.btn-success:hover {
+    background: #22c55e;
+    color: white;
+}
+
+.btn-warning {
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
+    border: none;
+}
+
+.btn-warning:hover {
+    background: #f97316;
+    color: white;
+}
+
+.notes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
 /* =====================
    CONTENT SECTION (FORMS)
    ===================== */
@@ -593,13 +694,19 @@
     flex-wrap: wrap;
 }
 
-.notes-admin-controls select {
+.notes-admin-controls select,
+.notes-admin-controls input.notes-search-input {
     padding: 10px 15px;
     border: 1px solid var(--border);
     border-radius: 8px;
     background: var(--bg-secondary);
     color: var(--text-primary);
     min-width: 150px;
+}
+
+.notes-admin-controls input.notes-search-input {
+    flex: 1;
+    min-width: 200px;
 }
 
 .notes-grid {

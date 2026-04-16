@@ -282,6 +282,7 @@ app.get('/api/setup', async (req, res) => {
                 description TEXT,
                 file_path VARCHAR(500),
                 downloads INTEGER DEFAULT 0,
+                status VARCHAR(20) DEFAULT 'pending',
                 school_id INTEGER REFERENCES schools(id),
                 dept_id INTEGER REFERENCES courses(id),
                 unit_id INTEGER REFERENCES units(id),
@@ -879,11 +880,11 @@ app.post('/api/notes', upload.single('file'), async (req, res) => {
         }
         
         const [rows] = await db.query(`
-            INSERT INTO notes (title, description, file_path, school_id, dept_id, unit_id, user_id, institution_id)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            RETURNING id
+            INSERT INTO notes (title, description, file_path, school_id, dept_id, unit_id, user_id, institution_id, status)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')
+            RETURNING id, status
         `, [title, description, filePath, school_id, dept_id, unit_id, userId || null, finalInstitutionId || null]);
-        res.json({ id: rows[0].id, title, description, file_path: filePath });
+        res.json({ id: rows[0].id, status: rows[0].status, title, description, file_path: filePath });
     } catch (error) {
         console.error('Error creating note:', error);
         res.status(500).json({ error: 'Failed to create note' });
@@ -1423,6 +1424,30 @@ app.delete('/api/admin/notes/:id', adminMiddleware, async (req, res) => {
     } catch (error) {
         console.error('Error deleting note:', error);
         res.status(500).json({ error: 'Failed to delete note' });
+    }
+});
+
+// Update note status endpoint
+app.put('/api/admin/notes/:id/status', adminMiddleware, async (req, res) => {
+    try {
+        const noteId = parseInt(req.params.id);
+        const { status } = req.body;
+        
+        if (!status || !['approved', 'rejected', 'pending'].includes(status)) {
+            return res.status(400).json({ error: 'Invalid status' });
+        }
+        
+        const [notes] = await db.query('SELECT * FROM notes WHERE id = $1', [noteId]);
+        
+        if (!notes[0]) {
+            return res.status(404).json({ error: 'Note not found' });
+        }
+        
+        await db.query('UPDATE notes SET status = $1 WHERE id = $2', [status, noteId]);
+        res.json({ message: 'Note status updated successfully' });
+    } catch (error) {
+        console.error('Error updating note status:', error);
+        res.status(500).json({ error: 'Failed to update note status' });
     }
 });
 

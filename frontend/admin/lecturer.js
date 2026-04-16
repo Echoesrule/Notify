@@ -133,6 +133,8 @@ const userRole = localStorage.getItem('notify_role') || '';
 
 if (userRole !== 'lecturer' && userRole !== 'admin') {
     window.location.href = '../html/dashboard.html';
+} else if (userRole === 'admin') {
+    window.location.href = 'admin.html';
 }
 
 document.getElementById('userName').textContent = user.name || 'Lecturer';
@@ -974,11 +976,21 @@ function renderNotesList(notesList) {
     }
 
     container.innerHTML = notesList.map(note => {
+        const status = note.status || 'pending';
+        const statusClass = status === 'approved' ? 'approved' : status === 'rejected' ? 'rejected' : 'pending';
+        const statusIcon = status === 'approved' ? 'fa-check-circle' : status === 'rejected' ? 'fa-times-circle' : 'fa-clock';
+        const statusColor = status === 'approved' ? '#22c55e' : status === 'rejected' ? '#ef4444' : '#f97316';
+        
         return `
             <div class="note-card">
                 <div class="note-icon"><i class="fas fa-file-pdf"></i></div>
                 <div class="note-details">
-                    <h4>${note.title}</h4>
+                    <div class="note-title-row">
+                        <h4>${note.title}</h4>
+                        <span class="note-status ${statusClass}" style="color: ${statusColor};">
+                            <i class="fas ${statusIcon}"></i> ${status === 'approved' ? 'Approved' : status === 'rejected' ? 'Rejected' : 'Pending'}
+                        </span>
+                    </div>
                     <div class="note-meta">
                         <span><i class="fas fa-book"></i> ${note.courseName || note.deptName || 'N/A'} - ${note.unitName || 'N/A'}</span>
                         <span><i class="fas fa-user"></i> ${note.uploadedByName || 'Unknown'}</span>
@@ -2363,7 +2375,7 @@ const data = {
     renderNotes();
     updateStats();
     renderRecentNotes();
-    showNotification('Note uploaded successfully!', 'success');
+    showNotification('Note uploaded successfully! It is pending approval.', 'info');
 });
 
 function openUpdateModal() {

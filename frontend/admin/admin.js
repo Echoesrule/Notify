@@ -47,6 +47,17 @@ async function checkAdminAuth() {
         return false;
     }
     
+    // Check role from localStorage first
+    const userRole = localStorage.getItem('notify_role');
+    if (userRole === 'lecturer') {
+        window.location.href = 'lecturer.html';
+        return false;
+    }
+    if (userRole !== 'admin') {
+        window.location.href = '../html/dashboard.html';
+        return false;
+    }
+    
     try {
         const headers = getAuthHeaders();
         const res = await fetch(`${API_BASE}/api/admin/users`, { headers });
@@ -116,6 +127,12 @@ async function loadSectionData(sectionId) {
     if (sectionId === 'home') {
         const skeleton = document.getElementById('skeletonHome');
         if (skeleton) skeleton.style.display = 'block';
+    } else if (sectionId === 'notes') {
+        const skeleton = document.getElementById('skeletonNotes');
+        if (skeleton) {
+            skeleton.style.display = 'block';
+            skeleton.classList.remove('hidden');
+        }
     } else {
         showLoader();
     }
@@ -142,6 +159,12 @@ async function loadSectionData(sectionId) {
                 const skeleton = document.getElementById('skeletonHome');
                 if (skeleton) skeleton.style.display = 'none';
             }, 500);
+        } else if (sectionId === 'notes') {
+            const skeleton = document.getElementById('skeletonNotes');
+            if (skeleton) {
+                skeleton.style.display = 'none';
+                skeleton.classList.add('hidden');
+            }
         } else {
             showContent();
         }
@@ -742,6 +765,8 @@ async function deleteUnit(unitId) {
 // NOTES MANAGEMENT
 // =====================
 
+let allNotes = [];
+
 async function loadNotes() {
     try {
         const headers = getAuthHeaders();
@@ -752,31 +777,123 @@ async function loadNotes() {
             return;
         }
         
-        const notes = await res.json();
-        const container = document.getElementById('notesList');
-        if (container) {
-            if (Array.isArray(notes) && notes.length > 0) {
-                container.innerHTML = notes.map(note => `
-                    <div class="note-card">
-                        <h3>${note.title}</h3>
-                        <p>Course: ${note.courseName || 'N/A'}</p>
-                        <p>School: ${note.schoolName || 'N/A'}</p>
-                        <p>Uploaded by: ${note.uploadedByName || 'N/A'}</p>
-                        <small>${new Date(note.created_at).toLocaleDateString()}</small>
-                        <div class="note-actions">
-                            <button class="btn-sm" onclick="viewNote('${note.id}')"><i class="fas fa-eye"></i></button>
-                            <button class="btn-sm btn-danger" onclick="deleteNote('${note.id}')"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>`
-                ).join('');
-            } else {
-                container.innerHTML = '<div class="empty-state">No notes found.</div>';
-            }
-        }
+        allNotes = await res.json();
+        
+        await loadSchoolsForNotesFilter();
+        
+        renderNotes(allNotes);
+        
         const skeleton = document.getElementById('skeletonNotes');
-        if (skeleton) skeleton.classList.add('hidden');
+        if (skeleton) {
+            skeleton.style.display = 'none';
+            skeleton.classList.add('hidden');
+        }
     } catch (err) {
         console.error('Error loading notes:', err);
+    }
+}
+
+async function loadSchoolsForNotesFilter() {
+    try {
+        const headers = getAuthHeaders();
+        
+        const [schoolsRes, coursesRes] = await Promise.all([
+            fetch(`${API_BASE}/api/admin/schools`, { headers }),
+            fetch(`${API_BASE}/api/admin/courses`, { headers })
+        ]);
+        
+        const schools = await schoolsRes.json();
+        const courses = await coursesRes.json();
+        
+        const schoolFilter = document.getElementById('notesSchoolFilter');
+        const courseFilter = document.getElementById('notesCourseFilter');
+        
+        if (schoolFilter) {
+            schoolFilter.innerHTML = '<option value="">All Schools</option>' +
+                (Array.isArray(schools) ? schools.map(s => `<option value="${s.id}">${s.name}</option>`).join('') : '');
+        }
+        
+        if (courseFilter) {
+            courseFilter.innerHTML = '<option value="">All Courses</option>' +
+                (Array.isArray(courses) ? courses.map(c => `<option value="${c.id}">${c.name}</option>`).join('') : '');
+        }
+    } catch (err) {
+        console.error('Error loading filter options:', err);
+    }
+}
+
+function filterNotes() {
+    const searchInput = document.getElementById('notesSearch');
+    const schoolFilter = document.getElementById('notesSchoolFilter');
+    const courseFilter = document.getElementById('notesCourseFilter');
+    const statusFilter = document.getElementById('notesStatusFilter');
+    
+    const search = searchInput?.value.toLowerCase() || '';
+    const schoolId = schoolFilter?.value || '';
+    const courseId = courseFilter?.value || '';
+    const status = statusFilter?.value || '';
+    
+    let filtered = [...allNotes];
+    
+    if (search) {
+        filtered = filtered.filter(note => 
+            note.title?.toLowerCase().includes(search) ||
+            note.courseName?.toLowerCase().includes(search) ||
+            note.schoolName?.toLowerCase().includes(search) ||
+            note.uploadedByName?.toLowerCase().includes(search)
+        );
+    }
+    
+    if (schoolId) {
+        filtered = filtered.filter(note => note.schoolId == schoolId);
+    }
+    
+    if (courseId) {
+        filtered = filtered.filter(note => note.courseId == courseId);
+    }
+    
+    if (status) {
+        filtered = filtered.filter(note => (note.status || 'pending') === status);
+    }
+    
+    renderNotes(filtered);
+}
+
+function renderNotes(notes) {
+    const container = document.getElementById('notesList');
+    if (container) {
+        if (Array.isArray(notes) && notes.length > 0) {
+            container.innerHTML = notes.map(note => {
+                const status = note.status || 'pending';
+                const statusClass = status === 'approved' ? 'approved' : status === 'rejected' ? 'rejected' : 'pending';
+                return `
+                <div class="note-card">
+                    <div class="note-card-header">
+                        <h3>${note.title}</h3>
+                        <span class="status-badge ${statusClass}">${status}</span>
+                    </div>
+                    <div class="note-card-body">
+                        <p class="note-meta"><i class="fas fa-building"></i> ${note.institutionName || 'N/A'}</p>
+                        <p class="note-meta"><i class="fas fa-graduation-cap"></i> ${note.schoolName || 'N/A'}</p>
+                        <p class="note-meta"><i class="fas fa-book"></i> ${note.courseName || 'N/A'} - ${note.unitName || 'N/A'}</p>
+                        <p class="note-meta"><i class="fas fa-user"></i> Uploaded by: ${note.uploadedByName || 'Unknown'}</p>
+                    </div>
+                    <div class="note-card-footer">
+                        <small class="note-date"><i class="fas fa-calendar"></i> ${new Date(note.created_at).toLocaleDateString()}</small>
+                        <div class="note-actions">
+                            <button class="btn-sm" onclick="viewNote('${note.id}')" title="View"><i class="fas fa-eye"></i></button>
+                            ${status === 'pending' ? `
+                            <button class="btn-sm btn-success" onclick="approveNote('${note.id}')" title="Approve"><i class="fas fa-check"></i></button>
+                            <button class="btn-sm btn-warning" onclick="rejectNote('${note.id}')" title="Reject"><i class="fas fa-times"></i></button>
+                            ` : ''}
+                            <button class="btn-sm btn-danger" onclick="deleteNote('${note.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        } else {
+            container.innerHTML = '<div class="empty-state">No notes found.</div>';
+        }
     }
 }
 
@@ -802,6 +919,46 @@ async function deleteNote(noteId) {
             console.error(err); 
             alert('Error deleting note');
         }
+    }
+}
+
+async function approveNote(noteId) {
+    const headers = getAuthHeaders();
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/notes/${noteId}/status`, {
+            method: 'PUT',
+            headers: headers,
+            body: JSON.stringify({ status: 'approved' })
+        });
+        if (res.ok) { 
+            alert('Note approved!'); 
+            loadSectionData('notes'); 
+        } else {
+            alert('Failed to approve note');
+        }
+    } catch (err) { 
+        console.error(err); 
+        alert('Error approving note');
+    }
+}
+
+async function rejectNote(noteId) {
+    const headers = getAuthHeaders();
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/notes/${noteId}/status`, {
+            method: 'PUT',
+            headers: headers,
+            body: JSON.stringify({ status: 'rejected' })
+        });
+        if (res.ok) { 
+            alert('Note rejected!'); 
+            loadSectionData('notes'); 
+        } else {
+            alert('Failed to reject note');
+        }
+    } catch (err) { 
+        console.error(err); 
+        alert('Error rejecting note');
     }
 }
 
@@ -1311,6 +1468,17 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         });
     }
+
+    // Notes filter event listeners
+    const notesSearch = document.getElementById('notesSearch');
+    const notesSchoolFilter = document.getElementById('notesSchoolFilter');
+    const notesCourseFilter = document.getElementById('notesCourseFilter');
+    const notesStatusFilter = document.getElementById('notesStatusFilter');
+    
+    if (notesSearch) notesSearch.addEventListener('input', filterNotes);
+    if (notesSchoolFilter) notesSchoolFilter.addEventListener('change', filterNotes);
+    if (notesCourseFilter) notesCourseFilter.addEventListener('change', filterNotes);
+    if (notesStatusFilter) notesStatusFilter.addEventListener('change', filterNotes);
     
     // Load home section by default
     loadSectionData('home');

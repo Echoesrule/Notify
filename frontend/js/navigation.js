@@ -153,6 +153,7 @@ function reinitializeAfterNavLoad() {
     updateBreadcrumbs();
     updateSidebarFooter();
     updateTopbar();
+    initTopSearch();
     
 
     initializePageScripts(currentPage);
@@ -582,6 +583,15 @@ function handleTopSearch(query, event) {
                 window.location.href = `search.html?q=${encodeURIComponent(query)}`;
             }, 500);
         }
+    }
+}
+
+function initTopSearch() {
+    const searchInput = document.getElementById('globalSearch');
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function(event) {
+            handleTopSearch(this.value, event);
+        });
     }
 }
 

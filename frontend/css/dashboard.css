@@ -358,13 +358,14 @@ body {
     margin-bottom: 20px;
 }
 
+
 /* Update Card */
 .update-card {
     display: flex;
     align-items: center;
     gap: 14px;
     padding: 16px;
-    background-color: var(--bg-secondary);
+    background-color: var(--primary-light);
     border: 1px solid var(--border);
     border-radius: 12px;
     transition: all 0.3s;
@@ -378,6 +379,39 @@ body {
 
 .update-card.read {
     opacity: 0.75;
+}
+
+.update-header-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.update-header-row h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+
+.unread-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--primary);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.update-meta {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+.update-preview {
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.4;
 }
 
 .update-card:hover {

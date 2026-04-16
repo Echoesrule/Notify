@@ -149,25 +149,50 @@ function displayUpdates(updates, filter = 'all') {
             const schoolId = update.school_id || update.schoolId;
             const courseId = update.course_id;
             
+            const getCategoryStyle = (title, content) => {
+                const text = ((title || '') + (content || '')).toLowerCase();
+                if (text.includes('exam') || text.includes('test') || text.includes('quiz')) return { icon: 'fa-file-alt', bg: '#fef3c7', color: '#d97706', label: 'Exam' };
+                if (text.includes('assignment') || text.includes('homework') || text.includes('task')) return { icon: 'fa-tasks', bg: '#dbeafe', color: '#2563eb', label: 'Assignment' };
+                if (text.includes('lecture') || text.includes('note') || text.includes('material')) return { icon: 'fa-book-open', bg: '#d1fae5', color: '#059669', label: 'Lecture' };
+                if (text.includes('schedule') || text.includes('time') || text.includes('class')) return { icon: 'fa-clock', bg: '#fce7f3', color: '#db2777', label: 'Schedule' };
+                if (text.includes('result') || text.includes('grade') || text.includes('mark')) return { icon: 'fa-chart-line', bg: '#e0e7ff', color: '#6366f1', label: 'Results' };
+                if (text.includes('notice') || text.includes('important') || text.includes('urgent')) return { icon: 'fa-exclamation-circle', bg: '#fee2e2', color: '#dc2626', label: 'Notice' };
+                return { icon: 'fa-bullhorn', bg: '#e3f2fd', color: '#1976d2', label: 'Update' };
+            };
+            
+            const cat = getCategoryStyle(update.title, update.content);
+            
             html += `
 <div class="update-card ${!update.read ? 'unread' : ''}">
-    
-    <div class="update-header">
-        <h4>${update.title}</h4>
-        ${!update.read ? '<span class="new">New</span>' : ''}
+    <div class="update-card-left">
+        <div class="update-icon-box" style="background: ${cat.bg};">
+            <i class="fas ${cat.icon}" style="color: ${cat.color};"></i>
+        </div>
     </div>
+    <div class="update-card-right">
+        <div class="update-header">
+            <div class="update-title-row">
+                <h4>${update.title}</h4>
+                ${!update.read ? '<span class="new">New</span>' : ''}
+                <span class="update-category-tag" style="background: ${cat.bg}; color: ${cat.color};">${cat.label}</span>
+            </div>
+        </div>
 
-    <div class="update-content">
-        <p>${update.content || update.description || 'No content'}</p>
-        <small style="color: #666;">Posted by: ${postedBy}</small>
-    </div>
+        <div class="update-content">
+            <p>${update.content || update.description || 'No content'}</p>
+            <div class="update-meta-info">
+                <small style="color: #666;"><i class="fas fa-user-circle"></i> ${postedBy}</small>
+                ${update.courseName ? `<small style="color: #666;"><i class="fas fa-book"></i> ${update.courseName}</small>` : ''}
+            </div>
+        </div>
 
-    <div class="update-actions">
-        ${courseId ? `<button onclick="viewCourse('${schoolId}', '${courseId}')" class="btn-view">View Course</button>` : ''}
+        <div class="update-actions">
+            ${courseId ? `<button onclick="viewCourse('${schoolId}', '${courseId}')" class="btn-view"><i class="fas fa-eye"></i> View Course</button>` : ''}
 
-        <button onclick="dismissUpdate('${update.id}', event)" class="btn-dismiss">
-            Dismiss
-        </button>
+            <button onclick="dismissUpdate('${update.id}', event)" class="btn-dismiss">
+                <i class="fas fa-check"></i> Mark Read
+            </button>
+        </div>
     </div>
 
 </div>
