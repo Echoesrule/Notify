@@ -75,7 +75,7 @@ const API = {
     createUnit: (name, code, schoolId, courseId, is_common = false) => fetch(`${API_URL}/units`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, code, school_id: schoolId, course_id: courseId, is_common })
+        body: JSON.stringify({ name, code, school_id: schoolId, course_id: courseId, is_common_unit })
     }).then(r => r.json()),
 
     createNote: async (data) => {

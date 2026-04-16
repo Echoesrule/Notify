@@ -257,12 +257,12 @@ app.get('/api/setup', async (req, res) => {
                 name VARCHAR(255) NOT NULL,
                 code VARCHAR(50),
                 dept_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
-                is_common BOOLEAN DEFAULT FALSE,
+                is_common_unit BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
         // Add is_common column if not exists (for older databases)
-        await db.query(`ALTER TABLE units ADD COLUMN IF NOT EXISTS is_common BOOLEAN DEFAULT FALSE`).catch(() => {});
+        await db.query(`ALTER TABLE units ADD COLUMN IF NOT EXISTS is_common_unit BOOLEAN DEFAULT FALSE`).catch(() => {});
         await db.query(`
             CREATE TABLE IF NOT EXISTS notify_users (
                 id SERIAL PRIMARY KEY,
@@ -646,12 +646,12 @@ app.get('/api/schools/:schoolId/departments/:deptId/units/:unitId', async (req, 
 
 app.post('/api/units', async (req, res) => {
     try {
-        const { name, code, school_id, course_id, is_common } = req.body;
+        const { name, code, school_id, course_id, is_common_unit } = req.body;
         if (!name || !school_id) return res.status(400).json({ error: 'Name and school_id are required' });
         
         // Check if unit with same name already exists (case-insensitive)
         const [existingUnits] = await db.query(
-            'SELECT id, name, code, is_common FROM units WHERE LOWER(name) = LOWER($1)',
+            'SELECT id, name, code, is_common_unit FROM units WHERE LOWER(name) = LOWER($1)',
             [name]
         );
         
@@ -664,8 +664,8 @@ app.post('/api/units', async (req, res) => {
         } else {
             // Create new unit
             const [rows] = await db.query(
-                'INSERT INTO units (name, code, is_common) VALUES ($1, $2, $3) RETURNING id',
-                [name, code, is_common || false]
+                'INSERT INTO units (name, code, is_common_unit) VALUES ($1, $2, $3) RETURNING id',
+                [name, code, is_common_unit || false]
             );
             unitId = rows[0].id;
             console.log('Created new unit:', unitId);
@@ -690,7 +690,7 @@ app.post('/api/units', async (req, res) => {
             }
         }
         
-        res.json({ id: unitId, name, code, course_id, is_common: is_common || existingUnits[0]?.is_common || false, isExisting: existingUnits.length > 0 });
+        res.json({ id: unitId, name, code, course_id, is_common_unit: is_common_unit || existingUnits[0]?.is_common_unit || false, isExisting: existingUnits.length > 0 });
     } catch (error) {
         console.error('Error creating unit:', error);
         res.status(500).json({ error: 'Failed to create unit' });
@@ -700,7 +700,7 @@ app.post('/api/units', async (req, res) => {
 // Link unit to additional courses (for shared/common units)
 app.post('/api/units/:unitId/link-courses', async (req, res) => {
     try {
-        const { course_ids, is_common = true } = req.body;
+        const { course_ids, is_common_unit = true } = req.body;
         const { unitId } = req.params;
         
         if (!course_ids || !Array.isArray(course_ids) || course_ids.length === 0) {
@@ -708,7 +708,7 @@ app.post('/api/units/:unitId/link-courses', async (req, res) => {
         }
         
         // Mark unit as common if linking to multiple courses
-        await db.query('UPDATE units SET is_common = TRUE WHERE id = $1', [unitId]);
+        await db.query('UPDATE units SET is_common_unit = TRUE WHERE id = $1', [unitId]);
         
         const linked = [];
         for (const course_id of course_ids) {
@@ -1265,12 +1265,12 @@ app.get('/api/admin/units', adminMiddleware, async (req, res) => {
 // Create unit (admin)
 app.post('/api/admin/units', adminMiddleware, async (req, res) => {
     try {
-        const { name, code, course_id, is_common } = req.body;
+        const { name, code, course_id, is_common_unit } = req.body;
         if (!name) return res.status(400).json({ error: 'Name is required' });
         
         const [rows] = await db.query(
-            'INSERT INTO units (name, code, is_common) VALUES ($1, $2, $3) RETURNING id',
-            [name, code || null, is_common || false]
+            'INSERT INTO units (name, code, is_common_unit) VALUES ($1, $2, $3) RETURNING id',
+            [name, code || null, is_common_unit || false]
         );
         
         const unitId = rows[0].id;
@@ -1279,7 +1279,7 @@ app.post('/api/admin/units', adminMiddleware, async (req, res) => {
             await db.query('INSERT INTO course_units (course_id, unit_id) VALUES ($1, $2)', [course_id, unitId]);
         }
         
-        res.json({ id: unitId, name, code, is_common });
+        res.json({ id: unitId, name, code, is_common_unit });
     } catch (error) {
         console.error('Error creating unit:', error);
         res.status(500).json({ error: 'Failed to create unit' });

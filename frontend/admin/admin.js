@@ -596,7 +596,7 @@ async function loadUnits() {
             if (Array.isArray(units) && units.length > 0) {
                 container.innerHTML = units.map(unit => `
                     <div class="course-card">
-                        <h3>${unit.name} ${unit.is_common ? '<span class="common-badge">Common</span>' : ''}</h3>
+                        <h3>${unit.name} ${unit.is_common_unit ? '<span class="common-badge">Common</span>' : ''}</h3>
                         <p>Code: ${unit.code || 'N/A'} | Course: ${unit.courseName || 'N/A'}</p>
                         <p>Notes: ${unit.noteCount || 0}</p>
                         <div class="action-buttons">
@@ -1266,7 +1266,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                         name: formData.get('name'),
                         code: formData.get('code'),
                         course_id: formData.get('course'),
-                        is_common: formData.get('is_common') === 'on'
+                        is_common_unit: formData.get('is_common_unit') === 'on'
                     })
                 });
                 if (res.ok) { 
