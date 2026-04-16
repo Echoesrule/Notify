@@ -222,7 +222,9 @@ function renderSortedNotes(sortedNotes) {
         const uploadedBy = note.uploadedByName || note.uploadedBy || note.postedBy || note.name || 'Unknown';
         const createdDate = note.created_at || note.date;
         const pages = note.pages || note.page_count || '?';
-        const institutionName = note.institutionName || '';
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const userInstitution = localStorage.getItem('institutionName');
+        const institutionName = note.institutionName || userInstitution || note.schoolName || '';
         const schoolName = note.schoolName || '';
         const courseName = note.courseName || note.deptName || '';
         const unitName = note.unitName || note.subjectName || '';

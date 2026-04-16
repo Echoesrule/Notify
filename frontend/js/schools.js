@@ -255,7 +255,7 @@ async function updateSchoolInsights(schools) {
                 </div>
                 <div class="insight-content">
                     <h4>Total Faculties</h4>
-                    <p class="insight-value">${counts.schools || 0}</p>
+                    <p class="insight-value">${counts?.schools ?? 0}</p>
                 </div>
             </div>
             <div class="insight-card">
@@ -264,7 +264,7 @@ async function updateSchoolInsights(schools) {
                 </div>
                 <div class="insight-content">
                     <h4>Total Courses</h4>
-                    <p class="insight-value">${counts.courses || 0}</p>
+                    <p class="insight-value">${counts?.courses ?? 0}</p>
                 </div>
             </div>
             <div class="insight-card">
@@ -273,7 +273,7 @@ async function updateSchoolInsights(schools) {
                 </div>
                 <div class="insight-content">
                     <h4>Total Students</h4>
-                    <p class="insight-value">${counts.students || 0}</p>
+                    <p class="insight-value">${counts?.students ?? 0}</p>
                 </div>
             </div>
             <div class="insight-card">
@@ -282,7 +282,7 @@ async function updateSchoolInsights(schools) {
                 </div>
                 <div class="insight-content">
                     <h4>Total Notes</h4>
-                    <p class="insight-value">${counts.notes || 0}</p>
+                    <p class="insight-value">${counts?.notes ?? 0}</p>
                 </div>
             </div>
         `;

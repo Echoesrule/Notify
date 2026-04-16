@@ -80,6 +80,26 @@ router.post('/login', authLimiter, async (req, res) => {
             { expiresIn: '7d' }
         );
 
+        // Get institution from email domain
+        let institutionName = null;
+        let institutionId = null;
+        const emailDomain = user.email.split('@')[1]?.toLowerCase();
+        if (emailDomain) {
+            try {
+                const [institutions] = await db.query(
+                    `SELECT * FROM institutions 
+                     WHERE LOWER(staff_domain) = $1 OR LOWER(student_domain) = $1`,
+                    [emailDomain]
+                );
+                if (institutions.length > 0) {
+                    institutionName = institutions[0].name;
+                    institutionId = institutions[0].id;
+                }
+            } catch(e) {
+                console.warn('Error finding institution:', e);
+            }
+        }
+
         res.json({
             success: true,
             message: 'Login successful',
@@ -88,7 +108,9 @@ router.post('/login', authLimiter, async (req, res) => {
             name: user.name,
             email: user.email,
             role: user.role,
-            pfp: user.pfp || null
+            pfp: user.pfp || null,
+            institutionName: institutionName,
+            institutionId: institutionId
         });
 
     } catch (err) {

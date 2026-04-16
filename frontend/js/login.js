@@ -123,8 +123,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     name: userData.name || 'User',
                     email: userData.email || email,
                     role: userData.role || 'student',
-                    pfp: userData.pfp || null
+                    pfp: userData.pfp || null,
+                    institutionName: userData.institutionName || null,
+                    institutionId: userData.institutionId || null
                 }));
+                
+                if (userData.institutionName) {
+                    localStorage.setItem('institutionName', userData.institutionName);
+                    localStorage.setItem('institutionId', userData.institutionId);
+                }
                 localStorage.setItem('justLoggedIn', 'true');
 
                 showNotification('Login successful! Redirecting...', 'success');

@@ -1111,12 +1111,18 @@ app.get('/api/counts', async (req, res) => {
         const [c] = await db.query('SELECT COUNT(*) as count FROM courses');
         const [inst] = await db.query('SELECT COUNT(*) as count FROM institutions');
 
+        const studentCount = parseInt(users[0]?.count)  || 0;
+        const noteCount = parseInt(notes[0]?.count)  || 0;
+        const schoolCount = parseInt(sc[0]?.count) || 0;
+        const courseCount = parseInt(c[0]?.count)  || 0;
+        
+        console.log('Counts:', { students: studentCount, notes: noteCount, schools: schoolCount, courses: courseCount });
+
         res.json({
-            students: parseInt(users[0].count)  || 0,
-            notes:    parseInt(notes[0].count)  || 0,
-            schools:  parseInt(sc[0].count) || 0,
-            courses:  parseInt(c[0].count)  || 0,
-            institutions: parseInt(inst[0].count) || 0
+            students: studentCount,
+            notes:    noteCount,
+            schools:  schoolCount,
+            courses:  courseCount
         });
     } catch (error) {
         console.error('Error fetching counts:', error);
