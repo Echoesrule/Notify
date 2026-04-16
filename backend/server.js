@@ -661,6 +661,10 @@ app.post('/api/units', async (req, res) => {
             // Unit exists - use existing one
             unitId = existingUnits[0].id;
             console.log('Using existing unit:', unitId, existingUnits[0].name);
+            // Update is_common_unit if requested
+            if (is_common_unit && !existingUnits[0].is_common_unit) {
+                await db.query('UPDATE units SET is_common_unit = TRUE WHERE id = $1', [unitId]);
+            }
         } else {
             // Create new unit
             const [rows] = await db.query(

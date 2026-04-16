@@ -72,7 +72,7 @@ const API = {
         body: JSON.stringify({ name, code, school_id: schoolId })
     }).then(r => r.json()),
 
-    createUnit: (name, code, schoolId, courseId, is_common = false) => fetch(`${API_URL}/units`, {
+    createUnit: (name, code, schoolId, courseId, is_common_unit = false) => fetch(`${API_URL}/units`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, code, school_id: schoolId, course_id: courseId, is_common_unit })
