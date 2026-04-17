@@ -537,6 +537,9 @@ function updateTopbar() {
             } else if (userPfp.startsWith('http')) {
                 pfpUrl = userPfp + '?v=' + Date.now();
             }
+            profileImg.onerror = function() {
+                this.src = '../images/dashboardImages/v3321_68.png';
+            };
             profileImg.src = pfpUrl;
         } else {
             profileImg.src = '../images/dashboardImages/v3321_68.png';

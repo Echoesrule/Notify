@@ -2641,10 +2641,17 @@ async function uploadLecturerPfp(input) {
             localStorage.setItem('user_pfp', data.pfp);
             const timestamp = Date.now();
             
-            document.getElementById('lecturerPfpPreview').src = API_BASE + data.pfp + '?v=' + timestamp;
+            const previewImg = document.getElementById('lecturerPfpPreview');
+            if (previewImg) {
+                previewImg.onerror = function() { this.src = '../images/dashboardImages/v3321_68.png'; };
+                previewImg.src = API_BASE + data.pfp + '?v=' + timestamp;
+            }
             
             const topPfp = document.getElementById('profileImg');
-            if (topPfp) topPfp.src = API_BASE + data.pfp + '?v=' + timestamp;
+            if (topPfp) {
+                topPfp.onerror = function() { this.src = '../images/dashboardImages/v3321_68.png'; };
+                topPfp.src = API_BASE + data.pfp + '?v=' + timestamp;
+            }
         } else {
             alert('Failed to upload image');
         }

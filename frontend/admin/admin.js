@@ -1304,10 +1304,16 @@ function loadAdminPfp() {
     const timestamp = Date.now();
 
     const profileImg = document.getElementById('profileImage');
-    if (profileImg) profileImg.src = savedPfp ? `${API_BASE}${savedPfp}?v=${timestamp}` : defaultPfp;
+    if (profileImg) {
+        profileImg.onerror = function() { this.src = defaultPfp; };
+        profileImg.src = savedPfp ? `${API_BASE}${savedPfp}?v=${timestamp}` : defaultPfp;
+    }
 
     const topPfp = document.getElementById('profileImg');
-    if (topPfp) topPfp.src = savedPfp ? `${API_BASE}${savedPfp}?v=${timestamp}` : defaultPfp;
+    if (topPfp) {
+        topPfp.onerror = function() { this.src = defaultPfp; };
+        topPfp.src = savedPfp ? `${API_BASE}${savedPfp}?v=${timestamp}` : defaultPfp;
+    }
 
     const changePfpBtn = document.getElementById('changeProfileImage');
     if (changePfpBtn) {

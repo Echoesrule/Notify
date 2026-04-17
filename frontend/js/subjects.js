@@ -145,7 +145,7 @@ ${subject.code ? `<span class="subject-code">${subject.code}</span>` : ''}
                         <p class="subject-desc">${subject.description || 'No description available'}</p>
                         <div class="subject-meta">
                             <span><i class="fas fa-file-pdf"></i> ${subject.noteCount || subject.notes?.length || 0} Notes</span>
-                            <span><i class="fas fa-users"></i> ${subject.enrolled || subject.studentCount || 0} Enrolled</span>
+                            <span><i class="fas fa-users"></i> ${subject.enrolled || 0} Enrolled</span>
                         </div>
                         <div class="subject-footer">
                             <span class="lecturer"><i class="fas fa-chalkboard-teacher"></i> ${subject.lecturer || 'Not assigned'}</span>
@@ -171,7 +171,7 @@ ${subject.code ? `<span class="subject-code">${subject.code}</span>` : ''}
             }, 0);
             
             const totalStudents = subjects.reduce((sum, s) => {
-                return sum + (s.studentCount || (s.enrolled || 0));
+                return sum + (s.enrolled || 0);
             }, 0);
 
             insightsGrid.innerHTML=`

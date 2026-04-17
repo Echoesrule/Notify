@@ -615,10 +615,14 @@ app.post('/api/departments', async (req, res) => {
 app.get('/api/schools/:schoolId/departments/:deptId/units', async (req, res) => {
     try {
         const [units] = await db.query(`
-            SELECT u.*, COUNT(DISTINCT n.id)::int AS "noteCount"
+            SELECT u.*, 
+                   COUNT(DISTINCT n.id)::int AS "noteCount",
+                   COUNT(DISTINCT uc.user_id)::int AS "enrolled"
             FROM units u
             LEFT JOIN course_units cu ON cu.unit_id = u.id
+            LEFT JOIN courses c ON cu.course_id = c.id
             LEFT JOIN notes n ON n.unit_id = u.id
+            LEFT JOIN user_courses uc ON uc.course_id = c.id
             WHERE cu.course_id = $1
             GROUP BY u.id
             ORDER BY u.name

@@ -587,6 +587,7 @@ function setupProfileImageButtons() {
                             // Update image display - use API base URL
                             if (profileImg) {
                                 const apiBase = window.API_URL?.replace('/api', '') || window.BASE_URL;
+                                profileImg.onerror = function() { this.src = '../images/dashboardImages/v3321_68.png'; };
                                 profileImg.src = apiBase + data.pfp + '?v=' + Date.now();
                             }
                             
@@ -594,6 +595,7 @@ function setupProfileImageButtons() {
                             const topProfileImg = document.getElementById('profileImg');
                             if (topProfileImg) {
                                 const apiBase = window.API_URL?.replace('/api', '') || window.BASE_URL;
+                                topProfileImg.onerror = function() { this.src = '../images/dashboardImages/v3321_68.png'; };
                                 topProfileImg.src = apiBase + data.pfp + '?v=' + Date.now();
                             }
                             
