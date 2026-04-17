@@ -529,9 +529,9 @@ function setupProfileImageButtons() {
             let pfpUrl = savedPfp;
             if (savedPfp.startsWith('/uploads/')) {
                 const apiBase = window.API_URL?.replace('/api', '') || window.BASE_URL;
-                pfpUrl = apiBase + savedPfp;
+                pfpUrl = apiBase + savedPfp + '?v=' + Date.now();
             } else if (savedPfp.startsWith('http')) {
-                pfpUrl = savedPfp;
+                pfpUrl = savedPfp + '?v=' + Date.now();
             }
             console.log('Loading PFP from:', pfpUrl);
             
@@ -587,14 +587,14 @@ function setupProfileImageButtons() {
                             // Update image display - use API base URL
                             if (profileImg) {
                                 const apiBase = window.API_URL?.replace('/api', '') || window.BASE_URL;
-                                profileImg.src = apiBase + data.pfp;
+                                profileImg.src = apiBase + data.pfp + '?v=' + Date.now();
                             }
                             
                             // Update topbar
                             const topProfileImg = document.getElementById('profileImg');
                             if (topProfileImg) {
                                 const apiBase = window.API_URL?.replace('/api', '') || window.BASE_URL;
-                                topProfileImg.src = apiBase + data.pfp;
+                                topProfileImg.src = apiBase + data.pfp + '?v=' + Date.now();
                             }
                             
                             showNotification('Profile image updated', 'success');

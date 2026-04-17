@@ -247,20 +247,24 @@ app.get('/api/setup', async (req, res) => {
                 id SERIAL PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 code VARCHAR(50),
+                description TEXT,
                 school_id INTEGER REFERENCES schools(id) ON DELETE CASCADE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+        await db.query(`ALTER TABLE courses ADD COLUMN IF NOT EXISTS description TEXT`).catch(() => {});
         await db.query(`
             CREATE TABLE IF NOT EXISTS units (
                 id SERIAL PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 code VARCHAR(50),
+                description TEXT,
                 dept_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
                 is_common_unit BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+        await db.query(`ALTER TABLE units ADD COLUMN IF NOT EXISTS description TEXT`).catch(() => {});
         // Add is_common column if not exists (for older databases)
         await db.query(`ALTER TABLE units ADD COLUMN IF NOT EXISTS is_common_unit BOOLEAN DEFAULT FALSE`).catch(() => {});
         await db.query(`
@@ -1193,6 +1197,24 @@ app.get('/api/admin/users', adminMiddleware, async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch users: ' + error.message });
     }
 });
+
+app.post('/api/admin/users/:id/promote', adminMiddleware, async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const { role } = req.body;
+        
+        if (!role || !['lecturer', 'admin'].includes(role)) {
+            return res.status(400).json({ error: 'Invalid role. Must be lecturer or admin' });
+        }
+        
+        await db.query('UPDATE notify_users SET role = $1 WHERE id = $2', [role, userId]);
+        res.json({ message: `User promoted to ${role}`, role });
+    } catch (error) {
+        console.error('Error promoting user:', error);
+        res.status(500).json({ error: 'Failed to promote user: ' + error.message });
+    }
+});
+
 app.get('/api/admin/schools', adminMiddleware, async (req, res) => {
     try {
         const [schools] = await db.query(`
@@ -1268,6 +1290,66 @@ app.get('/api/admin/courses', adminMiddleware, async (req, res) => {
     }
 });
 
+app.post('/api/admin/courses', adminMiddleware, async (req, res) => {
+    try {
+        const { name, code, school_id, description } = req.body;
+        if (!name) return res.status(400).json({ error: 'Name is required' });
+        
+        const [rows] = await db.query(
+            'INSERT INTO courses (name, code, school_id, description) VALUES ($1, $2, $3, $4) RETURNING id',
+            [name, code || null, school_id || null, description || null]
+        );
+        res.json({ id: rows[0].id, name, code, school_id, description });
+    } catch (error) {
+        console.error('Error creating course:', error);
+        res.status(500).json({ error: 'Failed to create course' });
+    }
+});
+
+app.put('/api/admin/courses/:id', adminMiddleware, async (req, res) => {
+    try {
+        const courseId = parseInt(req.params.id);
+        const { name, code, description } = req.body;
+        
+        await db.query(
+            'UPDATE courses SET name = $1, code = $2, description = $3 WHERE id = $4',
+            [name, code || null, description || null, courseId]
+        );
+        res.json({ message: 'Course updated successfully' });
+    } catch (error) {
+        console.error('Error updating course:', error);
+        res.status(500).json({ error: 'Failed to update course' });
+    }
+});
+
+app.delete('/api/admin/courses/:id', adminMiddleware, async (req, res) => {
+    try {
+        const courseId = parseInt(req.params.id);
+        await db.query('DELETE FROM course_units WHERE course_id = $1', [courseId]);
+        await db.query('DELETE FROM courses WHERE id = $1', [courseId]);
+        res.json({ message: 'Course deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting course:', error);
+        res.status(500).json({ error: 'Failed to delete course' });
+    }
+});
+
+app.get('/api/admin/schools/:schoolId/courses', adminMiddleware, async (req, res) => {
+    try {
+        const schoolId = parseInt(req.params.schoolId);
+        const [courses] = await db.query(`
+            SELECT c.id, c.name, c.code
+            FROM courses c
+            WHERE c.school_id = $1
+            ORDER BY c.name
+        `, [schoolId]);
+        res.json(courses);
+    } catch (error) {
+        console.error('Error fetching courses for school:', error);
+        res.status(500).json({ error: 'Failed to fetch courses' });
+    }
+});
+
 
 
 // Admin institutions endpoint
@@ -1307,12 +1389,12 @@ app.get('/api/admin/units', adminMiddleware, async (req, res) => {
 // Create unit (admin)
 app.post('/api/admin/units', adminMiddleware, async (req, res) => {
     try {
-        const { name, code, course_id, is_common_unit } = req.body;
+        const { name, code, course_id, is_common_unit, description } = req.body;
         if (!name) return res.status(400).json({ error: 'Name is required' });
         
         const [rows] = await db.query(
-            'INSERT INTO units (name, code, is_common_unit) VALUES ($1, $2, $3) RETURNING id',
-            [name, code || null, is_common_unit || false]
+            'INSERT INTO units (name, code, is_common_unit, description) VALUES ($1, $2, $3, $4) RETURNING id',
+            [name, code || null, is_common_unit || false, description || null]
         );
         
         const unitId = rows[0].id;
@@ -1321,7 +1403,7 @@ app.post('/api/admin/units', adminMiddleware, async (req, res) => {
             await db.query('INSERT INTO course_units (course_id, unit_id) VALUES ($1, $2)', [course_id, unitId]);
         }
         
-        res.json({ id: unitId, name, code, is_common_unit });
+        res.json({ id: unitId, name, code, is_common_unit, description });
     } catch (error) {
         console.error('Error creating unit:', error);
         res.status(500).json({ error: 'Failed to create unit' });
@@ -1431,7 +1513,7 @@ app.delete('/api/admin/notes/:id', adminMiddleware, async (req, res) => {
 app.put('/api/admin/notes/:id/status', adminMiddleware, async (req, res) => {
     try {
         const noteId = parseInt(req.params.id);
-        const { status } = req.body;
+        const { status, message } = req.body;
         
         if (!status || !['approved', 'rejected', 'pending'].includes(status)) {
             return res.status(400).json({ error: 'Invalid status' });
@@ -1443,7 +1525,21 @@ app.put('/api/admin/notes/:id/status', adminMiddleware, async (req, res) => {
             return res.status(404).json({ error: 'Note not found' });
         }
         
+        const note = notes[0];
         await db.query('UPDATE notes SET status = $1 WHERE id = $2', [status, noteId]);
+        
+        if (message && note.user_id) {
+            await db.query(
+                'INSERT INTO updates (title, content, user_id, school_id) VALUES ($1, $2, $3, $4)',
+                [
+                    status === 'approved' ? 'Note Approved' : 'Note Rejected',
+                    message,
+                    note.user_id,
+                    note.school_id
+                ]
+            );
+        }
+        
         res.json({ message: 'Note status updated successfully' });
     } catch (error) {
         console.error('Error updating note status:', error);

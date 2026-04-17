@@ -34,7 +34,7 @@ window.showLogoutModal = function() {
         <div style="display:flex;flex-direction:column;gap:12px;">
             <button onclick="logout(false)" style="padding:12px;background:#10b981;color:white;border:none;border-radius:8px;cursor:pointer;">Keep My Data (Resume Later)</button>
             <button onclick="logout(true)" style="padding:12px;background:#ef4444;color:white;border:none;border-radius:8px;cursor:pointer;">Clear All Data</button>
-            <button onclick="this.closest('div').remove()" style="padding:12px;background:var(--bg-tertiary,#f1f5f9);border:1px solid var(--border);border-radius:8px;cursor:pointer;">Cancel</button>
+            <button onclick="this.closest('[style*=\'position:fixed\']')?.remove()" style="padding:12px;background:var(--bg-tertiary,#f1f5f9);border:1px solid var(--border,#e2e8f0);border-radius:8px;cursor:pointer;">Cancel</button>
         </div>
     </div>`;
     document.body.appendChild(modal);
@@ -2142,12 +2142,8 @@ function editNote(id) {
 }
 
 function viewNote(id) {
-    const note = notes.find(n => n.id == id);
-    if (!note) {
-        alert('Note not found');
-        return;
-    }
-    alert(`Title: ${note.title}\nContent: ${note.content || 'No description'}`);
+    const baseUrl = window.BASE_URL || window.API_URL?.replace('/api', '') || window.location.origin;
+    window.open(`${baseUrl}/api/notes/${id}/preview`, '_blank');
 }
 
 function populateShareWithDropdown() {
@@ -2634,7 +2630,7 @@ async function uploadLecturerPfp(input) {
     formData.append('pfp', file);
     
     try {
-        const res = await fetch('API_BASE/api/user/pfp', {
+        const res = await fetch(`${API_URL}/user/pfp`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData
@@ -2643,11 +2639,12 @@ async function uploadLecturerPfp(input) {
         if (res.ok) {
             const data = await res.json();
             localStorage.setItem('user_pfp', data.pfp);
+            const timestamp = Date.now();
             
-            document.getElementById('lecturerPfpPreview').src = 'API_BASE' + data.pfp;
+            document.getElementById('lecturerPfpPreview').src = API_BASE + data.pfp + '?v=' + timestamp;
             
             const topPfp = document.getElementById('profileImg');
-            if (topPfp) topPfp.src = 'API_BASE' + data.pfp;
+            if (topPfp) topPfp.src = API_BASE + data.pfp + '?v=' + timestamp;
         } else {
             alert('Failed to upload image');
         }
@@ -2670,7 +2667,7 @@ async function saveProfileChanges() {
     }
     
     try {
-        const loginRes = await fetch('API_BASE/user_auth/login', {
+        const loginRes = await fetch(`${API_BASE}/api/user_auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: localStorage.getItem('user_email'), password })
@@ -2682,7 +2679,7 @@ async function saveProfileChanges() {
             return;
         }
         
-        const res = await fetch('API_BASE/user_auth/update-profile', {
+        const res = await fetch(`${API_BASE}/api/user_auth/update-profile`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',

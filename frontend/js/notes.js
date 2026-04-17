@@ -315,7 +315,8 @@ function previewNote(noteId) {
                 alert('No file attached to this note');
                 return;
             }
-            window.open(`${window.API_URL}/notes/${noteId}/preview`, '_blank');
+            const baseUrl = window.BASE_URL || window.API_URL?.replace('/api', '') || window.location.origin;
+            window.open(`${baseUrl}/api/notes/${noteId}/preview`, '_blank');
         })
         .catch(err => {
             console.error('Error fetching note:', err);
@@ -334,7 +335,8 @@ function downloadNote(noteId) {
                 alert('No file attached to this note');
                 return;
             }
-            window.location.href = `${window.API_URL}/notes/${noteId}/download`;
+            const baseUrl = window.BASE_URL || window.API_URL?.replace('/api', '') || window.location.origin;
+            window.location.href = `${baseUrl}/api/notes/${noteId}/download`;
         })
         .catch(err => {
             console.error('Error fetching note:', err);

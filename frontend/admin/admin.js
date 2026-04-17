@@ -550,8 +550,34 @@ async function loadSchoolsForSelect() {
             select.innerHTML = '<option value="">Select School</option>' +
                 schools.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
         }
+        const unitSchoolSelect = document.getElementById('unitSchoolSelect');
+        if (unitSchoolSelect && Array.isArray(schools)) {
+            unitSchoolSelect.innerHTML = '<option value="">Select School</option>' +
+                schools.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        }
     } catch (err) {
         console.error('Error loading schools for select:', err);
+    }
+}
+
+async function loadCoursesForUnitForm() {
+    const schoolId = document.getElementById('unitSchoolSelect')?.value;
+    const courseSelect = document.getElementById('unitCourseSelect');
+    if (!courseSelect) return;
+    
+    if (!schoolId) {
+        courseSelect.innerHTML = '<option value="">Select Course (select school first)</option>';
+        return;
+    }
+    
+    try {
+        const headers = getAuthHeaders();
+        const res = await fetch(`${API_BASE}/api/admin/schools/${schoolId}/courses`, { headers });
+        const courses = await res.json();
+        courseSelect.innerHTML = '<option value="">Select Course</option>' +
+            (Array.isArray(courses) ? courses.map(c => `<option value="${c.id}">${c.name}</option>`).join('') : '');
+    } catch (err) {
+        console.error('Error loading courses for unit form:', err);
     }
 }
 
@@ -638,6 +664,27 @@ async function loadUnits() {
     } catch (err) {
         console.error('Error loading units:', err);
     }
+}
+
+let allCourses = [];
+let allUnits = [];
+
+function filterCourses() {
+    const search = document.getElementById('courseSearch')?.value.toLowerCase() || '';
+    const cards = document.querySelectorAll('#courseList .course-card');
+    cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(search) ? '' : 'none';
+    });
+}
+
+function filterUnits() {
+    const search = document.getElementById('unitSearch')?.value.toLowerCase() || '';
+    const cards = document.querySelectorAll('#unitList .course-card');
+    cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(search) ? '' : 'none';
+    });
 }
 
 async function editUnit(unitId) {
@@ -898,7 +945,8 @@ function renderNotes(notes) {
 }
 
 function viewNote(noteId) {
-    window.open(`../html/notes.html?id=${noteId}`, '_blank');
+    const baseUrl = window.BASE_URL || window.API_URL?.replace('/api', '') || window.location.origin;
+    window.open(`${baseUrl}/api/notes/${noteId}/preview`, '_blank');
 }
 
 async function deleteNote(noteId) {
@@ -923,12 +971,13 @@ async function deleteNote(noteId) {
 }
 
 async function approveNote(noteId) {
+    const message = prompt('Enter message for the lecturer (optional):');
     const headers = getAuthHeaders();
     try {
         const res = await fetch(`${API_BASE}/api/admin/notes/${noteId}/status`, {
             method: 'PUT',
             headers: headers,
-            body: JSON.stringify({ status: 'approved' })
+            body: JSON.stringify({ status: 'approved', message: message || '' })
         });
         if (res.ok) { 
             alert('Note approved!'); 
@@ -943,12 +992,14 @@ async function approveNote(noteId) {
 }
 
 async function rejectNote(noteId) {
+    const message = prompt('Enter reason for rejection:');
+    if (message === null) return;
     const headers = getAuthHeaders();
     try {
         const res = await fetch(`${API_BASE}/api/admin/notes/${noteId}/status`, {
             method: 'PUT',
             headers: headers,
-            body: JSON.stringify({ status: 'rejected' })
+            body: JSON.stringify({ status: 'rejected', message: message || '' })
         });
         if (res.ok) { 
             alert('Note rejected!'); 
@@ -1080,7 +1131,7 @@ function showLogoutModal() {
             <div style="display:flex;flex-direction:column;gap:12px;">
                 <button onclick="logout(false)" style="padding:12px;background:#10b981;color:white;border:none;border-radius:8px;cursor:pointer;">Keep My Data (Resume Later)</button>
                 <button onclick="logout(true)" style="padding:12px;background:#ef4444;color:white;border:none;border-radius:8px;cursor:pointer;">Clear All Data</button>
-                <button onclick="this.closest('[style]').remove()" style="padding:12px;background:var(--bg-tertiary,#f1f5f9);border:1px solid var(--border);border-radius:8px;cursor:pointer;">Cancel</button>
+                <button onclick="this.closest('[style*=\'position:fixed\']')?.remove()" style="padding:12px;background:var(--bg-tertiary,#f1f5f9);border:1px solid var(--border,#e2e8f0);border-radius:8px;cursor:pointer;">Cancel</button>
             </div>
         </div>`;
     document.body.appendChild(modal);
@@ -1250,12 +1301,13 @@ async function saveAdminSettings() {
 function loadAdminPfp() {
     const savedPfp = localStorage.getItem('user_pfp');
     const defaultPfp = '../images/dashboardImages/v3321_68.png';
+    const timestamp = Date.now();
 
     const profileImg = document.getElementById('profileImage');
-    if (profileImg) profileImg.src = savedPfp ? `${API_BASE}${savedPfp}` : defaultPfp;
+    if (profileImg) profileImg.src = savedPfp ? `${API_BASE}${savedPfp}?v=${timestamp}` : defaultPfp;
 
     const topPfp = document.getElementById('profileImg');
-    if (topPfp) topPfp.src = savedPfp ? `${API_BASE}${savedPfp}` : defaultPfp;
+    if (topPfp) topPfp.src = savedPfp ? `${API_BASE}${savedPfp}?v=${timestamp}` : defaultPfp;
 
     const changePfpBtn = document.getElementById('changeProfileImage');
     if (changePfpBtn) {
@@ -1285,10 +1337,11 @@ function loadAdminPfp() {
                     if (res.ok) {
                         const data = await res.json();
                         localStorage.setItem('user_pfp', data.pfp);
+                        const timestamp = Date.now();
                         const pfpImg = document.getElementById('profileImage');
                         const topPfpEl = document.getElementById('profileImg');
-                        if (pfpImg) pfpImg.src = `${API_BASE}${data.pfp}`;
-                        if (topPfpEl) topPfpEl.src = `${API_BASE}${data.pfp}`;
+                        if (pfpImg) pfpImg.src = `${API_BASE}${data.pfp}?v=${timestamp}`;
+                        if (topPfpEl) topPfpEl.src = `${API_BASE}${data.pfp}?v=${timestamp}`;
                         alert('Profile picture updated!');
                     } else {
                         alert('Failed to upload image');

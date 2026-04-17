@@ -1,5 +1,5 @@
 
 git status
 git add .
-git commit -m "added institution id to users local storage"
+git commit -m "fixed bugs in codes"
 git push origin main

@@ -240,11 +240,15 @@
                     </div>
                     <form id="courseForm" class="content-section">
                         <input type="text" name="name" placeholder="Course Name" required>
+                        <input type="text" name="description" placeholder="Course Description (optional)">
                         <select name="school" id="courseSchoolSelect" required>
                             <option value="">Select School</option>
                         </select>
                         <button type="submit" class="btn-primary"><i class="fas fa-plus"></i> Add Course</button>
                     </form>
+                    <div style="margin:15px 0;">
+                        <input type="text" id="courseSearch" placeholder="Search courses..." oninput="filterCourses()" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;">
+                    </div>
                     <div id="courseList"></div>
                 </div>
 
@@ -253,10 +257,14 @@
                         <h2>Manage Units</h2>
                     </div>
                     <form id="unitForm" class="content-section">
+                        <select name="school" id="unitSchoolSelect" required onchange="loadCoursesForUnitForm()">
+                            <option value="">Select School</option>
+                        </select>
                         <input type="text" name="name" placeholder="Unit Name" required>
                         <input type="text" name="code" placeholder="Unit Code" required>
+                        <textarea name="description" placeholder="Unit Description (optional)" rows="2" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;resize:vertical;"></textarea>
                         <select name="course" id="unitCourseSelect" required>
-                            <option value="">Select Course</option>
+                            <option value="">Select Course (select school first)</option>
                         </select>
                         <label style="display:flex;align-items:center;gap:8px;margin:8px 0;">
                             <input type="checkbox" name="is_common_unit" id="unitIsCommon">
@@ -264,6 +272,9 @@
                         </label>
                         <button type="submit" class="btn-primary"><i class="fas fa-plus"></i> Add Unit</button>
                     </form>
+                    <div style="margin:15px 0;">
+                        <input type="text" id="unitSearch" placeholder="Search units..." oninput="filterUnits()" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;">
+                    </div>
                     <div id="unitList"></div>
                 </div>
 

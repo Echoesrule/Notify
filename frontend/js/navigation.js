@@ -533,9 +533,9 @@ function updateTopbar() {
         if (userPfp) {
             let pfpUrl = userPfp;
             if (userPfp.startsWith('/uploads/')) {
-                pfpUrl = (window.BASE_URL || window.location.origin) + userPfp;
+                pfpUrl = (window.BASE_URL || window.location.origin) + userPfp + '?v=' + Date.now();
             } else if (userPfp.startsWith('http')) {
-                pfpUrl = userPfp;
+                pfpUrl = userPfp + '?v=' + Date.now();
             }
             profileImg.src = pfpUrl;
         } else {
