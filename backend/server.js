@@ -795,7 +795,7 @@ app.get('/api/schools/:schoolId/departments/:deptId/units/:unitId/notes', async 
             LEFT JOIN institutions i2 ON n.institution_id = i2.id
             LEFT JOIN courses c ON n.dept_id = c.id
             LEFT JOIN units un ON n.unit_id = un.id
-            WHERE n.unit_id = $1
+            WHERE n.unit_id = $1 AND (n.status = 'approved' OR n.status IS NULL)
             ORDER BY n.created_at DESC
         `, [req.params.unitId]);
         console.log('Notes found:', notes.length);
@@ -822,10 +822,11 @@ app.get('/api/notes', async (req, res) => {
             LEFT JOIN units u ON n.unit_id = u.id
             LEFT JOIN notify_users p ON n.user_id = p.id
             LEFT JOIN institutions ui ON p.institution_id = ui.id
+            WHERE (n.status = 'approved' OR n.status IS NULL)
         `;
         const params = [];
         if (schoolId && !isNaN(parseInt(schoolId))) {
-            query += ` WHERE n.school_id = $1`;
+            query += ` AND n.school_id = $1`;
             params.push(parseInt(schoolId));
         }
         query += ` ORDER BY n.created_at DESC`;
@@ -913,6 +914,22 @@ app.get('/api/notes/:id/preview', async (req, res) => {
 
         const note = notes[0];
         if (!note.file_path) return res.status(404).json({ error: 'No file attached to this note' });
+        
+        // Only allow approved notes for students (or notes uploaded by the current user)
+        if (note.status === 'pending' || note.status === 'rejected') {
+            const token = req.headers.authorization?.split(' ')[1];
+            if (token) {
+                try {
+                    const jwt = require('jsonwebtoken');
+                    const decoded = jwt.verify(token, SECRET);
+                    if (decoded.id !== note.user_id) {
+                        return res.status(403).json({ error: 'Note not available' });
+                    }
+                } catch {}
+            } else {
+                return res.status(403).json({ error: 'Note not available' });
+            }
+        }
 
         const fileName = note.file_path.split('/').pop();
         const filePath = path.join(__dirname, 'uploads', 'notes', fileName);
@@ -933,6 +950,22 @@ app.get('/api/notes/:id/download', async (req, res) => {
 
         const note = notes[0];
         if (!note.file_path) return res.status(404).json({ error: 'No file attached to this note' });
+        
+        // Only allow approved notes for students
+        if (note.status === 'pending' || note.status === 'rejected') {
+            const token = req.headers.authorization?.split(' ')[1];
+            if (token) {
+                try {
+                    const jwt = require('jsonwebtoken');
+                    const decoded = jwt.verify(token, SECRET);
+                    if (decoded.id !== note.user_id) {
+                        return res.status(403).json({ error: 'Note not available' });
+                    }
+                } catch {}
+            } else {
+                return res.status(403).json({ error: 'Note not available' });
+            }
+        }
 
         await db.query('UPDATE notes SET downloads = COALESCE(downloads, 0) + 1 WHERE id = $1', [req.params.id]);
 

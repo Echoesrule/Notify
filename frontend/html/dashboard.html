@@ -349,7 +349,8 @@
     }
 
     function previewNote(noteId) {
-        window.open(`${window.API_URL}/notes/${noteId}/preview`, '_blank');
+        const baseUrl = window.BASE_URL || window.API_URL?.replace('/api', '') || window.location.origin;
+        window.open(`${baseUrl}/api/notes/${noteId}/preview`, '_blank');
     }
 
     window.addEventListener('load', function() {
