@@ -2269,6 +2269,13 @@ document.getElementById('isCommonUnit').addEventListener('change', function() {
 document.getElementById('noteForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
+    const saveBtn = document.querySelector('#noteForm button[type="submit"]');
+    const originalBtnText = saveBtn ? saveBtn.innerHTML : 'Save';
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+    }
+    
     const isCommonUnitChecked = document.getElementById('isCommonUnit').checked;
     
     let schoolId, deptId, unitId;
@@ -2367,11 +2374,21 @@ const data = {
         notes.unshift(data);
     }
 
+    if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalBtnText;
+    }
+
     closeNoteModal();
     renderNotes();
     updateStats();
     renderRecentNotes();
     showNotification('Note uploaded successfully! It is pending approval.', 'info');
+    
+    if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalBtnText;
+    }
 });
 
 function openUpdateModal() {

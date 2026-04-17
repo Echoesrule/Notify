@@ -56,6 +56,43 @@ async function getUnitsByDepartment(schoolId, deptId) {
     }
 }
 
+async function enrollInUnit(unitId, unitName) {
+    const userId = localStorage.getItem('user_id');
+    const schoolId = localStorage.getItem('selected_school');
+    const deptId = localStorage.getItem('selected_department');
+    
+    if (!userId) {
+        alert('Please log in to enroll');
+        return;
+    }
+    
+    if (!confirm(`Enroll in ${unitName}?`)) return;
+    
+    try {
+        const res = await fetch(`${window.API_URL}/users/enroll-units`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: parseInt(userId),
+                unitIds: [parseInt(unitId)],
+                schoolId: parseInt(schoolId),
+                courseId: parseInt(deptId)
+            })
+        });
+        
+        if (res.ok) {
+            alert(`Successfully enrolled in ${unitName}!`);
+            displaySubjects(); // Refresh to show badge
+        } else {
+            const data = await res.json();
+            alert(data.error || 'Failed to enroll');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error enrolling');
+    }
+}
+
 async function displaySubjects() {
 
     console.log("DisplayingUnits function started")
@@ -156,9 +193,10 @@ ${subject.code ? `<span class="subject-code">${subject.code}</span>` : ''}
                             <span class="lecturer"><i class="fas fa-chalkboard-teacher"></i> ${subject.lecturer || 'Not assigned'}</span>
                             <span class="semester"><i class="fas fa-calendar"></i> ${subject.semester || 'This semester'}</span>
                         </div>
-                        <button class="btn-primary btn-sm">
-                            <i class="fas fa-arrow-right"></i> View Notes
-                        </button>
+                        ${subject.isEnrolled ? 
+                            `<button class="btn-primary btn-sm"><i class="fas fa-arrow-right"></i> View Notes</button>` : 
+                            `<button class="btn-enroll btn-sm" onclick="event.stopPropagation();enrollInUnit('${subject.id}', '${subject.name}')"><i class="fas fa-plus"></i> Enroll</button>`
+                        }
                     </div>
             `;
 

@@ -618,15 +618,27 @@ app.get('/api/schools/:schoolId/departments/:deptId/units', async (req, res) => 
     try {
         const currentUserId = req.query.userId;
         
+        // First get all enrollments for this course to count properly
+        const [enrollments] = await db.query(
+            'SELECT unit_ids FROM user_courses WHERE course_id = $1 AND status = $2',
+            [req.params.deptId, 'active']
+        );
+        
+        // Count students per unit based on unit_ids
+        const unitStudentCount = {};
+        enrollments.forEach(e => {
+            if (e.unit_ids) {
+                const ids = e.unit_ids.split(',').filter(id => id);
+                ids.forEach(id => {
+                    const uid = parseInt(id);
+                    unitStudentCount[uid] = (unitStudentCount[uid] || 0) + 1;
+                });
+            }
+        });
+        
         const [units] = await db.query(`
             SELECT u.*, 
-                   COUNT(DISTINCT n.id)::int AS "noteCount",
-                   (SELECT COUNT(*)::int FROM user_courses uc 
-                    WHERE uc.status = 'active' 
-                    AND (uc.unit_ids::text LIKE '%,' || u.id || ',%' 
-                         OR uc.unit_ids::text LIKE u.id || ',%'
-                         OR uc.unit_ids::text LIKE '%,' || u.id
-                         OR uc.unit_ids::text = u.id::text)) AS "enrolled"
+                   COUNT(DISTINCT n.id)::int AS "noteCount"
             FROM units u
             LEFT JOIN course_units cu ON cu.unit_id = u.id
             LEFT JOIN courses c ON cu.course_id = c.id
@@ -636,16 +648,33 @@ app.get('/api/schools/:schoolId/departments/:deptId/units', async (req, res) => 
             ORDER BY u.name
         `, [req.params.deptId]);
         
-        // Add isEnrolled flag for current user
+        // Add enrolled count and isEnrolled flag
+        units.forEach(u => {
+            u.enrolled = unitStudentCount[u.id] || 0;
+        });
+        
+        // Check if current user is enrolled in any of these units
         if (currentUserId) {
-            const [userCourse] = await db.query(
+            const [userEnrollment] = await db.query(
                 'SELECT unit_ids FROM user_courses WHERE user_id = $1 AND course_id = $2 AND status = $3',
                 [parseInt(currentUserId), parseInt(req.params.deptId), 'active']
             );
-            const enrolledUnitIds = userCourse[0]?.unit_ids ? userCourse[0].unit_ids.split(',').map(Number) : [];
-            units.forEach(u => {
-                u.isEnrolled = enrolledUnitIds.includes(u.id);
-            });
+            
+            if (userEnrollment.length > 0 && userEnrollment[0].unit_ids) {
+                const myUnitIds = userEnrollment[0].unit_ids.split(',').filter(id => id).map(Number);
+                units.forEach(u => {
+                    u.isEnrolled = myUnitIds.includes(u.id);
+                });
+            }
+        }
+        
+        res.json(units);
+    } catch (error) {
+        console.error('Error fetching units:', error);
+        res.status(500).json({ error: 'Failed to fetch units' });
+    }
+});
+            }
         }
         
         res.json(units);
