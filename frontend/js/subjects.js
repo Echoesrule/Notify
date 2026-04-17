@@ -1,4 +1,29 @@
 
+// Notification function
+function showNotification(message, type = 'info') {
+    let container = document.getElementById('notification-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'notification-container';
+        container.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;';
+        document.body.appendChild(container);
+    }
+    
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.style.cssText = 'padding:15px 20px;border-radius:8px;color:white;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,0.15);animation:slideIn 0.3s ease;';
+    const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle', warning: 'fa-exclamation-triangle' };
+    const colors = { success: '#10b981', error: '#ef4444', info: '#3b82f6', warning: '#f59e0b' };
+    notification.style.background = colors[type] || colors.info;
+    notification.innerHTML = `<i class="fas ${icons[type]}"></i> ${message}`;
+    container.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
 function showLoader() {
     console.log("Showing loader in unts");
     
@@ -57,21 +82,25 @@ async function getUnitsByDepartment(schoolId, deptId) {
 }
 
 async function enrollInUnit(unitId, unitName) {
-    const userId = localStorage.getItem('user_id');
+    const userId = localStorage.getItem('user_id') || localStorage.getItem('notify_user_id');
     const schoolId = localStorage.getItem('selected_school');
     const deptId = localStorage.getItem('selected_department');
+    const token = localStorage.getItem('notify_token');
     
-    if (!userId) {
-        alert('Please log in to enroll');
+    if (!userId || !token) {
+        showNotification('Please log in to enroll', 'error');
         return;
     }
     
-    if (!confirm(`Enroll in ${unitName}?`)) return;
+    showNotification(`Enrolling in ${unitName}...`, 'info');
     
     try {
         const res = await fetch(`${window.API_URL}/users/enroll-units`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({
                 userId: parseInt(userId),
                 unitIds: [parseInt(unitId)],
@@ -81,15 +110,15 @@ async function enrollInUnit(unitId, unitName) {
         });
         
         if (res.ok) {
-            alert(`Successfully enrolled in ${unitName}!`);
-            displaySubjects(); // Refresh to show badge
+            showNotification(`Enrolled in ${unitName}!`, 'success');
+            displaySubjects();
         } else {
             const data = await res.json();
-            alert(data.error || 'Failed to enroll');
+            showNotification(data.error || 'Failed to enroll', 'error');
         }
     } catch (err) {
         console.error(err);
-        alert('Error enrolling');
+        showNotification('Error enrolling', 'error');
     }
 }
 
