@@ -674,15 +674,6 @@ app.get('/api/schools/:schoolId/departments/:deptId/units', async (req, res) => 
         res.status(500).json({ error: 'Failed to fetch units' });
     }
 });
-            }
-        }
-        
-        res.json(units);
-    } catch (error) {
-        console.error('Error fetching units:', error);
-        res.status(500).json({ error: 'Failed to fetch units' });
-    }
-});
 
 app.get('/api/schools/:schoolId/departments/:deptId/units/:unitId', async (req, res) => {
     try {
