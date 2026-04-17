@@ -616,6 +616,8 @@ app.post('/api/departments', async (req, res) => {
 
 app.get('/api/schools/:schoolId/departments/:deptId/units', async (req, res) => {
     try {
+        const currentUserId = req.query.userId;
+        
         const [units] = await db.query(`
             SELECT u.*, 
                    COUNT(DISTINCT n.id)::int AS "noteCount",
@@ -633,6 +635,19 @@ app.get('/api/schools/:schoolId/departments/:deptId/units', async (req, res) => 
             GROUP BY u.id
             ORDER BY u.name
         `, [req.params.deptId]);
+        
+        // Add isEnrolled flag for current user
+        if (currentUserId) {
+            const [userCourse] = await db.query(
+                'SELECT unit_ids FROM user_courses WHERE user_id = $1 AND course_id = $2 AND status = $3',
+                [parseInt(currentUserId), parseInt(req.params.deptId), 'active']
+            );
+            const enrolledUnitIds = userCourse[0]?.unit_ids ? userCourse[0].unit_ids.split(',').map(Number) : [];
+            units.forEach(u => {
+                u.isEnrolled = enrolledUnitIds.includes(u.id);
+            });
+        }
+        
         res.json(units);
     } catch (error) {
         console.error('Error fetching units:', error);
@@ -1114,6 +1129,50 @@ app.post('/api/users/enroll', async (req, res) => {
     } catch (error) {
         console.error('Error enrolling:', error);
         res.status(500).json({ error: 'Failed to enroll: ' + error.message });
+    }
+});
+
+// Enroll in specific unit(s)
+app.post('/api/users/enroll-units', async (req, res) => {
+    try {
+        const { userId, unitIds, schoolId, courseId } = req.body;
+        const userIdInt = parseInt(userId);
+        const schoolIdInt = parseInt(schoolId);
+        const courseIdInt = parseInt(courseId);
+        const unitIdsArray = Array.isArray(unitIds) ? unitIds : [unitIds];
+        
+        // Check if user has existing enrollment for this course
+        const [existing] = await db.query(
+            'SELECT unit_ids FROM user_courses WHERE user_id = $1 AND course_id = $2',
+            [userIdInt, courseIdInt]
+        );
+        
+        let currentUnitIds = [];
+        if (existing[0]?.unit_ids) {
+            currentUnitIds = existing[0].unit_ids.split(',').filter(id => id).map(Number);
+        }
+        
+        // Add new unit IDs (avoid duplicates)
+        const newUnitIds = [...new Set([...currentUnitIds, ...unitIdsArray.map(Number)])];
+        const unitIdsStr = newUnitIds.join(',');
+        
+        if (existing.length > 0) {
+            await db.query(
+                'UPDATE user_courses SET unit_ids = $1 WHERE user_id = $2 AND course_id = $3',
+                [unitIdsStr, userIdInt, courseIdInt]
+            );
+        } else {
+            await db.query(
+                'INSERT INTO user_courses (user_id, course_id, school_id, unit_ids, status) VALUES ($1, $2, $3, $4, $5)',
+                [userIdInt, courseIdInt, schoolIdInt, unitIdsStr, 'active']
+            );
+            await db.query('UPDATE notify_users SET school_id = $1 WHERE id = $2', [schoolIdInt, userIdInt]);
+        }
+        
+        res.json({ message: 'Successfully enrolled in units', unitIds: newUnitIds });
+    } catch (error) {
+        console.error('Error enrolling in units:', error);
+        res.status(500).json({ error: 'Failed to enroll in units: ' + error.message });
     }
 });
 

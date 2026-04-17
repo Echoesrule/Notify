@@ -1,5 +1,5 @@
 
 git status
 git add .
-git commit -m "updated courses description"
+git commit -m "fixed courses having many units"
 git push origin main

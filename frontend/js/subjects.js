@@ -43,7 +43,11 @@ function showContent() {
 
 async function getUnitsByDepartment(schoolId, deptId) {
     try {
-        const res = await fetch(`${window.API_URL}/schools/${schoolId}/departments/${deptId}/units`);
+        const userId = localStorage.getItem('user_id');
+        const url = userId 
+            ? `${window.API_URL}/schools/${schoolId}/departments/${deptId}/units?userId=${userId}`
+            : `${window.API_URL}/schools/${schoolId}/departments/${deptId}/units`;
+        const res = await fetch(url);
         if (!res.ok) throw new Error('Failed to fetch units');
         return await res.json();
     } catch (err) {
@@ -131,12 +135,13 @@ else{
 
   let html = '';
         
-        subjects.forEach(subject => {
-         const notesCount = subject.noteCount || 0;
+subjects.forEach(subject => {
+          const notesCount = subject.noteCount || 0;
             html+=`
-                        <div class="subject-card ${subject.popular ? 'popular' : ''}" data-aos="fade-up" 
+                        <div class="subject-card ${subject.popular ? 'popular' : ''} ${subject.isEnrolled ? 'enrolled' : ''}" data-aos="fade-up" 
                          onclick="selectSubject('${subject.id}', '${subject.name}')">
                         ${subject.popular ? '<span class="popular-badge">Popular</span>' : ''}
+                        ${subject.isEnrolled ? '<span class="enrolled-badge"><i class="fas fa-check-circle"></i> Enrolled</span>' : ''}
                         <div class="subject-icon" style="background: ${subject.iconBg || '#e3f2fd'};">
                             <i class="fas ${subject.icon || 'fa-book'}" style="color: ${subject.iconColor || '#1976d2'};"></i>
                         </div>
