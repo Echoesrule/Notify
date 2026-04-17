@@ -618,22 +618,30 @@ app.get('/api/schools/:schoolId/departments/:deptId/units', async (req, res) => 
     try {
         const currentUserId = req.query.userId;
         
-        // First get all enrollments for this course to count properly
+        // Get all enrollments for this course to count distinct students per unit
         const [enrollments] = await db.query(
-            'SELECT unit_ids FROM user_courses WHERE course_id = $1 AND status = $2',
+            'SELECT user_id, unit_ids FROM user_courses WHERE course_id = $1 AND status = $2',
             [req.params.deptId, 'active']
         );
         
-        // Count students per unit based on unit_ids
+        // Count students per unit (each student = 1, regardless of how many units they have)
         const unitStudentCount = {};
+        const unitStudentMap = {}; // unitId -> Set of userIds
+        
         enrollments.forEach(e => {
-            if (e.unit_ids) {
+            if (e.unit_ids && e.user_id) {
                 const ids = e.unit_ids.split(',').filter(id => id);
                 ids.forEach(id => {
                     const uid = parseInt(id);
-                    unitStudentCount[uid] = (unitStudentCount[uid] || 0) + 1;
+                    if (!unitStudentMap[uid]) unitStudentMap[uid] = new Set();
+                    unitStudentMap[uid].add(e.user_id);
                 });
             }
+        });
+        
+        // Convert Sets to counts
+        Object.keys(unitStudentMap).forEach(uid => {
+            unitStudentCount[uid] = unitStudentMap[uid].size;
         });
         
         const [units] = await db.query(`
