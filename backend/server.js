@@ -1335,6 +1335,24 @@ app.get('/api/admin/users', adminMiddleware, async (req, res) => {
     }
 });
 
+// Delete user
+app.delete('/api/admin/users/:id', adminMiddleware, async (req, res) => {
+    try {
+        const userId = parseInt(req.params.id);
+        
+        // Check if trying to delete self
+        if (userId === req.userId) {
+            return res.status(400).json({ error: 'Cannot delete your own account' });
+        }
+        
+        await db.query('DELETE FROM notify_users WHERE id = $1', [userId]);
+        res.json({ message: 'User deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        res.status(500).json({ error: 'Failed to delete user: ' + error.message });
+    }
+});
+
 app.post('/api/admin/users/:id/promote', adminMiddleware, async (req, res) => {
     try {
         const userId = req.params.id;

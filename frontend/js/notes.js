@@ -312,7 +312,7 @@ function previewNote(noteId) {
         .then(note => {
             console.log('Note data:', note);
             if (!note.file_path && !note.file) {
-                alert('No file attached to this note');
+                showNotification('No file attached to this note');
                 return;
             }
             const baseUrl = window.BASE_URL || window.API_URL?.replace('/api', '') || window.location.origin;
@@ -320,7 +320,7 @@ function previewNote(noteId) {
         })
         .catch(err => {
             console.error('Error fetching note:', err);
-            alert('Failed to load note');
+            showNotification('Failed to load note');
         });
 }
 
@@ -332,7 +332,7 @@ function downloadNote(noteId) {
         .then(res => res.json())
         .then(note => {
             if (!note.file_path && !note.file) {
-                alert('No file attached to this note');
+                showNotification('No file attached to this note');
                 return;
             }
             const baseUrl = window.BASE_URL || window.API_URL?.replace('/api', '') || window.location.origin;
@@ -340,7 +340,7 @@ function downloadNote(noteId) {
         })
         .catch(err => {
             console.error('Error fetching note:', err);
-            alert('Failed to download note');
+            showNotification('Failed to download note');
         });
 }
 

@@ -79,6 +79,15 @@ const defaultDescriptions = {
     'Law': 'Constitutional Law, Criminal Law, Civil Law, International Law'
 };
 
+function filterSchools() {
+    const search = document.getElementById('schoolSearch')?.value.toLowerCase() || '';
+    const cards = document.querySelectorAll('#schoolsGrid .school-card, #schoolsGrid .faculty-card');
+    cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(search) ? '' : 'none';
+    });
+}
+
 async function displaySchools() {
     try {
         const grid = document.getElementById('schoolsGrid');

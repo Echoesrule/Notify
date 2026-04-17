@@ -625,12 +625,12 @@ async function createNew(type) {
         if (type === 'school') {
             const existingSchool = schools.find(s => s.name.toLowerCase() === name.toLowerCase());
             if (existingSchool) {
-                alert('This school already exists!');
+                showNotification('This school already exists!');
                 return;
             }
             const newSchool = await API.createSchool(name);
             if (newSchool.exists) {
-                alert('This school already exists. Using existing school.');
+                showNotification('This school already exists. Using existing school.');
             }
             const existingIdx = schools.findIndex(s => s.id == newSchool.id);
             if (existingIdx === -1) {
@@ -646,14 +646,14 @@ async function createNew(type) {
         } else if (type === 'course') {
             const schoolId = schoolSelect?.value;
             if (!schoolId) {
-                alert('Please select a school first');
+                showNotification('Please select a school first');
                 return;
             }
             
             const school = schools.find(s => s.id == schoolId);
             const existingCourse = school?.departments?.find(d => d.name.toLowerCase() === name.toLowerCase());
             if (existingCourse) {
-                alert('This course already exists in this school!');
+                showNotification('This course already exists in this school!');
                 return;
             }
             
@@ -663,13 +663,13 @@ async function createNew(type) {
                 d.name.toLowerCase() === name.toLowerCase() && d.schoolId == schoolId
             );
             if (duplicateCheck) {
-                alert('This course already exists in this school!');
+                showNotification('This course already exists in this school!');
                 return;
             }
             
             const newCourse = await API.createDepartment(name, code, schoolId);
             if (newCourse.exists) {
-                alert('This course already exists in this school. Using existing course.');
+                showNotification('This course already exists in this school. Using existing course.');
             }
             newCourse.schoolId = schoolId;
             newCourse.units = newCourse.units || [];
@@ -700,7 +700,7 @@ async function createNew(type) {
             const schoolId = schoolSelect?.value;
             const deptId = courseSelect?.value;
             if (!deptId) {
-                alert('Please select a course first');
+                showNotification('Please select a course first');
                 return;
             }
             
@@ -708,7 +708,7 @@ async function createNew(type) {
             const dept = school?.departments?.find(d => d.id == deptId);
             const existingUnit = dept?.units?.find(u => u.name.toLowerCase() === name.toLowerCase());
             if (existingUnit) {
-                alert('This unit already exists in this course!');
+                showNotification('This unit already exists in this course!');
                 return;
             }
             
@@ -716,14 +716,14 @@ async function createNew(type) {
                 u.name.toLowerCase() === name.toLowerCase() && u.courseId == deptId
             );
             if (duplicateCheck) {
-                alert('This unit already exists in this course!');
+                showNotification('This unit already exists in this course!');
                 return;
             }
             
             const code = prompt('Enter unit code:');
             const newUnit = await API.createUnit(name, code || '', schoolId, deptId);
             if (newUnit.exists) {
-                alert('This unit already exists in this course. Using existing unit.');
+                showNotification('This unit already exists in this course. Using existing unit.');
             }
             newUnit.courseId = parseInt(deptId);
             newUnit.schoolId = parseInt(schoolId);
@@ -1660,7 +1660,7 @@ function removeUnitRow(btn) {
 function addUnitToCourse(deptId) {
     const course = departments.find(c => c.id == deptId);
     if (!course) {
-        alert('Course not found');
+        showNotification('Course not found');
         return;
     }
     
@@ -1718,7 +1718,7 @@ function addUnitToCourse(deptId) {
             alert(`Unit "${newUnit.name}" created successfully!`);
         } catch (err) {
             console.error('Error creating unit:', err);
-            alert('Failed to create unit');
+            showNotification('Failed to create unit');
         }
     })();
 }
@@ -1779,7 +1779,7 @@ function addDeptToSchool(schoolId) {
             alert(`Department "${newDept.name}" created successfully!`);
         } catch (err) {
             console.error('Error creating department:', err);
-            alert('Failed to create department');
+            showNotification('Failed to create department');
         }
     })();
 }
@@ -1815,7 +1815,7 @@ function addUnitToDept(schoolId, deptId) {
             alert(`Unit "${newUnit.name}" created successfully!`);
         } catch (err) {
             console.error('Error creating unit:', err);
-            alert('Failed to create unit');
+            showNotification('Failed to create unit');
         }
     })();
 }
@@ -1839,7 +1839,7 @@ document.getElementById('courseForm').addEventListener('submit', async function(
     const unitId = document.getElementById('courseUnitSelect').value;
     
     if (!schoolId || !courseId) {
-        alert('Please select a school and course');
+        showNotification('Please select a school and course');
         return;
     }
     
@@ -2071,7 +2071,7 @@ function openNoteModal(noteId = null) {
     if (noteId) {
         const note = notes.find(n => n.id == noteId);
         if (!note) {
-            alert('Note not found');
+            showNotification('Note not found');
             return;
         }
         title.textContent = 'Edit Note';
@@ -2282,7 +2282,7 @@ document.getElementById('noteForm').addEventListener('submit', async function(e)
     
     if (isCommonUnitChecked) {
         if (!confirmedCommonUnit) {
-            alert('Please confirm/select the common unit (auto-filled or manual)');
+            showNotification('Please confirm/select the common unit (auto-filled or manual)');
             return;
         }
         schoolId = confirmedCommonUnit.schoolId;
@@ -2295,7 +2295,7 @@ document.getElementById('noteForm').addEventListener('submit', async function(e)
     }
     
     if (!schoolId || !deptId || !unitId) {
-        alert('Please select School → Course → Unit (or confirm common unit)');
+        showNotification('Please select School → Course → Unit (or confirm common unit)');
         return;
     }
     
@@ -2638,7 +2638,7 @@ async function uploadLecturerPfp(input) {
     if (!file) return;
     
     if (file.size > 2 * 1024 * 1024) {
-        alert('File too large. Max 2MB');
+        showNotification('File too large. Max 2MB');
         return;
     }
     
@@ -2670,10 +2670,10 @@ async function uploadLecturerPfp(input) {
                 topPfp.src = API_BASE + data.pfp + '?v=' + timestamp;
             }
         } else {
-            alert('Failed to upload image');
+            showNotification('Failed to upload image');
         }
     } catch (err) {
-        alert('Error uploading image');
+        showNotification('Error uploading image');
     }
 }
 

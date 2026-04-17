@@ -281,14 +281,14 @@ async function editUser(userId) {
                 body: JSON.stringify({ role: newRole })
             });
             if (res.ok) { 
-                alert('User role updated successfully!'); 
+                showNotification('User role updated!', 'success'); 
                 loadSectionData('users'); 
             } else {
-                alert('Failed to update user role');
+                showNotification('Failed to update user role', 'error');
             }
         } catch (err) { 
             console.error('Error updating user:', err); 
-            alert('Error updating user');
+            showNotification('Error updating user', 'error');
         }
     }
 }
@@ -302,14 +302,14 @@ async function deleteUser(userId) {
                 headers: headers
             });
             if (res.ok) { 
-                alert('User deleted successfully!'); 
+                showNotification('User deleted!', 'success'); 
                 loadSectionData('users'); 
             } else {
-                alert('Failed to delete user');
+                showNotification('Failed to delete user', 'error');
             }
         } catch (err) { 
             console.error('Error deleting user:', err); 
-            alert('Error deleting user');
+            showNotification('Error deleting user', 'error');
         }
     }
 }
@@ -326,11 +326,11 @@ async function promoteUser(userId, newRole) {
             alert(`User promoted to ${newRole}!`); 
             loadSectionData('users'); 
         } else {
-            alert('Failed to promote user');
+            showNotification('Failed to promote user', 'info');
         }
     } catch (err) { 
         console.error('Error promoting user:', err); 
-        alert('Error promoting user');
+        showNotification('Error promoting user', 'info');
     }
 }
 
@@ -383,14 +383,14 @@ async function editInstitution(institutionId) {
                 body: JSON.stringify({ name })
             });
             if (res.ok) { 
-                alert('University updated!'); 
+                showNotification('University updated!', 'info'); 
                 loadSectionData('institutions'); 
             } else {
-                alert('Failed to update institution');
+                showNotification('Failed to update institution', 'info');
             }
         } catch (err) { 
             console.error(err); 
-            alert('Error updating institution');
+            showNotification('Error updating institution', 'info');
         }
     }
 }
@@ -404,14 +404,14 @@ async function deleteInstitution(institutionId) {
                 headers: headers
             });
             if (res.ok) { 
-                alert('University deleted!'); 
+                showNotification('University deleted!', 'info'); 
                 loadSectionData('institutions'); 
             } else {
-                alert('Failed to delete institution');
+                showNotification('Failed to delete institution', 'info');
             }
         } catch (err) { 
             console.error(err); 
-            alert('Error deleting institution');
+            showNotification('Error deleting institution', 'info');
         }
     }
 }
@@ -466,14 +466,14 @@ async function editSchool(schoolId) {
                 body: JSON.stringify({ name })
             });
             if (res.ok) { 
-                alert('School updated!'); 
+                showNotification('School updated!', 'info'); 
                 loadSectionData('schools'); 
             } else {
-                alert('Failed to update school');
+                showNotification('Failed to update school', 'info');
             }
         } catch (err) { 
             console.error(err); 
-            alert('Error updating school');
+            showNotification('Error updating school', 'info');
         }
     }
 }
@@ -487,14 +487,14 @@ async function deleteSchool(schoolId) {
                 headers: headers
             });
             if (res.ok) { 
-                alert('School deleted!'); 
+                showNotification('School deleted!', 'info'); 
                 loadSectionData('schools'); 
             } else {
-                alert('Failed to delete school');
+                showNotification('Failed to delete school', 'info');
             }
         } catch (err) { 
             console.error(err); 
-            alert('Error deleting school');
+            showNotification('Error deleting school', 'info');
         }
     }
 }
@@ -594,14 +594,14 @@ async function editCourse(courseId) {
                 body: JSON.stringify({ name, description: description || '' })
             });
             if (res.ok) { 
-                alert('Course updated!'); 
+                showNotification('Course updated!', 'info'); 
                 loadSectionData('courses'); 
             } else {
-                alert('Failed to update course');
+                showNotification('Failed to update course', 'info');
             }
         } catch (err) { 
             console.error(err); 
-            alert('Error updating course');
+            showNotification('Error updating course', 'info');
         }
     }
 }
@@ -615,14 +615,14 @@ async function deleteCourse(courseId) {
                 headers: headers
             });
             if (res.ok) { 
-                alert('Course deleted!'); 
+                showNotification('Course deleted!', 'info'); 
                 loadSectionData('courses'); 
             } else {
-                alert('Failed to delete course');
+                showNotification('Failed to delete course', 'info');
             }
         } catch (err) { 
             console.error(err); 
-            alert('Error deleting course');
+            showNotification('Error deleting course', 'info');
         }
     }
 }
@@ -671,6 +671,8 @@ async function loadUnits() {
 
 let allCourses = [];
 let allUnits = [];
+let allInstitutions = [];
+let allSchools = [];
 
 function filterCourses() {
     const search = document.getElementById('courseSearch')?.value.toLowerCase() || '';
@@ -690,6 +692,24 @@ function filterUnits() {
     });
 }
 
+function filterInstitutions() {
+    const search = document.getElementById('institutionSearch')?.value.toLowerCase() || '';
+    const cards = document.querySelectorAll('#institutionList .institution-card, #institutionList .course-card');
+    cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(search) ? '' : 'none';
+    });
+}
+
+function filterSchools() {
+    const search = document.getElementById('schoolSearch')?.value.toLowerCase() || '';
+    const cards = document.querySelectorAll('#schoolList .school-card, #schoolList .course-card');
+    cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(search) ? '' : 'none';
+    });
+}
+
 async function editUnit(unitId) {
     const name = prompt('Enter new unit name:');
     const description = prompt('Enter unit description:');
@@ -702,14 +722,14 @@ async function editUnit(unitId) {
                 body: JSON.stringify({ name, description: description || '' })
             });
             if (res.ok) { 
-                alert('Unit updated!'); 
+                showNotification('Unit updated!', 'info'); 
                 loadSectionData('units'); 
             } else {
-                alert('Failed to update unit');
+                showNotification('Failed to update unit', 'info');
             }
         } catch (err) { 
             console.error(err); 
-            alert('Error updating unit');
+            showNotification('Error updating unit', 'info');
         }
     }
 }
@@ -731,7 +751,7 @@ async function shareUnit(unitId) {
         const availableCourses = allCourses.filter(c => !linkedIds.includes(c.id));
         
         if (!availableCourses.length) {
-            alert('This unit is already shared with all available courses!');
+            showNotification('This unit is already shared with all available courses!', 'info');
             return;
         }
         
@@ -765,7 +785,7 @@ async function shareUnit(unitId) {
             const selectedIds = Array.from(select.selectedOptions).map(opt => parseInt(opt.value));
             
             if (!selectedIds.length) {
-                alert('Please select at least one course');
+                showNotification('Please select at least one course', 'info');
                 return;
             }
             
@@ -782,12 +802,12 @@ async function shareUnit(unitId) {
                 alert(`Unit shared successfully! Linked to ${data.linked?.length || 0} course(s)`);
                 loadSectionData('units');
             } else {
-                alert('Failed to share unit: ' + data.error);
+                showNotification('Failed to share unit: ' + data.error);
             }
         };
     } catch (err) {
         console.error('Error sharing unit:', err);
-        alert('Error sharing unit');
+        showNotification('Error sharing unit', 'info');
     }
 }
 
@@ -800,14 +820,14 @@ async function deleteUnit(unitId) {
                 headers: headers
             });
             if (res.ok) { 
-                alert('Unit deleted!'); 
+                showNotification('Unit deleted!', 'info'); 
                 loadSectionData('units'); 
             } else {
-                alert('Failed to delete unit');
+                showNotification('Failed to delete unit', 'info');
             }
         } catch (err) { 
             console.error(err); 
-            alert('Error deleting unit');
+            showNotification('Error deleting unit', 'info');
         }
     }
 }
@@ -962,14 +982,14 @@ async function deleteNote(noteId) {
                 headers: headers
             });
             if (res.ok) { 
-                alert('Note deleted!'); 
+                showNotification('Note deleted!', 'info'); 
                 loadSectionData('notes'); 
             } else {
-                alert('Failed to delete note');
+                showNotification('Failed to delete note', 'info');
             }
         } catch (err) { 
             console.error(err); 
-            alert('Error deleting note');
+            showNotification('Error deleting note', 'info');
         }
     }
 }
@@ -984,14 +1004,14 @@ async function approveNote(noteId) {
             body: JSON.stringify({ status: 'approved', message: message || '' })
         });
         if (res.ok) { 
-            alert('Note approved!'); 
+            showNotification('Note approved!', 'info'); 
             loadSectionData('notes'); 
         } else {
-            alert('Failed to approve note');
+            showNotification('Failed to approve note', 'info');
         }
     } catch (err) { 
         console.error(err); 
-        alert('Error approving note');
+        showNotification('Error approving note', 'info');
     }
 }
 
@@ -1006,14 +1026,14 @@ async function rejectNote(noteId) {
             body: JSON.stringify({ status: 'rejected', message: message || '' })
         });
         if (res.ok) { 
-            alert('Note rejected!'); 
+            showNotification('Note rejected!', 'info'); 
             loadSectionData('notes'); 
         } else {
-            alert('Failed to reject note');
+            showNotification('Failed to reject note', 'info');
         }
     } catch (err) { 
         console.error(err); 
-        alert('Error rejecting note');
+        showNotification('Error rejecting note', 'info');
     }
 }
 
@@ -1069,14 +1089,14 @@ async function editUpdate(updateId) {
                 body: JSON.stringify({ title, content })
             });
             if (res.ok) { 
-                alert('Update edited!'); 
+                showNotification('Update edited!', 'info'); 
                 loadSectionData('updates'); 
             } else {
-                alert('Failed to update');
+                showNotification('Failed to update', 'info');
             }
         } catch (err) { 
             console.error(err); 
-            alert('Error updating update');
+            showNotification('Error updating update', 'info');
         }
     }
 }
@@ -1090,14 +1110,14 @@ async function deleteUpdate(updateId) {
                 headers: headers
             });
             if (res.ok) { 
-                alert('Update deleted!'); 
+                showNotification('Update deleted!', 'info'); 
                 loadSectionData('updates'); 
             } else {
-                alert('Failed to delete update');
+                showNotification('Failed to delete update', 'info');
             }
         } catch (err) { 
             console.error(err); 
-            alert('Error deleting update');
+            showNotification('Error deleting update', 'info');
         }
     }
 }
@@ -1195,13 +1215,23 @@ function showNotification(message, type = 'info') {
     if (!container) {
         container = document.createElement('div');
         container.id = 'notification-container';
+        container.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;';
         document.body.appendChild(container);
     }
+    
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
-    notification.innerHTML = `<span>${message}</span>`;
+    notification.style.cssText = 'padding:15px 20px;border-radius:8px;color:white;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,0.15);animation:slideIn 0.3s ease;min-width:250px;';
+    const colors = { success: '#10b981', error: '#ef4444', info: '#3b82f6', warning: '#f59e0b' };
+    const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle', warning: 'fa-exclamation-triangle' };
+    notification.style.background = colors[type] || colors.info;
+    notification.innerHTML = `<i class="fas ${icons[type]}"></i> ${message}`;
     container.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 }
 
 // =====================
@@ -1235,15 +1265,15 @@ async function handleAdminPasswordChange() {
     const confirm = document.getElementById('confirmPassword').value;
 
     if (!current || !newPwd || !confirm) { 
-        alert('Please fill all password fields'); 
+        showNotification('Please fill all password fields', 'info'); 
         return; 
     }
     if (newPwd !== confirm) { 
-        alert('New passwords do not match'); 
+        showNotification('New passwords do not match', 'info'); 
         return; 
     }
     if (newPwd.length < 8) { 
-        alert('Password must be at least 8 characters'); 
+        showNotification('Password must be at least 8 characters', 'info'); 
         return; 
     }
 
@@ -1256,7 +1286,7 @@ async function handleAdminPasswordChange() {
         });
         const data = await res.json();
         if (res.ok) {
-            alert('Password updated successfully!');
+            showNotification('Password updated successfully!', 'info');
             ['currentPassword', 'newPassword', 'confirmPassword'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.value = '';
@@ -1265,7 +1295,7 @@ async function handleAdminPasswordChange() {
             alert(data.message || 'Failed to update password');
         }
     } catch (err) { 
-        alert('Error connecting to server'); 
+        showNotification('Error connecting to server', 'info'); 
     }
 }
 
@@ -1282,7 +1312,7 @@ async function saveAdminSettings() {
         });
         const data = await res.json();
         if (res.ok) {
-            alert('Settings saved successfully!');
+            showNotification('Settings saved successfully!', 'info');
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             user.name = name;
             user.email = email;
@@ -1298,7 +1328,7 @@ async function saveAdminSettings() {
             alert(data.message || 'Failed to save settings');
         }
     } catch (err) { 
-        alert('Error connecting to server'); 
+        showNotification('Error connecting to server', 'info'); 
     }
 }
 
@@ -1330,7 +1360,7 @@ function loadAdminPfp() {
                 const file = e.target.files[0];
                 if (!file) return;
                 if (file.size > 2 * 1024 * 1024) { 
-                    alert('File too large. Max 2MB'); 
+                    showNotification('File too large. Max 2MB', 'info'); 
                     return; 
                 }
 
@@ -1352,12 +1382,12 @@ function loadAdminPfp() {
                         const topPfpEl = document.getElementById('profileImg');
                         if (pfpImg) pfpImg.src = `${API_BASE}${data.pfp}?v=${timestamp}`;
                         if (topPfpEl) topPfpEl.src = `${API_BASE}${data.pfp}?v=${timestamp}`;
-                        alert('Profile picture updated!');
+                        showNotification('Profile picture updated!', 'info');
                     } else {
-                        alert('Failed to upload image');
+                        showNotification('Failed to upload image', 'info');
                     }
                 } catch (err) { 
-                    alert('Error uploading image'); 
+                    showNotification('Error uploading image', 'info'); 
                 }
             };
             input.click();
@@ -1400,15 +1430,15 @@ document.addEventListener('DOMContentLoaded', async function() {
                     })
                 });
                 if (res.ok) { 
-                    alert('Institution created successfully!'); 
+                    showNotification('Institution created successfully!', 'info'); 
                     institutionForm.reset(); 
                     loadSectionData('institutions'); 
                 } else {
-                    alert('Failed to create institution');
+                    showNotification('Failed to create institution', 'info');
                 }
             } catch (err) { 
                 console.error(err); 
-                alert('Error creating institution');
+                showNotification('Error creating institution', 'info');
             }
         });
     }
@@ -1427,15 +1457,15 @@ document.addEventListener('DOMContentLoaded', async function() {
                     body: JSON.stringify({ name: formData.get('name') })
                 });
                 if (res.ok) { 
-                    alert('School created successfully!'); 
+                    showNotification('School created successfully!', 'info'); 
                     schoolForm.reset(); 
                     loadSectionData('schools'); 
                 } else {
-                    alert('Failed to create school');
+                    showNotification('Failed to create school', 'info');
                 }
             } catch (err) { 
                 console.error(err); 
-                alert('Error creating school');
+                showNotification('Error creating school', 'info');
             }
         });
     }
@@ -1459,15 +1489,15 @@ document.addEventListener('DOMContentLoaded', async function() {
                     })
                 });
                 if (res.ok) { 
-                    alert('Course created successfully!'); 
+                    showNotification('Course created successfully!', 'info'); 
                     courseForm.reset(); 
                     loadSectionData('courses'); 
                 } else {
-                    alert('Failed to create course');
+                    showNotification('Failed to create course', 'info');
                 }
             } catch (err) { 
                 console.error(err); 
-                alert('Error creating course');
+                showNotification('Error creating course', 'info');
             }
         });
     }
@@ -1492,15 +1522,15 @@ document.addEventListener('DOMContentLoaded', async function() {
                     })
                 });
                 if (res.ok) { 
-                    alert('Unit created successfully!'); 
+                    showNotification('Unit created successfully!', 'info'); 
                     unitForm.reset(); 
                     loadSectionData('units'); 
                 } else {
-                    alert('Failed to create unit');
+                    showNotification('Failed to create unit', 'info');
                 }
             } catch (err) { 
                 console.error(err); 
-                alert('Error creating unit');
+                showNotification('Error creating unit', 'info');
             }
         });
     }
@@ -1521,14 +1551,14 @@ document.addEventListener('DOMContentLoaded', async function() {
                         body: JSON.stringify({ title, content, userId: user.id })
                     });
                     if (res.ok) { 
-                        alert('Update created successfully!'); 
+                        showNotification('Update created successfully!', 'info'); 
                         loadSectionData('updates'); 
                     } else {
-                        alert('Failed to create update');
+                        showNotification('Failed to create update', 'info');
                     }
                 } catch (err) { 
                     console.error(err); 
-                    alert('Error creating update');
+                    showNotification('Error creating update', 'info');
                 }
             }
         });

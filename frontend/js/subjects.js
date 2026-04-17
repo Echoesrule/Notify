@@ -164,7 +164,7 @@ async function displaySubjects() {
 
 
         if (!deptId && !isPreview) {
-            alert('No course selected')
+            showNotification('No course selected')
             window.location.href='../html/courses.html';
             return
         }

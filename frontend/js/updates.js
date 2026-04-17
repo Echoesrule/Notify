@@ -306,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
         displayUpdates(currentUpdates, 'all');
         updateStats(currentUpdates);
         window.updateNotificationBadge(0);
-        alert('All updates marked as read');
+        showNotification('All updates marked as read');
     });
 
     // Refresh button
