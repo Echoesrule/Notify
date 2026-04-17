@@ -68,8 +68,11 @@ function showContent() {
 
 async function getUnitsByDepartment(schoolId, deptId) {
     try {
-        const userId = localStorage.getItem('user_id');
-        const url = userId 
+        const userData = JSON.parse(localStorage.getItem('user') || '{}');
+        const userId = userData.id;
+        const token = localStorage.getItem('notify_token');
+        
+        const url = token && userId
             ? `${window.API_URL}/schools/${schoolId}/departments/${deptId}/units?userId=${userId}`
             : `${window.API_URL}/schools/${schoolId}/departments/${deptId}/units`;
         const res = await fetch(url);
@@ -82,12 +85,15 @@ async function getUnitsByDepartment(schoolId, deptId) {
 }
 
 async function enrollInUnit(unitId, unitName) {
-    const userId = localStorage.getItem('user_id') || localStorage.getItem('notify_user_id');
+    const token = localStorage.getItem('notify_token');
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    const userId = userData?.id;
     const schoolId = localStorage.getItem('selected_school');
     const deptId = localStorage.getItem('selected_department');
-    const token = localStorage.getItem('notify_token');
     
-    if (!userId || !token) {
+    console.log('Enroll check - Token:', !!token, 'UserID:', userId, 'User:', userData);
+    
+    if (!token || !userId) {
         showNotification('Please log in to enroll', 'error');
         return;
     }
@@ -102,7 +108,7 @@ async function enrollInUnit(unitId, unitName) {
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
-                userId: parseInt(userId),
+                userId: userId,
                 unitIds: [parseInt(unitId)],
                 schoolId: parseInt(schoolId),
                 courseId: parseInt(deptId)
