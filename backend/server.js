@@ -310,10 +310,12 @@ app.get('/api/setup', async (req, res) => {
                 user_id INTEGER REFERENCES notify_users(id) ON DELETE CASCADE,
                 course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
                 school_id INTEGER REFERENCES schools(id),
+                unit_ids TEXT,
                 status VARCHAR(20) DEFAULT 'active',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+        await db.query(`ALTER TABLE user_courses ADD COLUMN IF NOT EXISTS unit_ids TEXT`).catch(() => {});
         await db.query(`
             CREATE TABLE IF NOT EXISTS institutions (
                 id SERIAL PRIMARY KEY,
@@ -617,12 +619,16 @@ app.get('/api/schools/:schoolId/departments/:deptId/units', async (req, res) => 
         const [units] = await db.query(`
             SELECT u.*, 
                    COUNT(DISTINCT n.id)::int AS "noteCount",
-                   COUNT(DISTINCT uc.user_id)::int AS "enrolled"
+                   (SELECT COUNT(*)::int FROM user_courses uc 
+                    WHERE uc.status = 'active' 
+                    AND (uc.unit_ids::text LIKE '%,' || u.id || ',%' 
+                         OR uc.unit_ids::text LIKE u.id || ',%'
+                         OR uc.unit_ids::text LIKE '%,' || u.id
+                         OR uc.unit_ids::text = u.id::text)) AS "enrolled"
             FROM units u
             LEFT JOIN course_units cu ON cu.unit_id = u.id
             LEFT JOIN courses c ON cu.course_id = c.id
             LEFT JOIN notes n ON n.unit_id = u.id
-            LEFT JOIN user_courses uc ON uc.course_id = c.id
             WHERE cu.course_id = $1
             GROUP BY u.id
             ORDER BY u.name
@@ -1083,10 +1089,17 @@ app.post('/api/users/enroll', async (req, res) => {
         const courseIdInt = parseInt(courseId);
         const schoolIdInt = parseInt(schoolId);
 
+        // Get all units for this course
+        const [courseUnits] = await db.query(
+            'SELECT unit_id FROM course_units WHERE course_id = $1',
+            [courseIdInt]
+        );
+        const unitIds = courseUnits.map(cu => cu.unit_id).join(',');
+
         await db.query('DELETE FROM user_courses WHERE user_id = $1', [userIdInt]);
         await db.query(
-            'INSERT INTO user_courses (user_id, course_id, school_id, status) VALUES ($1, $2, $3, $4)',
-            [userIdInt, courseIdInt, schoolIdInt, 'active']
+            'INSERT INTO user_courses (user_id, course_id, school_id, unit_ids, status) VALUES ($1, $2, $3, $4, $5)',
+            [userIdInt, courseIdInt, schoolIdInt, unitIds, 'active']
         );
         await db.query('UPDATE notify_users SET school_id = $1 WHERE id = $2', [schoolIdInt, userIdInt]);
 
