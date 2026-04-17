@@ -1535,10 +1535,10 @@ app.delete('/api/admin/units/:id', adminMiddleware, async (req, res) => {
 app.put('/api/admin/units/:id', adminMiddleware, async (req, res) => {
     try {
         const unitId = parseInt(req.params.id);
-        const { name } = req.body;
+        const { name, description } = req.body;
         if (!name) return res.status(400).json({ error: 'Name is required' });
         
-        await db.query('UPDATE units SET name = $1 WHERE id = $2', [name, unitId]);
+        await db.query('UPDATE units SET name = $1, description = $2 WHERE id = $3', [name, description || null, unitId]);
         res.json({ message: 'Unit updated successfully' });
     } catch (error) {
         console.error('Error updating unit:', error);

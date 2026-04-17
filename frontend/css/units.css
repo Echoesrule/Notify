@@ -453,7 +453,7 @@
     width: 100%;
     justify-content: center;
     background: var(--primary-light);
-    color: var(--text-primary);
+    color: white;
     border: none;
     border-radius: 10px;
     cursor: pointer;

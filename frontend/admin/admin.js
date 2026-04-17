@@ -520,6 +520,7 @@ async function loadCourses() {
                 container.innerHTML = courses.map(course => `
                     <div class="course-card">
                         <h3>${course.name}</h3>
+                        <p>${course.description || 'No description'}</p>
                         <p>${course.schoolName || 'N/A'}</p>
                         <p>Students: ${course.studentCount || 0} | Units: ${course.unitCount || 0}</p>
                         <div class="action-buttons">
@@ -583,13 +584,14 @@ async function loadCoursesForUnitForm() {
 
 async function editCourse(courseId) {
     const name = prompt('Enter new course name:');
+    const description = prompt('Enter course description:');
     if (name) {
         const headers = getAuthHeaders();
         try {
             const res = await fetch(`${API_BASE}/api/admin/courses/${courseId}`, {
                 method: 'PUT',
                 headers: headers,
-                body: JSON.stringify({ name })
+                body: JSON.stringify({ name, description: description || '' })
             });
             if (res.ok) { 
                 alert('Course updated!'); 
@@ -646,6 +648,7 @@ async function loadUnits() {
                 container.innerHTML = units.map(unit => `
                     <div class="course-card">
                         <h3>${unit.name} ${unit.is_common_unit ? '<span class="common-badge">Common</span>' : ''}</h3>
+                        <p>${unit.description || 'No description'}</p>
                         <p>Code: ${unit.code || 'N/A'} | Course: ${unit.courseName || 'N/A'}</p>
                         <p>Notes: ${unit.noteCount || 0}</p>
                         <div class="action-buttons">
@@ -689,13 +692,14 @@ function filterUnits() {
 
 async function editUnit(unitId) {
     const name = prompt('Enter new unit name:');
+    const description = prompt('Enter unit description:');
     if (name) {
         const headers = getAuthHeaders();
         try {
             const res = await fetch(`${API_BASE}/api/admin/units/${unitId}`, {
                 method: 'PUT',
                 headers: headers,
-                body: JSON.stringify({ name })
+                body: JSON.stringify({ name, description: description || '' })
             });
             if (res.ok) { 
                 alert('Unit updated!'); 
@@ -1450,7 +1454,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                     body: JSON.stringify({
                         name: formData.get('name'),
                         code: 'NEW',
-                        school_id: formData.get('school')
+                        school_id: formData.get('school'),
+                        description: formData.get('description') || ''
                     })
                 });
                 if (res.ok) { 
@@ -1482,7 +1487,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                         name: formData.get('name'),
                         code: formData.get('code'),
                         course_id: formData.get('course'),
-                        is_common_unit: formData.get('is_common_unit') === 'on'
+                        is_common_unit: formData.get('is_common_unit') === 'on',
+                        description: formData.get('description') || ''
                     })
                 });
                 if (res.ok) { 
