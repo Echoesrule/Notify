@@ -9,7 +9,9 @@ if (process.env.DATABASE_URL) {
     console.log('📊 Connecting using DATABASE_URL');
     pool = new Pool({
         connectionString: process.env.DATABASE_URL,
-        ssl: false, // Render internal connections don't need SSL
+        ssl: {
+            rejectUnauthorized: false
+        }, // Render requires SSL for external connections
         max: 20,
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 5000,

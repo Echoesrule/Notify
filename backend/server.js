@@ -458,9 +458,9 @@ app.get('/api/schools', async (req, res) => {
             };
         }));
 
-        console.log('✅ Schools fetched successfully:');
+        console.log(' Schools fetched successfully:');
         schoolsWithDetails.forEach(s =>
-            console.log(`  📚 ${s.name}: ${s.courseCount} courses, ${s.studentCount} students`)
+            console.log(`   ${s.name}: ${s.courseCount} courses, ${s.studentCount} students`)
         );
 
         res.json(schoolsWithDetails);
@@ -1608,6 +1608,48 @@ app.get('/api/admin/updates', adminMiddleware, async (req, res) => {
     } catch (error) {
         console.error('Error fetching updates:', error);
         res.status(500).json({ error: 'Failed to fetch updates' });
+    }
+});
+
+// Admin update update endpoint
+app.put('/api/admin/updates/:id', adminMiddleware, async (req, res) => {
+    try {
+        const updateId = parseInt(req.params.id);
+        const { title, content, course_id } = req.body;
+        
+        const [updates] = await db.query('SELECT * FROM updates WHERE id = $1', [updateId]);
+        
+        if (!updates[0]) {
+            return res.status(404).json({ error: 'Update not found' });
+        }
+        
+        await db.query(
+            'UPDATE updates SET title = $1, content = $2, course_id = $3, updated_at = NOW() WHERE id = $4',
+            [title || updates[0].title, content || updates[0].content, course_id || updates[0].course_id, updateId]
+        );
+        
+        res.json({ message: 'Update updated successfully' });
+    } catch (error) {
+        console.error('Error updating update:', error);
+        res.status(500).json({ error: 'Failed to update update' });
+    }
+});
+
+// Admin delete update endpoint
+app.delete('/api/admin/updates/:id', adminMiddleware, async (req, res) => {
+    try {
+        const updateId = parseInt(req.params.id);
+        const [updates] = await db.query('SELECT * FROM updates WHERE id = $1', [updateId]);
+        
+        if (!updates[0]) {
+            return res.status(404).json({ error: 'Update not found' });
+        }
+        
+        await db.query('DELETE FROM updates WHERE id = $1', [updateId]);
+        res.json({ message: 'Update deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting update:', error);
+        res.status(500).json({ error: 'Failed to delete update' });
     }
 });
 

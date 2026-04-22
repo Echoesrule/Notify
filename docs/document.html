@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOTIFY Platform - Technical Documentation (B&W)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Times New Roman', Georgia, serif;
+            line-height: 1.6;
+            color: #000000;
+            background: #ffffff;
+            padding: 40px;
+        }
+
+        .document {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border: 1px solid #000000;
+            box-shadow: none;
+        }
+
+        /* Header */
+        .header {
+            background: #000000;
+            color: white;
+            padding: 40px;
+            text-align: center;
+            border-bottom: 3px solid #000000;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .header .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .version {
+            margin-top: 20px;
+            font-size: 0.9em;
+            opacity: 0.8;
+            border-top: 1px solid #444;
+            padding-top: 10px;
+        }
+
+        /* Content */
+        .content {
+            padding: 40px;
+        }
+
+        /* Sections */
+        .section {
+            margin-bottom: 40px;
+            page-break-inside: avoid;
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            color: #000000;
+            border-bottom: 2px solid #000000;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .subsection-title {
+            font-size: 1.4em;
+            color: #000000;
+            margin: 20px 0 15px 0;
+            padding-left: 10px;
+            border-left: 3px solid #000000;
+            font-weight: 600;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.9em;
+            border: 1px solid #000000;
+        }
+
+        th {
+            background: #e0e0e0;
+            color: #000000;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #000000;
+        }
+
+        td {
+            padding: 10px 12px;
+            border: 1px solid #000000;
+        }
+
+        tr:nth-child(even) {
+            background: #f5f5f5;
+        }
+
+        /* Code blocks */
+        code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #000000;
+            border: 1px solid #cccccc;
+        }
+
+        pre {
+            background: #f8f8f8;
+            color: #000000;
+            padding: 15px;
+            border: 1px solid #000000;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-size: 0.85em;
+        }
+
+        pre code {
+            background: none;
+            color: #000000;
+            padding: 0;
+            border: none;
+        }
+
+        /* Architecture diagram */
+        .diagram {
+            background: #f8f9fa;
+            border: 1px solid #000000;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: monospace;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-right: 5px;
+            border: 1px solid #000000;
+        }
+
+        .badge-public {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .badge-token {
+            background: #d0d0d0;
+            color: #000000;
+        }
+
+        .badge-admin {
+            background: #a0a0a0;
+            color: #000000;
+        }
+
+        /* Lists */
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        /* Info boxes */
+        .info-box {
+            background: #f0f0f0;
+            border-left: 3px solid #000000;
+            padding: 15px;
+            margin: 20px 0;
+            border: 1px solid #000000;
+        }
+
+        .warning-box {
+            background: #f8f8f8;
+            border-left: 3px solid #000000;
+            padding: 15px;
+            margin: 20px 0;
+            border: 1px solid #000000;
+        }
+
+        /* Footer */
+        .footer {
+            background: #f5f5f5;
+            padding: 20px 40px;
+            text-align: center;
+            color: #000000;
+            font-size: 0.85em;
+            border-top: 1px solid #000000;
+        }
+
+        /* Horizontal rule */
+        hr {
+            border: none;
+            border-top: 1px solid #000000;
+            margin: 20px 0;
+        }
+
+        /* Page break for printing */
+        @media print {
+            body {
+                padding: 0;
+                background: white;
+            }
+            .header {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                background: #000000;
+            }
+            th {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                background: #e0e0e0;
+            }
+            .section {
+                page-break-inside: avoid;
+            }
+            pre, .diagram {
+                page-break-inside: avoid;
+            }
+            a {
+                text-decoration: none;
+                color: #000000;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="document">
+        <div class="header">
+            <h1> NOTIFY Platform</h1>
+            <div class="subtitle">University Note-Sharing Platform - Technical Documentation</div>
+            <div class="version"> April 2026</div>
+        </div>
+
+        <div class="content">
+            <!-- 1. System Overview -->
+            <div class="section">
+                
+                <h2 class="section-title">1. System Overview</h2>
+                <p><strong>NOTIFY</strong> is a full-stack web application for university note-sharing, enabling students and lecturers to share, access, and manage educational materials across different schools, courses, and units within educational institutions.</p>
+                 <div class="developers">
+                    <strong>Developed by:</strong>
+                    <ul>
+                        <li>Kemboi Emmanuel - Group Leader----(Backend Engineer)-----------G126/1521/2024</li>
+                        <li>Esther Kavutha ------------------ (Backend Engineer)-----------G126/2721/2024</li>
+                        <li>Brian Oduor ----------------------(Frontend Engineer)-----------G126/1531/2024</li>
+                        <li>Rachael Kavindu-------------------(Frontend Engineer)-----------G126/1485/2024</li>
+                        <li>Derrick Muthenya -----------------(Database Architect)-----------G126/1480/2024</li>
+                        <li>Evans Peter-----------------------(Database Architect)-----------G126/1532/2024</li>
+                    </ul>
+                 </div>
+                <h3 class="subsection-title">Purpose</h3>
+                <ul>
+                    <li><strong>Students:</strong> Browse and download study notes, enroll in courses, bookmark materials</li>
+                    <li><strong>Lecturers:</strong> Upload and share course materials, create announcements</li>
+                    <li><strong>Administrators:</strong> Manage users, schools, courses, units, and system settings</li>
+                </ul>
+            </div>
+
+            <!-- 2. Technology Stack -->
+            <div class="section">
+                <h2 class="section-title">2. Technology Stack</h2>
+                
+                <h3 class="subsection-title">Backend</h3>
+                <table>
+                    <thead>
+                        <tr><th>Technology</th><th>Version</th><th>Purpose</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Node.js</td><td>Latest</td><td>Runtime environment</td></tr>
+                        <tr><td>Express.js</td><td>5.2.1</td><td>Web framework</td></tr>
+                        <tr><td>PostgreSQL</td><td>Cloud (Render)</td><td>Database</td></tr>
+                        <tr><td>JWT</td><td>9.0.3</td><td>Authentication</td></tr>
+                        <tr><td>bcrypt</td><td>6.0.0</td><td>Password hashing</td></tr>
+                        <tr><td>Multer</td><td>1.4.5-lts.1</td><td>File uploads</td></tr>
+                        <tr><td>Nodemailer</td><td>8.0.3</td><td>Email service</td></tr>
+                        <tr><td>express-rate-limit</td><td>8.3.1</td><td>Rate limiting</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Frontend</h3>
+                <table>
+                    <thead><tr><th>Technology</th><th>Purpose</th></tr></thead>
+                    <tbody>
+                        <tr><td>HTML5</td><td>Structure</td></tr>
+                        <tr><td>CSS3</td><td>Styling</td></tr>
+                        <tr><td>Vanilla JavaScript</td><td>Client-side logic</td></tr>
+                        <tr><td>Font Awesome</td><td>Icons</td></tr>
+                        <tr><td>Google Fonts</td><td>Typography (Inter, Fredoka)</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Deployment</h3>
+                <ul>
+                    <li><strong>Backend:</strong> Render.com (Node.js + PostgreSQL)</li>
+                    <li><strong>Frontend:</strong> Vercel (Static hosting)</li>
+                </ul>
+            </div>
+
+            <!-- 3. Data Model Hierarchy -->
+            <div class="section">
+                <h2 class="section-title">3. Data Model Hierarchy</h2>
+                <p>The system follows a strict hierarchical structure:</p>
+                
+                <div class="diagram">
+┌─────────────────────────────────────────────────────────────┐
+│                    INSTITUTION (University)                  │
+│                   Has many Schools (Faculties)               │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   SCHOOL (Faculty/College)                   │
+│                  Has many Courses/Departments                │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  COURSE (Department/Program)                  │
+│                   Has many Units (Subjects)                 │
+│              Units linked via course_units table            │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                       UNIT (Subject/Module)                  │
+│              Students choose which units to enroll           │
+│              Users enroll via user_courses table             │
+└─────────────────────────────────────────────────────────────┘
+                </div>
+
+                <h3 class="subsection-title">User Enrollment Flow</h3>
+                <ol>
+                    <li>User browses <strong>Schools</strong> → <strong>Courses</strong> → <strong>Units</strong></li>
+                    <li>User selects specific <strong>Units</strong> to enroll in (via <code>/api/users/enroll-units</code>)</li>
+                    <li>Enrollment stored in <code>user_courses.unit_ids</code> as comma-separated unit IDs</li>
+                    <li>User can enroll in multiple units across different courses</li>
+                </ol>
+            </div>
+
+            <!-- 4. Database Schema -->
+            <div class="section">
+                <h2 class="section-title">4. Database Schema</h2>
+                
+                <h3 class="subsection-title">Core Tables</h3>
+                <table>
+                    <thead><tr><th>Table</th><th>Description</th><th>Key Fields</th></tr></thead>
+                    <tbody>
+                        <tr><td>institutions</td><td>University/Institution</td><td>id, name, staff_domain, student_domain</td></tr>
+                        <tr><td>schools</td><td>Faculties/Colleges</td><td>id, institution_id, name</td></tr>
+                        <tr><td>courses</td><td>Departments/Programs</td><td>id, school_id, name, code</td></tr>
+                        <tr><td>units</td><td>Subjects/Modules</td><td>id, name, code, is_common_unit</td></tr>
+                        <tr><td>course_units</td><td>Junction table</td><td>course_id, unit_id</td></tr>
+                        <tr><td>notify_users</td><td>User accounts</td><td>id, email, role, school_id</td></tr>
+                        <tr><td>user_courses</td><td>User enrollments</td><td>user_id, course_id, unit_ids</td></tr>
+                        <tr><td>notes</td><td>Uploaded notes</td><td>id, title, file_path, unit_id</td></tr>
+                        <tr><td>updates</td><td>Announcements</td><td>id, title, content, course_id</td></tr>
+                        <tr><td>notifications</td><td>User notifications</td><td>id, user_id, message, is_read</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 5. API Endpoints -->
+            <div class="section">
+                <h2 class="section-title">5. API Endpoints</h2>
+                
+                <h3 class="subsection-title">Authentication</h3>
+                <table>
+                    <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Auth</th></tr></thead>
+                    <tbody>
+                        <tr><td>POST</td><td>/api/user_auth/login</td><td>Login user</td><td><span class="badge badge-public">Public</span></td></tr>
+                        <tr><td>POST</td><td>/api/user_auth/register</td><td>Register new user</td><td><span class="badge badge-public">Public</span></td></tr>
+                        <tr><td>POST</td><td>/api/user_auth/verify-email</td><td>Verify email</td><td><span class="badge badge-public">Public</span></td></tr>
+                        <tr><td>GET</td><td>/api/user_auth/me</td><td>Get current user</td><td><span class="badge badge-token">Token</span></td></tr>
+                        <tr><td>PUT</td><td>/api/user_auth/update-profile</td><td>Update profile</td><td><span class="badge badge-token">Token</span></td></tr>
+                        <tr><td>POST</td><td>/api/user_auth/forgot-password</td><td>Forgot password</td><td><span class="badge badge-public">Public</span></td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">Unit Enrollment API</h3>
+                <div class="info-box">
+                    <strong>POST /api/users/enroll-units</strong><br>
+                    Enroll in specific units
+                    <pre><code>{
+  "userId": 1,
+  "schoolId": 1,
+  "courseId": 1,
+  "unitIds": [1, 3, 5]
+}</code></pre>
+                    <strong>Response:</strong>
+                    <pre><code>{
+  "message": "Successfully enrolled in units",
+  "unitIds": [1, 3, 5]
+}</code></pre>
+                </div>
+
+                <h3 class="subsection-title">Notes Management</h3>
+                <table>
+                    <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Auth</th></tr></thead>
+                    <tbody>
+                        <tr><td>GET</td><td>/api/notes</td><td>List all notes</td><td><span class="badge badge-public">Public</span></td></tr>
+                        <tr><td>GET</td><td>/api/notes/:id</td><td>Get note details</td><td><span class="badge badge-public">Public</span></td></tr>
+                        <tr><td>POST</td><td>/api/notes</td><td>Upload note</td><td><span class="badge badge-token">Token</span></td></tr>
+                        <tr><td>DELETE</td><td>/api/notes/:id</td><td>Delete note</td><td><span class="badge badge-token">Token</span></td></tr>
+                        <tr><td>GET</td><td>/api/notes/:id/download</td><td>Download note</td><td><span class="badge badge-token">Token</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 6. Security -->
+            <div class="section">
+                <h2 class="section-title">6. Security</h2>
+                
+                <h3 class="subsection-title">Authentication</h3>
+                <ul>
+                    <li>JWT tokens with 7-day expiration</li>
+                    <li>Password hashing using bcrypt (10 rounds)</li>
+                    <li>Token stored in localStorage on client</li>
+                </ul>
+
+                <h3 class="subsection-title">Role-Based Access Control</h3>
+                <table>
+                    <thead><tr><th>Role</th><th>Permissions</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Student</strong></td><td>View notes, enroll in units, download</td></tr>
+                        <tr><td><strong>Lecturer</strong></td><td>All student permissions + upload notes, create updates</td></tr>
+                        <tr><td><strong>Admin</strong></td><td>All permissions + manage users, schools, courses, units</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="subsection-title">API Security Measures</h3>
+                <ul>
+                    <li>CORS configured for allowed origins</li>
+                    <li>Rate limiting (100 requests per 15 minutes)</li>
+                    <li>Auth rate limiting (5 attempts per 15 minutes)</li>
+                    <li>Input validation on all endpoints</li>
+                    <li>File type validation for uploads (PDF only)</li>
+                    <li>File size limit: 10MB</li>
+                </ul>
+
+                <div class="warning-box">
+                    <strong>Environment Variables Required:</strong>
+                    <pre><code>JWT_SECRET=&lt;secret-key&gt;
+DB_HOST=&lt;database-host&gt;
+DB_NAME=&lt;database-name&gt;
+FRONTEND_URL=&lt;frontend-url&gt;
+BREVO_API_KEY=&lt;email-api-key&gt;</code></pre>
+                </div>
+            </div>
+
+            <!-- 7. System Architecture -->
+            <div class="section">
+                <h2 class="section-title">7. System Architecture</h2>
+                
+                <div class="diagram">
+┌─────────────────────────────────────────────────────────────┐
+│                      FRONTEND (Vercel)                       │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐  │
+│  │  Admin   │ │ Lecturer │ │ Student  │ │   Landing    │  │
+│  │ Dashboard│ │  Portal  │ │ Dashboard│ │    Pages     │  │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────────┘  │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ HTTPS
+┌──────────────────────────▼──────────────────────────────────┐
+│                     BACKEND (Render.com)                     │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
+│  │  Express    │  │   Routes    │  │     Middleware      │  │
+│  │   Server    │  │  (REST API)  │  │ (Auth, CORS, Rate)  │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────┘  │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+┌──────────────────────────▼──────────────────────────────────┐
+│                   DATABASE (PostgreSQL)                      │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │ notify_users │ schools │ courses │ units │ notes   │    │
+│  └─────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────┘
+                </div>
+            </div>
+
+            <!-- 8. User Flows -->
+            <div class="section">
+                <h2 class="section-title">8. User Flows</h2>
+                
+                <h3 class="subsection-title">Student Flow</h3>
+                <ol>
+                    <li>Register with email (auto-detected role based on institution domain)</li>
+                    <li>Login to dashboard</li>
+                    <li>Browse schools → departments → units</li>
+                    <li><strong>Select specific units to enroll in</strong></li>
+                    <li>View and download notes for enrolled units</li>
+                    <li>Upload notes (if role permits)</li>
+                    <li>View course updates</li>
+                </ol>
+
+                <h3 class="subsection-title">Lecturer Flow</h3>
+                <ol>
+                    <li>Register with institutional email (staff domain = lecturer role)</li>
+                    <li>Login to dashboard</li>
+                    <li>Access lecturer portal</li>
+                    <li>Upload notes to units</li>
+                    <li>Create course updates/announcements</li>
+                    <li>Manage own uploads</li>
+                </ol>
+
+                <h3 class="subsection-title">Admin Flow</h3>
+                <ol>
+                    <li>Login to admin dashboard</li>
+                    <li>View system statistics</li>
+                    <li>Manage users (view, filter, delete)</li>
+                    <li>Manage institutions, schools, courses, units</li>
+                    <li>View all content</li>
+                </ol>
+            </div>
+
+            <!-- 9. File Storage -->
+            <div class="section">
+                <h2 class="section-title">9. File Storage</h2>
+                
+                <h3 class="subsection-title">Upload Structure</h3>
+                <pre><code>backend/uploads/
+├── notes/
+│   ├── &lt;timestamp&gt;-&lt;random&gt;.pdf
+│   └── ...
+└── pfps/
+    ├── &lt;timestamp&gt;-&lt;random&gt;.jpg
+    └── ...</code></pre>
+
+                <h3 class="subsection-title">Constraints</h3>
+                <ul>
+                    <li>Notes: PDF only, max 10MB</li>
+                    <li>Profile pictures: jpg/png, max 2MB</li>
+                    <li>Static file serving enabled</li>
+                </ul>
+            </div>
+
+            <!-- 10. Deployment -->
+            <div class="section">
+                <h2 class="section-title">10. Deployment</h2>
+                
+                <h3 class="subsection-title">Backend (Render.com)</h3>
+                <ol>
+                    <li>Connect GitHub repository</li>
+                    <li>Set environment variables</li>
+                    <li>Build command: <code>node server.js</code></li>
+                    <li>Auto-deploy on push</li>
+                </ol>
+
+                <h3 class="subsection-title">Frontend (Vercel)</h3>
+                <ol>
+                    <li>Import repository</li>
+                    <li>Set output directory: frontend</li>
+                    <li>Build command: (empty)</li>
+                    <li>Auto-deploy on push</li>
+                </ol>
+
+                <div class="info-box">
+                    <strong>Production URLs:</strong><br>
+                    Backend: <code>https://notify-sxkf.onrender.com</code><br>
+                    Frontend: <code>https://notify-frontend.vercel.app</code>
+                </div>
+            </div>
+
+            <!-- 11. Development Setup -->
+            <div class="section">
+                <h2 class="section-title">11. Development Setup</h2>
+                
+                <h3 class="subsection-title">Prerequisites</h3>
+                <ul>
+                    <li>Node.js 18+</li>
+                    <li>PostgreSQL (local or cloud)</li>
+                </ul>
+
+                <h3 class="subsection-title">Backend Setup</h3>
+                <pre><code>cd backend
+npm install
+cp .env.example .env
+# Configure database credentials
+npm run dev  # Development with nodemon</code></pre>
+
+                <h3 class="subsection-title">Frontend Setup</h3>
+                <pre><code>cd frontend
+# Open index.html in browser
+# Or serve with: npx serve .</code></pre>
+
+                <div class="warning-box">
+                    <strong>Initial Setup:</strong><br>
+                    1. Run <code>GET /api/setup</code> to initialize database<br>
+                    2. Seed data created automatically<br>
+                    3. Default test account: <code>student@test.com</code> / <code>password123</code>
+                </div>
+            </div>
+
+            <!-- 12. Future Improvements -->
+            <div class="section">
+                <h2 class="section-title">12. Future Improvements</h2>
+                <ul>
+                    <li>Real-time notifications via WebSocket</li>
+                    <li>Search with filters (date, author, unit)</li>
+                    <li>Note ratings and reviews</li>
+                    <li>Discussion threads on notes</li>
+                    <li>Mobile responsive design</li>
+                    <li>Email verification via OTP</li>
+                    <li>Two-factor authentication</li>
+                    <li>Analytics dashboard for lecturers</li>
+                    <li>Bulk upload for notes</li>
+                    <li>Integration with LMS systems</li>
+                </ul>
+            </div>
+
+            <!-- 13. Appendix -->
+            <div class="section">
+                <h2 class="section-title">13. Appendix</h2>
+                
+                <h3 class="subsection-title">Sample Credentials</h3>
+                <ul>
+                    <li>Student: <code>student@test.com</code> / <code>password123</code></li>
+                    <li>Lecturer: <code>lecturer@university.com</code> / <code>password123</code></li>
+                    <li>Admin: <code>admin@notify.com</code> / <code>password123</code></li>
+                </ul>
+
+                <h3 class="subsection-title">API Response Format</h3>
+                <pre><code>{
+  "success": true,
+  "data": { ... },
+  "message": "Success"
+}</code></pre>
+
+                <h3 class="subsection-title">Error Response Format</h3>
+                <pre><code>{
+  "success": false,
+  "error": "Error message"
+}</code></pre>
+
+                <h3 class="subsection-title">Rate Limits</h3>
+                <ul>
+                    <li>Default: 100 requests per 15 minutes</li>
+                    <li>Auth endpoints: 5 requests per 15 minutes</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>NOTIFY Platform - University Note-Sharing System</p>
+            <p>© NOTIFY Platform</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -40,7 +40,47 @@ NOTIFY is a full-stack web application for university note-sharing, enabling stu
 
 ---
 
-## 3. System Architecture
+## 3. Data Model Hierarchy
+
+The system follows a strict hierarchical structure:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    INSTITUTION (University)                  │
+│                   Has many Schools (Faculties)               │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────��───────────────────────────────────────────┐
+│                   SCHOOL (Faculty/College)                   │
+│                  Has many Courses/Departments                │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  COURSE (Department/Program)                  │
+│                   Has many Units (Subjects)                 │
+│              Units linked via course_units table            │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                       UNIT (Subject/Module)                  │
+│              Students choose which units to enroll            │
+│              Users enroll via user_courses table             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### User Enrollment Flow
+
+1. User browses **Schools** → **Courses** → **Units**
+2. User selects specific **Units** to enroll in (via `/api/users/enroll-units`)
+3. Enrollment stored in `user_courses.unit_ids` as comma-separated unit IDs
+4. User can enroll in multiple units across different courses
+
+---
+
+## 4. System Architecture
 
 ### High-Level Architecture
 ```
@@ -65,8 +105,8 @@ NOTIFY is a full-stack web application for university note-sharing, enabling stu
 │  │ /api/notes  │  │             │  │                     │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────┘  │
 └──────────────────────────┬──────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────┐
+                          │
+┌──���───────────────────────▼──────────────────────────────────┐
 │                   DATABASE (PostgreSQL)                      │
 │  ┌─────────────────────────────────────────────────────┐    │
 │  │ notify_users │ schools │ courses │ units │ notes   │    │
@@ -84,68 +124,74 @@ NOTIFY is a full-stack web application for university note-sharing, enabling stu
 
 ---
 
-## 4. Database Schema
+## 5. Database Schema
 
 ### Entity Relationship Diagram
 ```
 ┌──────────────┐       ┌──────────────┐       ┌──────────────┐
 │ institutions │       │   schools    │       │   courses    │
 ├──────────────┤       ├──────────────┤       ├──────────────┤
-│ id (PK)      │       │ id (PK)      │       │ id (PK)      │
-│ name         │       │ name         │       │ name         │
-│ email_domain │       │ institution_id│───────│ school_id (FK)│
-│ created_at   │       │ created_at   │       │ created_at   │
-└──────────────┘       └──────────────┘       └──────┬───────┘
+│ id (PK)      │◄──────│ institution_id│    │ id (PK)      │
+│ name         │       │ id (PK)      │────►│ school_id (FK)│
+│ staff_domain │       │ name         │       │ name         │
+│ student_domain│      │ created_at   │       │ code         │
+│ created_at   │       └──────────────┘       │ description  │
+└──────────────┘                             │ created_at   │
+                                              └──────┬───────┘
                                                     │
-                                                    ▼
-┌──────────────┐       ┌──────────────┐       ┌──────────────┐
-│    notes     │       │    updates   │       │    units     │
-├──────────────┤       ├──────────────┤       ├──────────────┤
-│ id (PK)      │       │ id (PK)      │       │ id (PK)      │
-│ title        │       │ title        │       │ name         │
-│ description  │       │ content      │       │ code         │
-│ file_path    │       │ course_id(FK)│       │ course_id(FK)│
-│ unit_id (FK) │       │ author_id(FK)│       │ created_at   │
-│ author_id(FK)│       │ created_at   │       └──────────────┘
-│ created_at   │       └──────────────┘
-│ downloads    │               ▲
-└──────────────┘               │
-         │                    │
-         ▼                    │
-┌──────────────────┐  ┌──────────────┐
-│  notify_users    │  │ user_courses │
-├──────────────────┤  ├──────────────┤
-│ id (PK)          │  │ user_id (FK) │
-│ email (UK)       │  │ course_id(FK)│
-│ password (hash)  │  │ enrolled_at  │
-│ name             │  └──────────────┘
-│ role             │
-│ school_id (FK)   │
-│ profile_picture  │
-│ created_at       │
-└──────────────────┘
+                         ┌──────────────────────────┼───��───────────┐
+                         │                          │               │
+                         ▼                          ▼               ▼
+              ┌──────────────┐       ┌──────────────────┐  ┌──────────────┐
+              │ course_units │       │    units         │  │   notes     │
+              │ (junction)  │       ├──────────────┤  │ ├──────────────┤
+              ├──────────────┤       │ id (PK)      │  │ │ id (PK)    │
+              │ course_id(FK)│       │ name        │  │ │ title      │
+              │ unit_id (FK) │       │ code        │  │ │ description│
+              └──────┬───────┘       │ is_common_unit│  │ │ file_path  │
+                     │             │ created_at   │  │ │ unit_id(FK)│
+                     │             └──────────────┘  │ │ user_id(FK)│
+                     ▼                            │ │ downloads │
+              ┌──────────────┐                     │ │ status   │
+              │ user_courses │                     │ └──────────┘
+              ├──────────────┤
+              │ user_id(FK) │
+              │ course_id(FK│
+              │ unit_ids    │  ◄── Stores user's selected unit IDs
+              │ status     │
+              └────────────┘
+
+              ┌──────────────┐
+              │ notify_users │
+              ├──────────────┤
+              │ id (PK)     │
+              │ email (UK)  │
+              │ password    │
+              │ name       │
+              │ role       │
+              │ school_id(FK)│
+              │ pfp        │
+              │ created_at  │
+              └────────────┘
 ```
 
 ### Table Definitions
 
-#### notify_users
+#### institutions
 | Column | Type | Constraints |
 |--------|------|-------------|
 | id | SERIAL | PRIMARY KEY |
-| email | VARCHAR(255) | UNIQUE, NOT NULL |
-| password | VARCHAR(255) | NOT NULL |
 | name | VARCHAR(255) | NOT NULL |
-| role | VARCHAR(50) | DEFAULT 'student' |
-| school_id | INTEGER | FOREIGN KEY (schools.id) |
-| profile_picture | VARCHAR(500) | NULLABLE |
+| staff_domain | VARCHAR(255) | NULLABLE |
+| student_domain | VARCHAR(255) | NULLABLE |
 | created_at | TIMESTAMP | DEFAULT NOW() |
 
 #### schools
 | Column | Type | Constraints |
 |--------|------|-------------|
 | id | SERIAL | PRIMARY KEY |
-| name | VARCHAR(255) | NOT NULL |
 | institution_id | INTEGER | FOREIGN KEY (institutions.id) |
+| name | VARCHAR(100) | NOT NULL |
 | created_at | TIMESTAMP | DEFAULT NOW() |
 
 #### courses
@@ -153,7 +199,9 @@ NOTIFY is a full-stack web application for university note-sharing, enabling stu
 |--------|------|-------------|
 | id | SERIAL | PRIMARY KEY |
 | name | VARCHAR(255) | NOT NULL |
-| school_id | INTEGER | FOREIGN KEY (schools.id) |
+| code | VARCHAR(50) | NULLABLE |
+| description | TEXT | NULLABLE |
+| school_id | INTEGER | FOREIGN KEY (schools.id) ON DELETE CASCADE |
 | created_at | TIMESTAMP | DEFAULT NOW() |
 
 #### units
@@ -161,132 +209,155 @@ NOTIFY is a full-stack web application for university note-sharing, enabling stu
 |--------|------|-------------|
 | id | SERIAL | PRIMARY KEY |
 | name | VARCHAR(255) | NOT NULL |
-| code | VARCHAR(50) | NOT NULL |
-| course_id | INTEGER | FOREIGN KEY (courses.id) |
+| code | VARCHAR(50) | NULLABLE |
+| description | TEXT | NULLABLE |
+| dept_id | INTEGER | FOREIGN KEY (courses.id) ON DELETE CASCADE |
+| is_common_unit | BOOLEAN | DEFAULT FALSE |
 | created_at | TIMESTAMP | DEFAULT NOW() |
+
+#### course_units (Junction Table)
+| Column | Type | Constraints |
+|--------|------|-------------|
+| id | SERIAL | PRIMARY KEY |
+| course_id | INTEGER | FOREIGN KEY (courses.id) ON DELETE CASCADE |
+| unit_id | INTEGER | FOREIGN KEY (units.id) ON DELETE CASCADE |
+| UNIQUE | (course_id, unit_id) | |
+
+The junction table enables many-to-many relationships between courses and units, allowing a unit to belong to multiple courses.
+
+#### notify_users
+| Column | Type | Constraints |
+|--------|------|-------------|
+| id | SERIAL | PRIMARY KEY |
+| name | VARCHAR(255) | NULLABLE |
+| email | VARCHAR(255) | UNIQUE, NOT NULL |
+| password | VARCHAR(255) | NOT NULL |
+| role | VARCHAR(50) | DEFAULT 'student' |
+| school_id | INTEGER | FOREIGN KEY (schools.id) |
+| pfp | VARCHAR(500) | NULLABLE |
+| institution_id | INTEGER | FOREIGN KEY (institutions.id) |
+| verified | BOOLEAN | DEFAULT FALSE |
+| otp_code | VARCHAR(255) | NULLABLE |
+| otp_expires_at | TIMESTAMP | NULLABLE |
+| created_at | TIMESTAMP | DEFAULT NOW() |
+
+#### user_courses (User Enrollment)
+| Column | Type | Constraints |
+|--------|------|-------------|
+| id | SERIAL | PRIMARY KEY |
+| user_id | INTEGER | FOREIGN KEY (notify_users.id) ON DELETE CASCADE |
+| course_id | INTEGER | FOREIGN KEY (courses.id) ON DELETE CASCADE |
+| school_id | INTEGER | FOREIGN KEY (schools.id) |
+| unit_ids | TEXT | Stores comma-separated enrolled unit IDs |
+| status | VARCHAR(20) | DEFAULT 'active' |
+| UNIQUE | (user_id, course_id) | |
 
 #### notes
 | Column | Type | Constraints |
 |--------|------|-------------|
 | id | SERIAL | PRIMARY KEY |
-| title | VARCHAR(255) | NOT NULL |
+| user_id | INTEGER | FOREIGN KEY (notify_users.id) ON DELETE CASCADE |
+| school_id | INTEGER | FOREIGN KEY (schools.id) ON DELETE SET NULL |
+| dept_id | INTEGER | FOREIGN KEY (courses.id) ON DELETE SET NULL |
+| unit_id | INTEGER | FOREIGN KEY (units.id) ON DELETE SET NULL |
+| title | VARCHAR(200) | NOT NULL |
 | description | TEXT | NULLABLE |
-| file_path | VARCHAR(500) | NOT NULL |
-| unit_id | INTEGER | FOREIGN KEY (units.id) |
-| author_id | INTEGER | FOREIGN KEY (notify_users.id) |
+| file_path | VARCHAR(255) | NULLABLE |
+| is_common_unit | BOOLEAN | DEFAULT FALSE |
 | downloads | INTEGER | DEFAULT 0 |
+| status | VARCHAR(20) | DEFAULT 'pending' |
 | created_at | TIMESTAMP | DEFAULT NOW() |
 
 #### updates
 | Column | Type | Constraints |
 |--------|------|-------------|
 | id | SERIAL | PRIMARY KEY |
-| title | VARCHAR(255) | NOT NULL |
+| user_id | INTEGER | FOREIGN KEY (notify_users.id) ON DELETE CASCADE |
+| school_id | INTEGER | FOREIGN KEY (schools.id) ON DELETE SET NULL |
+| course_id | INTEGER | FOREIGN KEY (courses.id) ON DELETE SET NULL |
+| title | VARCHAR(200) | NOT NULL |
 | content | TEXT | NOT NULL |
-| course_id | INTEGER | FOREIGN KEY (courses.id) |
-| author_id | INTEGER | FOREIGN KEY (notify_users.id) |
 | created_at | TIMESTAMP | DEFAULT NOW() |
-
-#### institutions
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | SERIAL | PRIMARY KEY |
-| name | VARCHAR(255) | NOT NULL |
-| email_domain | VARCHAR(100) | NOT NULL |
-| created_at | TIMESTAMP | DEFAULT NOW() |
-
-#### user_courses
-| Column | Type | Constraints |
-|--------|------|-------------|
-| user_id | INTEGER | FOREIGN KEY (notify_users.id) |
-| course_id | INTEGER | FOREIGN KEY (courses.id) |
-| enrolled_at | TIMESTAMP | DEFAULT NOW() |
-| PRIMARY KEY | (user_id, course_id) |
 
 #### notifications
 | Column | Type | Constraints |
 |--------|------|-------------|
 | id | SERIAL | PRIMARY KEY |
-| user_id | INTEGER | FOREIGN KEY (notify_users.id) |
-| message | TEXT | NOT NULL |
-| type | VARCHAR(50) | DEFAULT 'info' |
+| user_id | INTEGER | FOREIGN KEY (notify_users.id) ON DELETE CASCADE |
+| message | VARCHAR(255) | NOT NULL |
 | is_read | BOOLEAN | DEFAULT FALSE |
 | created_at | TIMESTAMP | DEFAULT NOW() |
 
 ---
 
-## 5. API Endpoints
+## 6. API Endpoints
 
 ### Authentication
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| POST | /api/auth/register | Register new user | Public |
-| POST | /api/auth/login | Login user | Public |
-| POST | /api/auth/change-password | Change password | Token |
-| GET | /api/auth/profile | Get user profile | Token |
+| POST | /api/user_auth/login | Login user | Public |
+| POST | /api/user_auth/register | Register new user | Public |
+| POST | /api/user_auth/verify-email | Verify email | Public |
+| POST | /api/user_auth/resend-verification | Resend verification | Public |
+| GET | /api/user_auth/me | Get current user | Token |
+| PUT | /api/user_auth/update-profile | Update profile | Token |
+| PUT | /api/user_auth/change-password | Change password | Token |
+| POST | /api/user_auth/forgot-password | Forgot password | Public |
+| POST | /api/user_auth/verify-reset-code | Verify reset code | Public |
+| POST | /api/user_auth/check-institution | Check institution | Public |
 
 ### Schools
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| GET | /api/schools | List all schools | Public |
-| GET | /api/schools/:id | Get school details | Public |
+| GET | /api/schools | List all schools with departments & units | Public |
+| GET | /api/schools/:schoolId | Get school details | Public |
 | POST | /api/schools | Create school | Admin |
-| PUT | /api/schools/:id | Update school | Admin |
-| DELETE | /api/schools/:id | Delete school | Admin |
+| GET | /api/schools-legacy | Legacy schools endpoint | Public |
 
-### Courses
+### Departments (Courses)
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| GET | /api/courses | List courses | Public |
-| GET | /api/courses/:id | Get course details | Public |
-| POST | /api/courses | Create course | Admin |
-| PUT | /api/courses/:id | Update course | Admin |
-| DELETE | /api/courses/:id | Delete course | Admin |
+| GET | /api/departments | List all departments | Public |
+| GET | /api/schools/:schoolId/departments | List school departments | Public |
+| GET | /api/schools/:schoolId/departments/:deptId | Get department | Public |
+| POST | /api/departments | Create department | Admin |
 
 ### Units
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| GET | /api/units | List units | Public |
-| GET | /api/units/:id | Get unit details | Public |
+| GET | /api/schools/:schoolId/departments/:deptId/units | List units with enrollment status | Public |
+| GET | /api/schools/:schoolId/departments/:deptId/units/:unitId | Get unit details | Public |
 | POST | /api/units | Create unit | Admin/Lecturer |
-| PUT | /api/units/:id | Update unit | Admin |
+| GET | /api/units/:unitId/courses | Get courses linked to unit | Public |
+| POST | /api/units/:unitId/link-courses | Link unit to courses | Admin |
 | DELETE | /api/units/:id | Delete unit | Admin |
+
+### User Enrollment
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | /api/users/enroll | Enroll in course (all units) | Token |
+| POST | /api/users/enroll-units | **Enroll in specific unit(s)** | Token |
+| POST | /api/users/enroll-school | Join school | Token |
+| GET | /api/users/:userId | Get user details | Token |
+| GET | /api/users/:userId/enrollment | Get user enrollments | Token |
 
 ### Notes
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| GET | /api/notes | List notes | Public |
+| GET | /api/notes | List all notes | Public |
 | GET | /api/notes/:id | Get note details | Public |
+| GET | /api/notes/my-notes | Get user's notes | Token |
 | POST | /api/notes | Upload note | Token |
-| PUT | /api/notes/:id | Update note | Token |
 | DELETE | /api/notes/:id | Delete note | Token |
-| GET | /api/notes/:id/download | Download note | Public |
+| GET | /api/notes/:id/preview | Preview PDF | Token |
+| GET | /api/notes/:id/download | Download note | Token |
 
 ### Updates
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
 | GET | /api/updates | List updates | Public |
-| GET | /api/updates/:id | Get update | Public |
+| GET | /api/updates/my-updates | Get user's updates | Token |
 | POST | /api/updates | Create update | Token |
-| PUT | /api/updates/:id | Update update | Token |
-| DELETE | /api/updates/:id | Delete update | Token |
-
-### Users
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | /api/users | List users | Admin |
-| GET | /api/users/:id | Get user | Token |
-| PUT | /api/users/:id | Update user | Token |
-| PUT | /api/users/:id/enroll | Enroll in course | Token |
-| DELETE | /api/users/:id | Delete user | Admin |
-
-### Admin
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | /api/admin/stats | Get statistics | Admin |
-| GET | /api/admin/users | List all users | Admin |
-| GET | /api/admin/notes | List all notes | Admin |
-| POST | /api/admin/institutions | Add institution | Admin |
 
 ### System
 | Method | Endpoint | Description | Auth |
@@ -294,26 +365,70 @@ NOTIFY is a full-stack web application for university note-sharing, enabling stu
 | GET | / | Health check | Public |
 | GET | /health | Health check | Public |
 | GET | /api/db-health | Database health | Public |
-| POST | /api/setup | Initialize database | Public (first run) |
+| GET | /api/test | Test endpoint | Public |
+| GET | /api/setup | Initialize database | Public |
+
+### Debug (Development)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | /api/check-tables | List database tables | Public |
+| GET | /api/debug/counts | Get entity counts | Public |
+| GET | /api/debug/dataService | Test data service | Public |
 
 ---
 
-## 6. Security
+## 7. Unit Enrollment API Details
+
+### Enroll in Specific Units
+
+**Endpoint:** `POST /api/users/enroll-units`
+
+**Request Body:**
+```json
+{
+  "userId": 1,
+  "schoolId": 1,
+  "courseId": 1,
+  "unitIds": [1, 3, 5]  // Array of unit IDs to enroll in
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Successfully enrolled in units",
+  "unitIds": [1, 3, 5]
+}
+```
+
+### Get Units with Enrollment Status
+
+**Endpoint:** `GET /api/schools/:schoolId/departments/:deptId/units`
+
+Returns units with `enrolled` count and `isEnrolled` flag for current user.
+
+**Query Parameters:**
+- `userId` (optional): Check if user is enrolled
+
+---
+
+## 8. Security
 
 ### Authentication
-- JWT tokens with 24-hour expiration
+- JWT tokens with 7-day expiration
 - Password hashing using bcrypt (10 rounds)
 - Token stored in localStorage on client
 
 ### Authorization
 Role-based access control:
-- **Student:** View notes, enroll in courses, bookmark
+- **Student:** View notes, enroll in units, download
 - **Lecturer:** All student permissions + upload notes, create updates
 - **Admin:** All permissions + manage users, schools, courses, units
 
 ### API Security
 - CORS configured for allowed origins
 - Rate limiting (100 requests per 15 minutes)
+- Auth rate limiting (5 attempts per 15 minutes)
 - Input validation on all endpoints
 - File type validation for uploads (PDF only)
 - File size limit: 10MB
@@ -328,11 +443,17 @@ DB_USER=<username>
 DB_PASSWORD=<password>
 FRONTEND_URL=<frontend-url>
 NODE_ENV=production
+PORT=3000
+BREVO_API_KEY=<email-api-key>
+SMTP_HOST=<smtp-host>
+SMTP_PORT=587
+SMTP_USER=<smtp-user>
+SMTP_PASS=<smtp-password>
 ```
 
 ---
 
-## 7. Frontend Architecture
+## 9. Frontend Architecture
 
 ### Pages Structure
 ```
@@ -383,19 +504,19 @@ frontend/
 
 ---
 
-## 8. User Roles and Flows
+## 10. User Roles and Flows
 
 ### Student Flow
-1. Register with email (auto-detected role)
+1. Register with email (auto-detected role based on institution domain)
 2. Login to dashboard
-3. Browse schools → courses → units
-4. View and download notes
-5. Enroll in courses
-6. Bookmark notes
+3. Browse schools → departments → units
+4. **Select specific units to enroll in**
+5. View and download notes for enrolled units
+6. Upload notes (if role permits)
 7. View course updates
 
 ### Lecturer Flow
-1. Register with institutional email
+1. Register with institutional email (staff domain = lecturer role)
 2. Login to dashboard
 3. Access lecturer portal
 4. Upload notes to units
@@ -412,16 +533,16 @@ frontend/
 
 ---
 
-## 9. File Storage
+## 11. File Storage
 
 ### Upload Structure
 ```
 backend/uploads/
 ├── notes/
-│   ├── <uuid>.pdf
+│   ├── <timestamp>-<random>.pdf
 │   └── ...
 └── pfps/
-    ├── <uuid>.jpg
+    ├── <timestamp>-<random>.jpg
     └── ...
 ```
 
@@ -432,7 +553,7 @@ backend/uploads/
 
 ---
 
-## 10. Deployment
+## 12. Deployment
 
 ### Backend (Render.com)
 1. Connect GitHub repository
@@ -452,7 +573,7 @@ backend/uploads/
 
 ---
 
-## 11. Development Setup
+## 13. Development Setup
 
 ### Prerequisites
 - Node.js 18+
@@ -475,20 +596,20 @@ cd frontend
 ```
 
 ### Initial Setup
-1. Run `POST /api/setup` to initialize database
+1. Run `GET /api/setup` to initialize database
 2. Seed data created automatically
-3. Default admin account created
+3. Default test account: `student@test.com` / `password123`
 
 ---
 
-## 12. Future Improvements
+## 14. Future Improvements
 
-- [ ] Real-time notifications
+- [ ] Real-time notifications via WebSocket
 - [ ] Search with filters (date, author, unit)
 - [ ] Note ratings and reviews
 - [ ] Discussion threads on notes
 - [ ] Mobile responsive design
-- [ ] Email verification
+- [ ] Email verification via OTP
 - [ ] Two-factor authentication
 - [ ] Analytics dashboard for lecturers
 - [ ] Bulk upload for notes
@@ -496,7 +617,7 @@ cd frontend
 
 ---
 
-## 13. Appendix
+## 15. Appendix
 
 ### Sample Credentials
 - Student: `student@test.com` / `password123`
@@ -522,7 +643,7 @@ cd frontend
 
 ### Rate Limits
 - Default: 100 requests per 15 minutes
-- Auth endpoints: 10 requests per 15 minutes
+- Auth endpoints: 5 requests per 15 minutes
 
 ---
 
