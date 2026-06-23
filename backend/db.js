@@ -15,6 +15,7 @@ if (process.env.DATABASE_URL) {
         max: 20,
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 5000,
+        family: 4, // Force IPv4 (Render doesn't support IPv6)
     });
 } else {
     // Local development fallback
