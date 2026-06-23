@@ -1,268 +1,95 @@
-/* Mobile Responsive Styles - Web App Feel */
+/* ============================
+   Responsive Overrides
+   ============================ */
 
-/* Desktop & Mobile: two row layout */
-@media (min-width: 769px) {
-    .topbar {
-        flex-direction: column !important;
-        padding: 10px 20px 15px 20px !important;
-        gap: 12px !important;
-    }
-    
-    .topbar-row-1, .topbar-row-2 {
-        display: flex !important;
-        flex-direction: row !important;
-        width: 100% !important;
-        gap: 12px !important;
-    }
-    
-    .topbar-row-1 {
-        justify-content: space-between !important;
-        align-items: center !important;
-    }
-    
-    .topbar-row-2 {
-        justify-content: flex-start !important;
-        align-items: center !important;
-    }
-    
-    .topbar-logo {
-        font-size: 1.4rem !important;
-        padding: 0 10px !important;
-    }
-    
-    .topbar .search {
-        flex: 1 !important;
-        max-width: 600px !important;
-        padding: 10px 15px !important;
-    }
-    
-    .sideburger {
-        display: none !important;
-    }
-    
-    #sidebarToggleBtn {
-        display: flex !important;
-    }
+/* ── Sidebar responsive behavior ── */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 280px !important;
+    transform: translateX(-100%);
+    transition: transform var(--transition-slow);
+    position: fixed;
+    z-index: 1000;
+  }
+
+  .sidebar.active {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+  }
+
+  .sidebar-overlay.active {
+    display: block;
+  }
+
+  .page-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding: var(--space-4);
+  }
+
+  .profile-info,
+  .profile-name,
+  .profile-role {
+    display: none;
+  }
+
+  .profile-menu-header {
+    display: flex;
+  }
 }
 
-/* Base text sizes - smaller for mobile app feel */
+/* ── Touch-friendly targets ── */
+@media (max-width: 768px) {
+  button, a, select {
+    min-height: 44px;
+  }
+  .sidebar-nav a {
+    padding: 12px 14px;
+  }
+}
+
+/* ── Prevent horizontal scroll ── */
+@media (max-width: 768px) {
+  html, body {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+}
+
+/* ── Mobile font adjustment ── */
 @media (max-width: 480px) {
-    html { font-size: 13px; }
-    body { font-size: 13px; }
-    
-    /* Reduce all heading sizes */
-    h1 { font-size: 1.3rem !important; }
-    h2 { font-size: 1.2rem !important; }
-    h3 { font-size: 1.1rem !important; }
-    h4 { font-size: 1rem !important; }
-    p { font-size: 0.8rem !important; }
-    span { font-size: 0.8rem !important; }
-    
-    /* Smaller section headers */
-    .section-header h2 { font-size: 1rem !important; }
-    .welcome-content h1 { font-size: 1.2rem !important; }
-    .welcome-subtitle { font-size: 0.85rem !important; }
-    
-    /* Smaller stat cards */
-    .stat-card { padding: 12px !important; }
-    .stat-card h3 { font-size: 1.1rem !important; }
-    .stat-card p { font-size: 0.75rem !important; }
-    .insight-value { font-size: 1rem !important; }
-    
-    /* Smaller cards */
-    .update-card, .course-card, .note-card, .continue-card {
-        padding: 10px !important;
-    }
-    
-    .course-card h3 { font-size: 0.95rem !important; }
-    .course-card p { font-size: 0.75rem !important; }
-    
-    /* Smaller icons */
-    .update-icon, .course-icon, .file-icon, .stat-icon {
-        width: 28px !important;
-        height: 28px !important;
-    }
-    
-    .update-icon i, .course-icon i { font-size: 0.9rem !important; }
-    
-    /* Smaller badges */
-    .school-badge, .dept-badge {
-        font-size: 0.7rem !important;
-        padding: 4px 8px !important;
-    }
-    
-    /* Padding adjustments */
-    .page-content { padding: 8px !important; }
-    .welcome-section { padding: 10px !important; margin: 6px 2% !important; }
-    .content-section { padding: 8px !important; margin: 2% 2% !important; }
-    
-    /* Grid adjustments */
-    .update-cards { grid-template-columns: 1fr !important; gap: 8px !important; }
-    .course-grid { grid-template-columns: 1fr !important; }
-    
-    /* Smaller buttons */
-    .btn-primary, .btn-outline, .btn-resume {
-        padding: 6px 10px !important;
-        font-size: 0.8rem !important;
-    }
-    
-    /* Form elements smaller */
-    .input-group input, .select-group select {
-        padding: 8px 10px !important;
-        font-size: 0.85rem !important;
-    }
-    
-    /* Full width buttons on mobile */
-    .btn-primary, .btn-outline, .btn-resume {
-        width: 100% !important;
-        justify-content: center !important;
-    }
-    
-    /* Stack form elements */
-    .hierarchy-selects, .form-row {
-        grid-template-columns: 1fr !important;
-    }
-    
-    /* Hide less important elements */
-    .sidebar-footer, .section-meta {
-        display: none !important;
-    }
+  html {
+    font-size: 14px;
+  }
 }
 
-/* Small tablets */
-@media (min-width: 481px) and (max-width: 768px) {
-    html { font-size: 14px; }
-    h1 { font-size: 1.5rem !important; }
-    h2 { font-size: 1.3rem !important; }
-    .update-cards { grid-template-columns: repeat(2, 1fr) !important; }
-}
-
-/* Touch-friendly */
+/* ── Auth pages (login/register) ── */
 @media (max-width: 768px) {
-    button, a, select { min-height: 44px; }
-    .sidebar-nav a { padding: 12px 14px !important; }
+  .login-container,
+  .register-container {
+    flex-direction: column;
+  }
 }
 
-/* Prevent horizontal scroll */
+/* ── Notifications on mobile ── */
 @media (max-width: 768px) {
-    html, body { max-width: 100vw !important; overflow-x: hidden !important; }
-    .dashboard-cont, .main-content { overflow-x: hidden; width: 100% !important; }
-}
-
-/* ==================== TOPBAR ==================== */
-@media (max-width: 768px) {
-    /* Hide duplicate breadcrumbs */
-    .page-content-wrapper .breadcrumbs,
-    .page-content .breadcrumbs { display: none !important; }
-    
-    /* Show main-content breadcrumbs */
-    .main-content > .breadcrumbs {
-        display: flex !important;
-        padding: 4px 8px !important;
-        font-size: 0.65rem !important;
-    }
-    
-    .main-content > .breadcrumbs a { font-size: 0.6rem !important; }
-    
-    /* Topbar with 2 rows */
-    .topbar {
-        display: flex !important;
-        flex-direction: column !important;
-        width: 100% !important;
-        padding: 6px !important;
-        gap: 6px !important;
-        overflow-x: hidden !important;
-    }
-    
-    /* Line 1: logo + icons */
-    .topbar-row-1 {
-        display: flex !important;
-        flex-direction: row !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        width: 100% !important;
-    }
-    
-    .topbar-logo {
-        font-size: 0.8rem !important;
-        padding: 2px 4px !important;
-    }
-    
-    .topbar-logo i {
-        font-size: 0.7rem !important;
-    }
-    
-    .topbar-right {
-        display: flex !important;
-        gap: 6px !important;
-    }
-    
-    /* Line 2: burger + search */
-    .topbar-row-2 {
-        display: flex !important;
-        flex-direction: row !important;
-        width: 100% !important;
-        gap: 6px !important;
-    }
-    
-    .sideburger {
-        display: flex !important;
-    }
-    
-    .mobile-menu-btn {
-        display: inline-flex !important;
-        padding: 4px 8px !important;
-        font-size: 0.9rem !important;
-    }
-    
-    .topbar .search {
-        flex: 1 !important;
-        padding: 6px 10px !important;
-    }
-    
-    .topbar .search input {
-        font-size: 0.8rem !important;
-    }
-    
-    /* Smaller icons */
-    .theme-toggle { width: 28px !important; height: 14px !important; }
-    .theme-toggle i { font-size: 0.5rem !important; }
-    .notif { font-size: 0.85rem !important; padding: 2px !important; }
-    .notif-badge { width: 10px !important; height: 10px !important; font-size: 6px !important; }
-    .profile img { width: 22px !important; height: 22px !important; }
-    
-    /* Hide name in topbar */
-    .profile-info, .profile-name, .profile-role, .profile i.fa-chevron-down { display: none !important; }
-    
-    /* Show name in dropdown */
-    .profile-menu-header { display: flex !important; flex-direction: column !important; padding: 6px !important; }
-    .profile-menu-header .menu-name { font-size: 0.8rem !important; }
-    .profile-menu-header .menu-role { font-size: 0.65rem !important; }
-}
-
-/* ==================== NOTIFICATIONS ==================== */
-@media (max-width: 768px) {
-    #notification-container {
-        position: fixed !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        width: 85% !important;
-        max-width: 280px !important;
-        z-index: 100000 !important;
-    }
-    
-    .notification {
-        padding: 10px 12px !important;
-        font-size: 0.8rem !important;
-        border-radius: 8px !important;
-    }
-}
-
-/* Login/Register */
-@media (max-width: 480px) {
-    .login-container, .register-container { flex-direction: column !important; }
-    .auth-container { padding: 15px !important; }
-    .auth-container h2 { font-size: 1.1rem !important; }
-    .input-group input { padding: 8px 10px !important; font-size: 0.85rem !important; }
+  #notification-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 85%;
+    max-width: 320px;
+    z-index: 100000;
+  }
 }
