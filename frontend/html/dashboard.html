@@ -5,14 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Notify</title>
     <link rel="icon" type="image/png" href="../images/dashboardImages/education.png">
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Fredoka|Inter&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
 <script src="../js/config.js"></script>
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-
-       <script src="../js/navigation.js"></script>
+<script src="../js/navigation.js"></script>
 <script src="../js/themes.js"></script>
 
     <link href="../css/design.css" rel="stylesheet" />
@@ -22,88 +19,104 @@
     <link href="../css/modal.css" rel="stylesheet" />
 </head>
 <body>
-<script>
-  AOS.init();
-</script>
 
-    <!--------
-<div data-aos="fade-down"></div>
-<div data-aos="fade-right"></div>
-<div data-aos="fade-left"></div>
---->
 <div class="dashboard-cont">
-
-    <div id="page-content-wrapper"  >
-        <div class="page-content" >
+    <div id="page-content-wrapper">
+        <div class="page-content">
 
             <div class="breadcrumbs"></div>
 
+            <!-- Hero Section: Welcome + Calendar Card -->
             <div class="welcome-section" id="welcomeSection">
-                <div class="welcome-content skeleton-wrapper">
-                    <div class="skeleton skeleton-title"></div>
-                    <div class="skeleton skeleton-subtitle"></div>
-                    <div class="skeleton skeleton-badge"></div>
-                    <div class="welcome-content-actual">
-                        <h2>Hello</h2>
-                        <h1>Welcome Back, <span id="userNameDisplay">User</span>! <span class="wave"></span></h1><br>                     
-                    <span class="welcome-subtitle" id="userInfoDisplay">Loading your info...</span>
-                     <p>  Your smart hub for accessing and managing university notes with ease. Stay organized, stay ahead  </p>
-
-                        <div class="welcome-badge" id="notifBadge" style="display: none;">
-                            <i class="fas fa-bell"></i>
-                            <span>You have <strong id="newUpdateCount">0 new updates</strong></span>
+                <div class="welcome-text">
+                    <h2>Hello</h2>
+                    <h1>Welcome Back, <span id="userNameDisplay">User</span>!</h1>
+                    <p id="userInfoDisplay">Loading your info...</p>
+                    <p>Your smart hub for accessing and managing university notes with ease.</p>
+                    <div class="welcome-badge" id="notifBadge" style="display: none;">
+                        <i class="fas fa-bell"></i>
+                        <span>You have <strong id="newUpdateCount">0 new updates</strong></span>
+                    </div>
+                    <div class="welcome-actions">
+                        <button class="btn" onclick="window.location.href='notes.html'">
+                            <i class="fas fa-eye"></i> View Notes
+                        </button>
+                        <button class="btn" onclick="window.location.href='schools.html'">
+                            <i class="fas fa-chalkboard"></i> Browse Classes
+                        </button>
+                    </div>
+                </div>
+                <div class="welcome-card">
+                    <div class="wc-header">
+                        <span><i class="fas fa-calendar-alt"></i> Your Progress</span>
+                    </div>
+                    <div class="wc-stats">
+                        <div class="wc-stat">
+                            <div class="wc-stat-icon" style="background: rgba(255,255,255,0.15);">
+                                <i class="fas fa-file-pdf"></i>
+                            </div>
+                            <div>
+                                <div class="wc-stat-value" id="statNotes">0</div>
+                                <div class="wc-stat-label">Notes</div>
+                            </div>
+                        </div>
+                        <div class="wc-stat">
+                            <div class="wc-stat-icon" style="background: rgba(255,255,255,0.15);">
+                                <i class="fas fa-download"></i>
+                            </div>
+                            <div>
+                                <div class="wc-stat-value" id="statDownloads">0</div>
+                                <div class="wc-stat-label">Downloads</div>
+                            </div>
+                        </div>
+                        <div class="wc-stat">
+                            <div class="wc-stat-icon" style="background: rgba(255,255,255,0.15);">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div>
+                                <div class="wc-stat-value" id="statCourses">0</div>
+                                <div class="wc-stat-label">Courses</div>
+                            </div>
+                        </div>
+                        <div class="wc-stat">
+                            <div class="wc-stat-icon" style="background: rgba(255,255,255,0.15);">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <div>
+                                <div class="wc-stat-value" id="statUpdates">0</div>
+                                <div class="wc-stat-label">Updates</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="welcome-actions skeleton-wrapper">
-                    <div class="skeleton skeleton-btn"></div>
-                    <div class="skeleton skeleton-btn"></div>
-                    <div class="skeleton skeleton-btn"></div>
-                    <div class="welcome-actions-actual">
-                        <button class="btn-outline" onclick="window.location.href='updates.html'">
-                            <i class="fas fa-clock"></i>
-                            Recent Updates
-                        </button>
-                        <button class="btn-outline" onclick="window.location.href='notes.html'">
-                            <i class="fas fa-eye"></i>
-                            View all Notes
-                        </button>
-                        <button class="btn-primary" id="classbtn" onclick="window.location.href='schools.html'">
-                            <i class="fas fa-chalkboard"></i>
-                            Browse Notes
-                        </button>
-                    </div>
-                </div>
-
-                <div class="welcome-img skeleton-wrapper">
-                    <div class="skeleton skeleton-img"></div>
-                    <div class="welcome-img-actual">
-                        <img src="../images/dashboardImages/dashboard2-removebg-preview.png" alt="Welcome Image">
+                    <div class="wc-day">
+                        <i class="fas fa-calendar-check"></i>
+                        <span id="currentDate">Loading...</span>
                     </div>
                 </div>
             </div>
 
+            <!-- My Classes / Recent Classes -->
             <div class="content-section">
                 <div class="section-header">
-                    <h2>Recent Updates</h2>
+                    <h2><i class="fas fa-chalkboard-teacher"></i> My Classes</h2>
+                    <a href="courses.html" class="view-all">View all <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="class-grid" id="classGrid">
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card"></div>
+                </div>
+            </div>
+
+            <!-- Recent Updates -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-clock"></i> Recent Updates</h2>
                     <a href="updates.html" class="view-all">View all <i class="fas fa-arrow-right"></i></a>
                 </div>
-
                 <div class="update-cards" id="updateCards">
                     <div class="skeleton skeleton-card"></div>
                     <div class="skeleton skeleton-card"></div>
-                    <div class="skeleton skeleton-card"></div>
-                </div>
-            </div>
-
-            <div class="content-section">
-                <div class="section-header">
-                    <h2>Continue Where You Left Off</h2>
-                </div>
-
-                <div id="continueCard">
-                    <div class="skeleton skeleton-continue"></div>
                 </div>
             </div>
 
@@ -112,63 +125,62 @@
 </div>
 
 <footer class="main-footer">
-        <div class="footer-container">
-            <div class="footer-brand">
-                <h3> Notify</h3>
-                <p>Your ultimate university notes platform. Access, share, and excel with comprehensive study materials across all faculties.</p>
-            </div>
-            <div class="footer-section">
-                <h4>Quick Links</h4>
-                <ul>
-                    <li><a href="dashboard.html">Dashboard</a></li>
-                    <li><a href="search.html">Search Notes</a></li>
-                    <li><a href="updates.html">Updates</a></li>
-                    <li><a href="bookmarks.html">Bookmarks</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4>Faculties</h4>
-                <ul>
-                    <li><a href="#">Science & Computing</a></li>
-                    <li><a href="#">Business</a></li>
-                    <li><a href="#">Medicine</a></li>
-                    <li><a href="#">Engineering</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4>Support</h4>
-                <ul>
-                    <li><a href="#">Help Center</a></li>
-                    <li><a href="#">Contact Us</a></li>
-                    <li><a href="#">Privacy Policy</a></li>
-                    <li><a href="#">Terms of Service</a></li>
-                </ul>
-            </div>
+    <div class="footer-container">
+        <div class="footer-brand">
+            <h3>Notify</h3>
+            <p>Your ultimate university notes platform. Access, share, and excel with comprehensive study materials across all faculties.</p>
         </div>
-        <div class="footer-bottom">
-            <p>&copy; 2026 Notify. All rights reserved.</p>
-            <div class="footer-social">
-                <a href="#"><i class="fab fa-facebook-f"></i></a>
-                <a href="#"><i class="fab fa-twitter"></i></a>
-                <a href="#"><i class="fab fa-instagram"></i></a>
-                <a href="#"><i class="fab fa-linkedin-in"></i></a>
-            </div>
-            <div class="footer-links">
-                <a href="#">Privacy</a>
-                <span>|</span>
-                <a href="#">Terms</a>
-                <span>|</span>
-                <a href="#">Support</a>
-            </div>
+        <div class="footer-section">
+            <h4>Quick Links</h4>
+            <ul>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="search.html">Search Notes</a></li>
+                <li><a href="updates.html">Updates</a></li>
+                <li><a href="bookmarks.html">Bookmarks</a></li>
+            </ul>
         </div>
-    </footer>
+        <div class="footer-section">
+            <h4>Faculties</h4>
+            <ul>
+                <li><a href="#">Science & Computing</a></li>
+                <li><a href="#">Business</a></li>
+                <li><a href="#">Medicine</a></li>
+                <li><a href="#">Engineering</a></li>
+            </ul>
+        </div>
+        <div class="footer-section">
+            <h4>Support</h4>
+            <ul>
+                <li><a href="#">Help Center</a></li>
+                <li><a href="#">Contact Us</a></li>
+                <li><a href="#">Privacy Policy</a></li>
+                <li><a href="#">Terms of Service</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2026 Notify. All rights reserved.</p>
+        <div class="footer-social">
+            <a href="#"><i class="fab fa-facebook-f"></i></a>
+            <a href="#"><i class="fab fa-twitter"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-linkedin-in"></i></a>
+        </div>
+        <div class="footer-links">
+            <a href="#">Privacy</a>
+            <span>|</span>
+            <a href="#">Terms</a>
+            <span>|</span>
+            <a href="#">Support</a>
+        </div>
+    </div>
+</footer>
 
-    <div id="modalContainer"></div>
+<div id="modalContainer"></div>
 </body>
 <script>
     function showModal(options) {
         const { title, message, icon = 'info', confirmText = 'Confirm', cancelText = 'Cancel', onConfirm, isDanger = false } = options;
-        
         const modalHtml = `
             <div class="modal-overlay" id="customModal">
                 <div class="modal-dialog">
@@ -184,17 +196,13 @@
                 </div>
             </div>
         `;
-        
         document.getElementById('modalContainer').innerHTML = modalHtml;
         const modal = document.getElementById('customModal');
-        
         setTimeout(() => modal.classList.add('show'), 10);
-        
         document.getElementById('modalConfirmBtn').onclick = () => {
             closeModal();
             if (onConfirm) onConfirm();
         };
-        
         modal.addEventListener('click', (e) => {
             if (e.target === modal) closeModal();
         });
@@ -218,6 +226,18 @@
         });
     }
 
+    function getRelativeTime(dateStr) {
+        if (!dateStr) return 'Just now';
+        const date = new Date(dateStr);
+        const now = new Date();
+        const diff = Math.floor((now - date) / 1000);
+        if (diff < 60) return 'Just now';
+        if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+        if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+        return date.toLocaleDateString();
+    }
+
     async function loadDashboardData() {
         try {
             const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -232,7 +252,7 @@
                 let enrollment = [];
                 if (schoolName) enrollment.push(schoolName);
                 if (courseName) enrollment.push(courseName);
-                userInfo += ' • ' + enrollment.join(' - ');
+                userInfo += ' \u2022 ' + enrollment.join(' - ');
             }
             document.getElementById('userInfoDisplay').textContent = userInfo;
 
@@ -240,50 +260,45 @@
             
             let updatesUrl = `${API_URL}/updates`;
             let notesUrl = `${API_URL}/notes`;
-            
-            // Filter by school if user has selected a school
+
             if (currentSchoolId) {
                 notesUrl += `?schoolId=${currentSchoolId}`;
             }
 
-            const [updatesRes, notesRes] = await Promise.all([
+            const [updatesRes, notesRes, schoolsRes] = await Promise.all([
                 fetch(updatesUrl).then(r => r.json()),
-                fetch(notesUrl).then(r => r.json())
+                fetch(notesUrl).then(r => r.json()),
+                fetch(`${API_URL}/schools`).then(r => r.json())
             ]);
 
             let updates = Array.isArray(updatesRes) ? updatesRes : [];
             let notes = Array.isArray(notesRes) ? notesRes : [];
-            
-            // Filter by school if needed (in case API doesn't support filtering)
+            let schools = Array.isArray(schoolsRes) ? schoolsRes : [];
+
             if (currentSchoolId) {
                 notes = notes.filter(n => n.school_id == currentSchoolId);
                 updates = updates.filter(u => !u.course_id || u.school_id == currentSchoolId);
             }
 
-            const notifBadge = document.getElementById('notifBadge');
-            const newUpdateCount = document.getElementById('newUpdateCount');
+            // ── Welcome card stats ──
+            document.getElementById('statNotes').textContent = notes.length;
+            const totalDownloads = notes.reduce((sum, n) => sum + (n.downloads || 0), 0);
+            document.getElementById('statDownloads').textContent = totalDownloads;
+            document.getElementById('statCourses').textContent = schools.length;
+            document.getElementById('statUpdates').textContent = updates.length;
+
+            // ── Current date ──
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+            document.getElementById('currentDate').textContent = dateStr;
+
+            // ── Recent Updates ──
+            const updatesContainer = document.getElementById('updateCards');
             if (updates.length > 0) {
+                const notifBadge = document.getElementById('notifBadge');
+                const newUpdateCount = document.getElementById('newUpdateCount');
                 notifBadge.style.display = 'flex';
                 newUpdateCount.textContent = updates.length + ' new updates';
-            }
-
-            const updatesContainer = document.getElementById('updateCards');
-            
-            function getRelativeTime(dateStr) {
-                if (!dateStr) return 'Just now';
-                const date = new Date(dateStr);
-                const now = new Date();
-                const diff = Math.floor((now - date) / 1000);
-                if (diff < 60) return 'Just now';
-                if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
-                if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
-                if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
-                return date.toLocaleDateString();
-            }
-            
-            if (updates.length > 0) {
-                let readUpdates = [];
-                try { readUpdates = JSON.parse(localStorage.getItem('readUpdates') || '[]'); } catch {}
                 
                 const getCategoryIcon = (title, content) => {
                     const text = (title + content).toLowerCase();
@@ -295,64 +310,57 @@
                     return { icon: 'fa-bullhorn', bg: '#e3f2fd', color: '#1976d2' };
                 };
                 
-                updatesContainer.innerHTML = `
-                    <div class="update-cards-actual">
-                        ${updates.slice(0, 5).map(update => {
-                            const isRead = readUpdates.includes(update.id);
-                            const cat = getCategoryIcon(update.title, update.content);
-                            return `
-                            <div class="update-card ${isRead ? 'read' : 'unread'}" onclick="window.location.href='updates.html'" style="cursor:pointer;">
-                                <div class="update-icon" style="background: ${cat.bg};">
-                                    <i class="fas ${cat.icon}" style="color: ${cat.color};"></i>
-                                </div>
-                                <div class="update-content">
-                                    <div class="update-header-row">
-                                        <h4>${update.title}</h4>
-                                        ${!isRead ? '<span class="unread-dot"></span>' : ''}
-                                    </div>
-                                    <p class="update-meta">${update.postedByName || 'Unknown'} posted${update.courseName ? ' in ' + update.courseName : ''}</p>
-                                    ${update.content ? '<p class="update-preview">' + (update.content.substring(0, 100) + (update.content.length > 100 ? '...' : '')) + '</p>' : ''}
-                                </div>
-                                <span class="update-time">${getRelativeTime(update.created_at)}</span>
+                updatesContainer.innerHTML = updates.slice(0, 3).map(update => {
+                    const cat = getCategoryIcon(update.title, update.content);
+                    return `
+                        <div class="update-card" onclick="window.location.href='updates.html'" style="cursor:pointer;">
+                            <div class="update-icon" style="background: ${cat.bg};">
+                                <i class="fas ${cat.icon}" style="color: ${cat.color};"></i>
                             </div>
-                        `}).join('')}
-                    </div>
-                `;
+                            <div class="update-content">
+                                <h4>${update.title}</h4>
+                                <p>${update.postedByName || 'Unknown'} posted${update.courseName ? ' in ' + update.courseName : ''}</p>
+                                ${update.content ? '<p class="update-preview">' + (update.content.substring(0, 80) + (update.content.length > 80 ? '...' : '')) + '</p>' : ''}
+                            </div>
+                            <span class="update-time">${getRelativeTime(update.created_at)}</span>
+                        </div>
+                    `;
+                }).join('');
             } else {
-                updatesContainer.innerHTML = '<p class="empty-state"><i class="fas fa-bell-slash"></i> No updates yet</p>';
+                updatesContainer.innerHTML = '<div class="empty-state"><i class="fas fa-bell-slash"></i><h3>No updates</h3><p>You\'re all caught up!</p></div>';
             }
 
-            const continueCard = document.getElementById('continueCard');
-            if (notes.length > 0) {
-                const recentNote = notes[0];
-                continueCard.innerHTML = `
-                    <div class="continue-card continue-card-actual">
-                        <div class="file-info">
-                            <div class="file-icon">
-                                <i class="fas fa-file-pdf"></i>
-                            </div>
-                            <div class="file-details">
-                                <h4>${recentNote.title}</h4>
-                                <p>${recentNote.schoolName || ''} ${recentNote.courseName || ''} - ${recentNote.unitName || ''}</p>
-                            </div>
+            // ── My Classes Grid ──
+            const classGrid = document.getElementById('classGrid');
+            if (schools.length > 0) {
+                let classItems = schools.map(school => {
+                    const counts = notes.filter(n => n.school_id === school.id);
+                    return {
+                        id: school.id,
+                        name: school.name,
+                        noteCount: counts.length,
+                        studentCount: school.studentCount || 0
+                    };
+                });
+                classGrid.innerHTML = classItems.map(cls => `
+                    <div class="class-card" onclick="window.location.href='courses.html?schoolId=${cls.id}'">
+                        <div class="class-card-icon">
+                            <i class="fas fa-university"></i>
                         </div>
-                        <button class="btn-resume" onclick="previewNote('${recentNote.id}')">
-                            <i class="fas fa-play"></i> Preview
-                        </button>
+                        <div class="class-card-info">
+                            <h4>${cls.name}</h4>
+                            <span>${cls.noteCount} notes \u2022 ${cls.studentCount} students</span>
+                        </div>
+                        <i class="fas fa-chevron-right"></i>
                     </div>
-                `;
+                `).join('');
             } else {
-                continueCard.innerHTML = '<p class="empty-state">No notes available</p>';
+                classGrid.innerHTML = '<div class="empty-state"><i class="fas fa-school"></i><h3>No classes yet</h3><p>Enroll in a school to get started.</p><button class="btn btn-primary" onclick="window.location.href=\'schools.html\'">Browse Schools</button></div>';
             }
 
         } catch (error) {
             console.error('Error loading dashboard:', error);
         }
-    }
-
-    function previewNote(noteId) {
-        const baseUrl = window.BASE_URL || window.API_URL?.replace('/api', '') || window.location.origin;
-        window.open(`${baseUrl}/api/notes/${noteId}/preview`, '_blank');
     }
 
     window.addEventListener('load', function() {
