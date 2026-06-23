@@ -546,17 +546,14 @@ app.get('/api/schools', async (req, res) => {
         const [schools] = await db.query(`
             SELECT
                 s.id,
-                s.institution_id,
                 s.name,
                 s.created_at,
-                i.name as "institutionName",
                 COUNT(DISTINCT u.id)::int AS "studentCount",
                 COUNT(DISTINCT c.id)::int AS "courseCount"
             FROM schools s
-            LEFT JOIN institutions i ON s.institution_id = i.id
             LEFT JOIN notify_users u ON u.school_id = s.id
             LEFT JOIN courses c ON c.school_id = s.id
-            GROUP BY s.id, s.institution_id, s.name, s.created_at, i.name
+            GROUP BY s.id, s.name, s.created_at
             ORDER BY s.name
         `);
 
@@ -704,10 +701,10 @@ app.get('/api/schools-legacy', async (req, res) => {
 
 app.post('/api/schools', async (req, res) => {
     try {
-        const { name, institution_id } = req.body;
+        const { name } = req.body;
         if (!name) return res.status(400).json({ error: 'School name is required' });
-        const [rows] = await db.query('INSERT INTO schools (name, institution_id) VALUES ($1, $2) RETURNING id', [name, institution_id || null]);
-        res.json({ id: rows[0].id, name, institution_id });
+        const [rows] = await db.query('INSERT INTO schools (name) VALUES ($1) RETURNING id', [name]);
+        res.json({ id: rows[0].id, name });
     } catch (error) {
         console.error('Error creating school:', error);
         res.status(500).json({ error: 'Failed to create school' });
@@ -1006,16 +1003,14 @@ app.get('/api/schools/:schoolId/departments/:deptId/units/:unitId/notes', async 
             SELECT n.*, 
                    u.name as "uploadedByName",
                    s.name as "schoolName",
-                   s.institution_id,
-                   COALESCE(ui.name, i2.name, i.name) as "uploaderInstitution",
-                   COALESCE(i.name, i2.name) as "institutionName",
+                   COALESCE(ui.name, i2.name) as "uploaderInstitution",
+                   i2.name as "institutionName",
                    c.name as "courseName",
                    un.name as "unitName"
             FROM notes n
             LEFT JOIN notify_users u ON n.user_id = u.id
             LEFT JOIN institutions ui ON u.institution_id = ui.id
             LEFT JOIN schools s ON n.school_id = s.id
-            LEFT JOIN institutions i ON s.institution_id = i.id
             LEFT JOIN institutions i2 ON n.institution_id = i2.id
             LEFT JOIN courses c ON n.dept_id = c.id
             LEFT JOIN units un ON n.unit_id = un.id
@@ -1037,11 +1032,9 @@ app.get('/api/notes', async (req, res) => {
             SELECT n.*, s.name as "schoolName", c.name as "deptName", u.name as "unitName",
                    s.id as "schoolId", c.id as "deptId", u.id as "unitId",
                    p.name as "uploadedByName",
-                   COALESCE(ui.name, i.name) as "uploaderInstitution",
-                   i.name as "institutionName", s.institution_id
+                   ui.name as "uploaderInstitution"
             FROM notes n
             LEFT JOIN schools s ON n.school_id = s.id
-            LEFT JOIN institutions i ON s.institution_id = i.id
             LEFT JOIN courses c ON n.dept_id = c.id
             LEFT JOIN units u ON n.unit_id = u.id
             LEFT JOIN notify_users p ON n.user_id = p.id
@@ -1071,11 +1064,9 @@ app.get('/api/notes/my-notes', async (req, res) => {
         const [notes] = await db.query(`
             SELECT n.*, s.name as "schoolName", c.name as "courseName", u.name as "unitName",
                    u.id as "unitId", u.code as "unitCode",
-                   p.name as "uploadedByName",
-                   i.name as "institutionName", s.institution_id
+                   p.name as "uploadedByName"
             FROM notes n
             LEFT JOIN schools s ON n.school_id = s.id
-            LEFT JOIN institutions i ON s.institution_id = i.id
             LEFT JOIN courses c ON n.dept_id = c.id
             LEFT JOIN units u ON n.unit_id = u.id
             LEFT JOIN notify_users p ON n.user_id = p.id
@@ -1097,22 +1088,11 @@ app.post('/api/notes', upload.single('file'), async (req, res) => {
         }
         const filePath = req.file ? '/uploads/notes/' + req.file.filename : null;
         
-        // If no institution_id provided, try to get from school's institution
-        let finalInstitutionId = institution_id;
-        console.log('Creating note - institution_id from request:', institution_id, 'school_id:', school_id);
-        if (!finalInstitutionId) {
-            try {
-                const [schoolRows] = await db.query('SELECT institution_id FROM schools WHERE id = $1', [school_id]);
-                console.log('School institution_id:', schoolRows[0]?.institution_id);
-                finalInstitutionId = schoolRows[0]?.institution_id;
-            } catch(e) {}
-        }
-        
         const [rows] = await db.query(`
             INSERT INTO notes (title, description, file_path, school_id, dept_id, unit_id, user_id, institution_id, status)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')
             RETURNING id, status
-        `, [title, description, filePath, school_id, dept_id, unit_id, userId || null, finalInstitutionId || null]);
+        `, [title, description, filePath, school_id, dept_id, unit_id, userId || null, institution_id || null]);
         res.json({ id: rows[0].id, status: rows[0].status, title, description, file_path: filePath });
     } catch (error) {
         console.error('Error creating note:', error);
@@ -1545,16 +1525,14 @@ app.get('/api/admin/schools', adminMiddleware, async (req, res) => {
     try {
         const [schools] = await db.query(`
             SELECT s.*,
-                   i.name as "institutionName",
                    COUNT(DISTINCT u.id)::int AS "studentCount",
                    COUNT(DISTINCT c.id)::int AS "courseCount",
                    COUNT(DISTINCT n.id)::int AS "noteCount"
             FROM schools s
-            LEFT JOIN institutions i ON s.institution_id = i.id
             LEFT JOIN notify_users u ON u.school_id = s.id
             LEFT JOIN courses c ON c.school_id = s.id
             LEFT JOIN notes n ON n.school_id = s.id
-            GROUP BY s.id, i.name
+            GROUP BY s.id
             ORDER BY s.name
         `);
         res.json(schools);
@@ -1566,9 +1544,9 @@ app.get('/api/admin/schools', adminMiddleware, async (req, res) => {
 
 app.post('/api/admin/schools', adminMiddleware, async (req, res) => {
     try {
-        const { name, institution_id } = req.body;
-        const [rows] = await db.query('INSERT INTO schools (name, institution_id) VALUES ($1, $2) RETURNING id', [name, institution_id || null]);
-        res.json({ id: rows[0].id, name, institution_id });
+        const { name } = req.body;
+        const [rows] = await db.query('INSERT INTO schools (name) VALUES ($1) RETURNING id', [name]);
+        res.json({ id: rows[0].id, name });
     } catch (error) {
         console.error('Error creating school:', error);
         res.status(500).json({ error: 'Failed to create school' });
@@ -1577,8 +1555,8 @@ app.post('/api/admin/schools', adminMiddleware, async (req, res) => {
 
 app.put('/api/admin/schools/:id', adminMiddleware, async (req, res) => {
     try {
-        const { name, institution_id } = req.body;
-        await db.query('UPDATE schools SET name = $1, institution_id = $2 WHERE id = $3', [name, institution_id, req.params.id]);
+        const { name } = req.body;
+        await db.query('UPDATE schools SET name = $1 WHERE id = $2', [name, req.params.id]);
         res.json({ message: 'School updated successfully' });
     } catch (error) {
         console.error('Error updating school:', error);
@@ -1832,11 +1810,9 @@ app.get('/api/admin/notes', adminMiddleware, async (req, res) => {
                    s.name as "schoolName", 
                    c.name as "courseName", 
                    u.name as "unitName",
-                   p.name as "uploadedByName",
-                   i.name as "institutionName", s.institution_id
+                   p.name as "uploadedByName"
             FROM notes n
             LEFT JOIN schools s ON n.school_id = s.id
-            LEFT JOIN institutions i ON s.institution_id = i.id
             LEFT JOIN courses c ON n.dept_id = c.id
             LEFT JOIN units u ON n.unit_id = u.id
             LEFT JOIN notify_users p ON n.user_id = p.id
