@@ -369,6 +369,176 @@ app.get('/api/setup', async (req, res) => {
 });
 
 // =====================
+// SEED ALL DATA ENDPOINT
+// =====================
+app.get('/api/seed-full', async (req, res) => {
+    try {
+        console.log(' Running full database seed...');
+
+        // Check if already seeded
+        const [existing] = await db.query(`SELECT COUNT(*)::int as count FROM courses`);
+        if (existing[0].count > 0) {
+            return res.json({ success: true, message: 'Data already exists, skipping.' });
+        }
+
+        // Schools (setup already created 4, add Law)
+        const [lawSchool] = await db.query(`SELECT id FROM schools WHERE name = 'School of Law'`);
+        if (!lawSchool[0]) {
+            await db.query(`INSERT INTO schools (name) VALUES ('School of Law')`);
+        }
+
+        const [comp] = await db.query(`SELECT id FROM schools WHERE name = 'School of Computing'`);
+        const [bus]  = await db.query(`SELECT id FROM schools WHERE name = 'School of Business'`);
+        const [eng]  = await db.query(`SELECT id FROM schools WHERE name = 'School of Engineering'`);
+        const [med]  = await db.query(`SELECT id FROM schools WHERE name = 'School of Medicine'`);
+        const [law]  = await db.query(`SELECT id FROM schools WHERE name = 'School of Law'`);
+
+        const cid = (r) => r[0]?.id;
+
+        // Course inserts
+        async function addCourse(name, code, desc, schoolId) {
+            const [r] = await db.query(`SELECT id FROM courses WHERE name = $1 AND school_id = $2`, [name, schoolId]);
+            if (!r[0]) {
+                const [ins] = await db.query(`INSERT INTO courses (name, code, description, school_id) VALUES ($1, $2, $3, $4) RETURNING id`, [name, code, desc, schoolId]);
+                return ins[0].id;
+            }
+            return r[0].id;
+        }
+
+        // Unit insert and link
+        async function addUnit(name, code, desc, courseId, isCommon = false) {
+            const [r] = await db.query(`SELECT id FROM units WHERE name = $1`, [name]);
+            let uid;
+            if (!r[0]) {
+                const [ins] = await db.query(`INSERT INTO units (name, code, description, is_common_unit) VALUES ($1, $2, $3, $4) RETURNING id`, [name, code, desc, isCommon]);
+                uid = ins[0].id;
+            } else {
+                uid = r[0].id;
+            }
+            const [link] = await db.query(`SELECT 1 FROM course_units WHERE course_id = $1 AND unit_id = $2`, [courseId, uid]);
+            if (!link[0]) {
+                await db.query(`INSERT INTO course_units (course_id, unit_id) VALUES ($1, $2)`, [courseId, uid]);
+            }
+            return uid;
+        }
+
+        // === SCHOOL OF COMPUTING ===
+        const cscId  = await addCourse('Computer Science', 'CSC', 'Study of computing fundamentals, programming, and software development', cid(comp));
+        const itId   = await addCourse('Information Technology', 'IT', 'IT infrastructure, networking, and system administration', cid(comp));
+        const dsId   = await addCourse('Data Science', 'DS', 'Data analysis, machine learning, and AI', cid(comp));
+        const seId   = await addCourse('Software Engineering', 'SE', 'Software development lifecycle and engineering practices', cid(comp));
+
+        await addUnit('Programming Fundamentals', 'CSC101', 'Fundamentals of programming using Python and Java', cscId);
+        await addUnit('Discrete Mathematics', 'CSC102', 'Mathematical structures and logic', cscId);
+        await addUnit('Computer Architecture', 'CSC103', 'Computer hardware and architecture', cscId);
+        await addUnit('Data Structures & Algorithms', 'CSC201', 'Arrays, lists, trees, and graphs', cscId);
+        await addUnit('Object-Oriented Programming', 'CSC202', 'OOP concepts with Java and C++', cscId);
+        await addUnit('Operating Systems', 'CSC203', 'OS concepts and process management', cscId);
+        await addUnit('Database Systems', 'CSC204', 'SQL and NoSQL databases', cscId);
+        await addUnit('Software Engineering', 'CSC301', 'Software development lifecycle', cscId);
+        await addUnit('Algorithm Design & Analysis', 'CSC302', 'Algorithm design and analysis', cscId);
+
+        await addUnit('Web Development', 'IT101', 'Web development with MERN stack', itId);
+        await addUnit('Computer Networks', 'IT102', 'Network protocols and security', itId);
+        await addUnit('Mobile App Development', 'IT201', 'Mobile app development with Flutter', itId);
+        await addUnit('UI/UX Design', 'IT202', 'User interface design principles', itId);
+        await addUnit('Cybersecurity', 'IT301', 'Security fundamentals and ethical hacking', itId);
+        await addUnit('Cloud Computing', 'IT302', 'Cloud platforms and deployment', itId);
+
+        await addUnit('Artificial Intelligence', 'DS101', 'AI concepts and applications', dsId);
+        await addUnit('Machine Learning', 'DS102', 'ML algorithms and neural networks', dsId);
+        await addUnit('Big Data Analytics', 'DS201', 'Big data processing with Hadoop', dsId);
+
+        await addUnit('Research Methodology', 'SE101', 'Research methods and writing', seId);
+        await addUnit('Project Management', 'SE201', 'Project planning and management', seId);
+        await addUnit('Internship', 'SE301', 'Industrial internship experience', seId);
+        await addUnit('Capstone Project', 'SE401', 'Final year capstone project', seId);
+        await addUnit('Professional Ethics', 'CSC401', 'Professional ethics in computing', seId);
+
+        // === SCHOOL OF BUSINESS ===
+        const baId  = await addCourse('Business Administration', 'BA', 'Business administration and management', cid(bus));
+        const mktId = await addCourse('Marketing', 'MKT', 'Marketing strategies and consumer behavior', cid(bus));
+        const accId = await addCourse('Financial Accounting', 'ACC', 'Financial accounting and reporting', cid(bus));
+        const hrId  = await addCourse('HR Management', 'HR', 'HR management and organizational behavior', cid(bus));
+
+        await addUnit('Principles of Management', 'BUS101', 'Management principles and theories', baId);
+        await addUnit('Business Mathematics', 'BUS102', 'Business mathematics and calculus', baId);
+        await addUnit('Organizational Behavior', 'BUS201', 'Organizational behavior and culture', baId);
+        await addUnit('Marketing Principles', 'MKT101', 'Marketing strategies and CRM', mktId);
+        await addUnit('Business Statistics', 'MKT102', 'Statistical analysis for business', mktId);
+        await addUnit('Financial Accounting', 'ACC101', 'Financial accounting principles', accId);
+        await addUnit('HR Management', 'HR101', 'HR management principles', hrId);
+
+        // === SCHOOL OF ENGINEERING ===
+        const ceId  = await addCourse('Civil Engineering', 'CE', 'Civil infrastructure and construction', cid(eng));
+        const meId  = await addCourse('Mechanical Engineering', 'ME', 'Mechanical design and manufacturing', cid(eng));
+        const eeId  = await addCourse('Electrical Engineering', 'EE', 'Electrical systems and power', cid(eng));
+        const coeId = await addCourse('Computer Engineering', 'COE', 'Electronic circuits and embedded systems', cid(eng));
+
+        await addUnit('Engineering Mathematics', 'CE101', 'Engineering mathematics', ceId);
+        await addUnit('Engineering Physics', 'CE102', 'Physics for engineers', ceId);
+        await addUnit('Engineering Drawing', 'CE103', 'Engineering drawing and CAD', ceId);
+        await addUnit('Statics & Dynamics', 'CE201', 'Statics and dynamics', ceId);
+        await addUnit('Thermodynamics', 'CE202', 'Thermodynamics principles', ceId);
+        await addUnit('Fluid Mechanics', 'CE301', 'Fluid mechanics basics', ceId);
+
+        await addUnit('Thermodynamics', 'ME201', 'Thermodynamics principles', meId);
+        await addUnit('Fluid Mechanics', 'ME301', 'Fluid mechanics basics', meId);
+        await addUnit('Circuit Analysis', 'EE201', 'Electrical circuit analysis', eeId);
+        await addUnit('Digital Logic Design', 'COE102', 'Digital logic and circuit design', coeId);
+        await addUnit('Microprocessors', 'COE201', 'Microprocessor architecture and programming', coeId);
+        await addUnit('Embedded Systems', 'COE301', 'Embedded system design', coeId);
+
+        // === SCHOOL OF MEDICINE ===
+        const medId  = await addCourse('Medicine', 'MED', 'Medical education and clinical practice', cid(med));
+        const nurId  = await addCourse('Nursing', 'NUR', 'Nursing care and patient management', cid(med));
+        const phaId  = await addCourse('Pharmacy', 'PHA', 'Pharmaceutical sciences and drug development', cid(med));
+        const phId   = await addCourse('Public Health', 'PH', 'Public health and epidemiology', cid(med));
+
+        await addUnit('Human Anatomy', 'MED101', 'Human anatomy and structure', medId);
+        await addUnit('Physiology', 'MED102', 'Body systems and functions', medId);
+        await addUnit('Biochemistry', 'MED103', 'Biochemistry of life', medId);
+        await addUnit('Pathology', 'MED201', 'Disease mechanisms', medId);
+        await addUnit('Pharmacology', 'MED202', 'Drug classifications and uses', medId);
+        await addUnit('Clinical Diagnosis', 'MED301', 'Clinical diagnosis methods', medId);
+
+        await addUnit('Nursing Fundamentals', 'NUR102', 'Basic nursing care principles', nurId);
+        await addUnit('Community Health Nursing', 'NUR301', 'Community and public health nursing', nurId);
+        await addUnit('Pharmaceutical Chemistry', 'PHA101', 'Chemistry of drug compounds', phaId);
+        await addUnit('Pharmaceutics', 'PHA201', 'Drug formulation and delivery', phaId);
+        await addUnit('Epidemiology', 'PH101', 'Principles of epidemiology', phId);
+        await addUnit('Biostatistics', 'PH102', 'Statistical methods in public health', phId);
+        await addUnit('Health Policy & Management', 'PH301', 'Health systems and policy', phId);
+
+        // === SCHOOL OF LAW ===
+        const llbId  = await addCourse('Law (LLB)', 'LLB', 'Bachelor of Laws - legal studies and practice', cid(law));
+        const crlId  = await addCourse('Criminal Law', 'CRL', 'Criminal law and justice system', cid(law));
+        const intlId = await addCourse('International Law', 'INTL', 'International law and relations', cid(law));
+
+        await addUnit('Legal Methods', 'LAW101', 'Legal research and writing', llbId);
+        await addUnit('Constitutional Law', 'LAW102', 'Constitutional law basics', llbId);
+        await addUnit('Contract Law', 'LAW201', 'Contract law and agreements', llbId);
+        await addUnit('Tort Law', 'LAW202', 'Tort law and liability', llbId);
+        await addUnit('Legal Writing', 'LAW301', 'Legal writing skills', llbId);
+        await addUnit('Criminal Law', 'CRL101', 'Criminal law principles', crlId);
+        await addUnit('International Law', 'INTL101', 'Public international law', intlId);
+
+        // === COMMON UNITS (shared across all schools) ===
+        const allCourses = await db.query(`SELECT id FROM courses`);
+        for (const row of allCourses[0]) {
+            await addUnit('Communication Skills', 'COM101', 'Professional communication skills', row.id);
+            await addUnit('Computer Literacy', 'CIT101', 'Basic computer skills and digital literacy', row.id);
+            await addUnit('Research Methodology', 'RES101', 'Research methods and academic writing', row.id);
+        }
+
+        res.json({ success: true, message: 'Full seed complete — all schools, courses, and units restored!' });
+    } catch (error) {
+        console.error('Seed error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// =====================
 // MAIN API ENDPOINTS
 // =====================
 app.get('/api/schools', async (req, res) => {
